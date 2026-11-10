@@ -684,6 +684,11 @@ export class PharmacyService {
     return [];
   }
 
+  static async setUserRole(userId: string, role: UserProfile['system_role']): Promise<void> {
+    const { error } = await supabase.rpc('admin_set_user_role', { _user_id: userId, _role: role as any });
+    if (error) throw new Error(error.message);
+  }
+
   // ==========================================
   // 12. AI FEATURES
   // ==========================================
