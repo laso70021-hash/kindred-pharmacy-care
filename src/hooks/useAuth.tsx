@@ -33,12 +33,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  // Which user the loaded profile/roles belong to; until it matches, roles are still loading.
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const isLoading = initialLoading || (user !== null && profileUserId !== user.id);
 
   const loadProfile = useCallback(async (currentUser: User | null) => {
     if (!currentUser) {
       setProfile(null);
       setIsSuperAdmin(false);
+      setProfileUserId(null);
       return;
     }
     const [{ data: row }, { data: roleRows }] = await Promise.all([
@@ -58,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       is_super_admin: admin,
       created_at: row?.created_at || currentUser.created_at,
     });
+    setProfileUserId(currentUser.id);
   }, []);
 
   useEffect(() => {
@@ -81,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       await loadProfile(data.session?.user ?? null);
-      if (active) setIsLoading(false);
+      if (active) setInitialLoading(false);
     });
 
     return () => {
@@ -98,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setIsSuperAdmin(false);
+    setProfileUserId(null);
     navigate({ to: "/auth", replace: true });
   }, [navigate, queryClient]);
 
