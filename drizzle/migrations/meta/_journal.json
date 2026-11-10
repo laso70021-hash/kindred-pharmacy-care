@@ -134,6 +134,13 @@
       "when": 1794332983355,
       "tag": "0018_scope_related_sales_records",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794333099485,
+      "tag": "0019_align_import_history_reader_roles",
+      "breakpoints": true
     }
   ]
 }
