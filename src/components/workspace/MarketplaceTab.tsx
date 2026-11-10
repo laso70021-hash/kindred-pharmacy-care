@@ -113,8 +113,8 @@ function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDo
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!branch) return toast.error('Add a branch first to receive stock.');
-    if (!reference.trim() && !file) return toast.error('Add the transaction reference or attach the receipt.');
+    if (!branch) { toast.error('Add a branch first to receive stock.'); return; }
+    if (!reference.trim() && !file) { toast.error('Add the transaction reference or attach the receipt.'); return; }
     setBusy(true);
     try {
       await WholesaleService.placeOrder({ userId, buyerId: ws.id, supplierId: cart[0]!.supplier_id, branchId: branch,
