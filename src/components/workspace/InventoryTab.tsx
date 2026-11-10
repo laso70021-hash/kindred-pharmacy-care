@@ -43,8 +43,8 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
         </div>)} />
       {editable && branches.length === 0 && <div className="text-xs bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-2.5 font-semibold">Add a branch first so you can receive stock into it.</div>}
       <div className="flex flex-wrap gap-2 items-center">
-        <div className="relative"><Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" /><input className={`${inputCls} pl-8 w-56`} placeholder="Search products" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-        <select className={`${inputCls} w-44`} value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Branch">
+        <div className="relative"><Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" /><input className={`${inputCls.replace('w-full ', '')} pl-8 w-56`} placeholder="Search products" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <select className={`${inputCls.replace('w-full ', '')} w-44`} value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Branch">
           <option value="">All branches</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
         <div className="flex bg-slate-100 rounded-lg p-0.5 text-xs font-bold">
