@@ -106,6 +106,41 @@
       "when": 1794332297852,
       "tag": "0014_entry_branch_scope_and_staff_join",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794332622539,
+      "tag": "0015_finish_branch_scope_and_wholesale_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794332665311,
+      "tag": "0016_admin_business_registration_and_staff_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794332915110,
+      "tag": "0017_repair_polymorphic_entry_validation",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794332983355,
+      "tag": "0018_scope_related_sales_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794333099485,
+      "tag": "0019_align_import_history_reader_roles",
+      "breakpoints": true
     }
   ]
 }

@@ -52,3 +52,5 @@ use the editor.
 - Till sales go only through `create_sale` (price from products, FIFO from the chosen branch's unexpired batches, payment row + stock movements in one transaction); the cash drawer is computed from that day's branch sales, not stored.
 - Prescriptions queue in `prescriptions`; staff insert pending rows, but dispensing/rejecting goes only through `review_prescription` (pharmacist/manager), which reuses `create_sale` so stock and sales stay in one code path.
 - In-app notifications are rows in `notifications` written only by SECURITY DEFINER triggers on business tables (users can just read/mark their own); expiry reminders are computed in the bell from end dates, not stored.
+- Forms/templates share `entry-model.ts` via `EntryService`; imports and stock changes are transactional RPCs to prevent partial saves. Import fingerprints prevent repeat files.
+- Membership `branch_ids` restrict selected branches (empty uses legacy branch_id or all); enforce tenant and branch scope in SQL, not just dropdowns.

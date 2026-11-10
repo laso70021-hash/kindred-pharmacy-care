@@ -1026,6 +1026,15 @@ export class PharmacyService {
 }
 
 export class EntryService {
+  static async registerBusiness(row: Record<string,string>) {
+    const {data,error}=await supabase.rpc('admin_register_business',{_payload:row});fail(error);return String(data);
+  }
+  static async staffDetails(pid:string) {
+    const {data,error}=await supabase.from('pharmacy_memberships').select('*').eq('pharmacy_id',pid);fail(error);return data ?? [];
+  }
+  static async updateStaff(pid:string,id:string,row:EntryRow) {
+    const {error}=await supabase.rpc('update_staff_details',{_pharmacy:pid,_membership:id,_row:row});fail(error);
+  }
   static async list(pid: string, module: EntryModule): Promise<(EntryRow & { id: string })[]> {
     const tables = { products: 'products', batches: 'inventory_batches', branches: 'branches', categories: 'categories', suppliers: 'suppliers', staff: 'pharmacy_invites', settings: 'pharmacies' };
     const { data, error } = await supabase.from(tables[module]).select('*').eq(module === 'settings' ? 'id' : 'pharmacy_id', pid);
@@ -1068,6 +1077,11 @@ export class EntryService {
   }
   static async save(pid: string,module: EntryModule,row: EntryRow,id?: string): Promise<string> {
     const { data,error } = await supabase.rpc('save_business_entry',{_pharmacy:pid,_module:module,_row:row,_id:id ?? null}); fail(error); return String(data);
+  }
+  static async photo(pid:string,id:string,file:File) {
+    if(file.size>5*1024*1024 || !['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Choose a JPG, PNG or WebP under 5 MB');
+    const path=`${pid}/${crypto.randomUUID()}`;const {error}=await supabase.storage.from('product-images').upload(path,file);fail(error);
+    const {error:update}=await supabase.from('products').update({image_url:path}).eq('id',id).eq('pharmacy_id',pid);fail(update);
   }
   static async import(pid: string,module: EntryModule,rows: EntryRow[],fileName: string) {
     const bytes = new TextEncoder().encode(JSON.stringify({module,rows}));
@@ -1216,7 +1230,7 @@ export class WorkspaceService {
   }
 
   static async updateMembership(membershipId: string, patch: { role?: StaffRole; branch_id?: string | null; is_active?: boolean }): Promise<void> {
-    const { error } = await supabase.from('pharmacy_memberships').update(patch).eq('id', membershipId);
+    const { error } = await supabase.from('pharmacy_memberships').update('branch_id' in patch ? {...patch,branch_ids:patch.branch_id?[patch.branch_id]:[]} : patch).eq('id', membershipId);
     fail(error);
   }
 
