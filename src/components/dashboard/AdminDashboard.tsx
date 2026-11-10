@@ -90,6 +90,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { askPharmacyAssistant } from '@/lib/ai-assistant.functions';
 import { RegistrationsPanel, useRegistrations, needsAction } from '@/components/dashboard/RegistrationsPanel';
 import { STATUS_LABELS } from '@/lib/billing';
+import { filterByRange, presetRange, recordDayKey, formatDayKey, type DateRange } from '@/lib/date-range';
+import { DateRangeFilter } from '@/components/dashboard/DateRangeFilter';
 
 interface AdminDashboardProps {
   onBackToLanding: () => void;
@@ -115,22 +117,51 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
   const [productsOpen, setProductsOpen] = useState(false);
 
   // Core Data States (Direct from Supabase)
-  const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
+  const [allPharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [allCustomers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [batches, setBatches] = useState<InventoryBatch[]>([]);
-  const [sales, setSales] = useState<SaleTransaction[]>([]);
-  const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
+  const [allSales, setSales] = useState<SaleTransaction[]>([]);
+  const [allPurchases, setPurchases] = useState<PurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [allExpenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [allUsers, setUsers] = useState<UserProfile[]>([]);
   const [aiFeatures, setAiFeatures] = useState<AIFeatureState[]>([]);
   const [recommendations, setRecommendations] = useState<AIRecommendationItem[]>([]);
   const [systemHealth, setSystemHealth] = useState<SystemHealthItem[]>([]);
-  const [auditLogs, setAuditLogs] = useState<ActivityLogItem[]>([]);
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [allAuditLogs, setAuditLogs] = useState<ActivityLogItem[]>([]);
+  const [allTickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Date Range filter — set after mount so server and browser agree on "today"
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  useEffect(() => {
+    setDateRange(presetRange('last30'));
+  }, []);
+
+  const pharmacies = filterByRange(allPharmacies, (p) => p.registered_at, dateRange);
+  const customers = filterByRange(allCustomers, (c) => c.created_at, dateRange);
+  const sales = filterByRange(allSales, (s) => s.created_at, dateRange);
+  const purchases = filterByRange(allPurchases, (po) => po.order_date || po.created_at, dateRange);
+  const expenses = filterByRange(allExpenses, (e) => e.expense_date || e.created_at, dateRange);
+  const users = filterByRange(allUsers, (u) => u.created_at, dateRange);
+  const auditLogs = filterByRange(allAuditLogs, (a) => a.time, dateRange);
+  const tickets = filterByRange(allTickets, (t) => t.created_at, dateRange);
+
+  // Sections where the date filter applies, with "shown / total" counts
+  const dateScopedCounts: Record<string, [number, number]> = {
+    dashboard: [sales.length + purchases.length, allSales.length + allPurchases.length],
+    businesses: [pharmacies.length, allPharmacies.length],
+    users: [users.length, allUsers.length],
+    orders: [sales.length, allSales.length],
+    purchases: [purchases.length, allPurchases.length],
+    customers: [customers.length, allCustomers.length],
+    expenses: [expenses.length, allExpenses.length],
+    reports: [sales.length + expenses.length + purchases.length, allSales.length + allExpenses.length + allPurchases.length],
+    'audit-logs': [auditLogs.length, allAuditLogs.length],
+    support: [tickets.length, allTickets.length]
+  };
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
