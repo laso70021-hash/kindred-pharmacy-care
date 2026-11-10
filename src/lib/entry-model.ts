@@ -32,11 +32,11 @@ export function validateEntries(module: EntryModule, rows: EntryRow[], existing:
    if(f.options&&!f.options.includes(value))add(f.key,'Choose one of: '+f.options.join(', '));
    if(references[f.key]){
     const values=f.key==='branch_codes'?value.split(';').map(v=>v.trim()):[value];
-    for(const v of values){const matches=references[f.key].filter(o=>o.value.toLowerCase()===v.toLowerCase());if(matches.length!==1)add(f.key,`Unknown or ambiguous reference: ${v}`);}
+    for(const v of values){const matches=(references[f.key] ?? []).filter(o=>o.value.toLowerCase()===v.toLowerCase());if(matches.length!==1)add(f.key,`Unknown or ambiguous reference: ${v}`);}
    }
   }
-  if(module==='batches'&&r.manufacturing_date&&r.expiry_date&&r.manufacturing_date>r.expiry_date)add('manufacturing_date','Manufacturing date must not be after expiry date');
-  if(module==='batches'&&Number(r.quantity)===0)add('quantity','Opening stock quantity must be greater than zero');
+  if(module==='batches'&&r['manufacturing_date']&&r['expiry_date']&&r['manufacturing_date']>r['expiry_date'])add('manufacturing_date','Manufacturing date must not be after expiry date');
+  if(module==='batches'&&Number(r['quantity'])===0)add('quantity','Opening stock quantity must be greater than zero');
   if(model.unique.length&&model.unique.every(k=>r[k]?.trim())){const key=identity(r);if(seen.has(key)||old.has(key))add(model.unique.join(', '),'Duplicate record');seen.add(key);}
  });
  if(rows.length>5000)errors.push({row:0,column:'file',reason:'Import no more than 5000 rows at a time'});

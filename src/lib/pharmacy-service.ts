@@ -1034,16 +1034,16 @@ export class EntryService {
     return (data ?? []).map((row: Record<string, unknown>) => {
       const mapped = Object.fromEntries(Object.entries(row).map(([k,v]) => [k, v == null ? '' : String(v)])) as EntryRow & { id: string };
       if (module === 'products' && refs) {
-        mapped.category_name = refs.categories.find(r => r.id === row.category_id)?.name ?? '';
-        mapped.supplier_name = refs.suppliers.find(r => r.id === row.supplier_id)?.name ?? '';
+        mapped['category_name'] = refs.categories.find(r => r['id'] === row['category_id'])?.['name'] ?? '';
+        mapped['supplier_name'] = refs.suppliers.find(r => r['id'] === row['supplier_id'])?.['name'] ?? '';
       }
       if (module === 'batches' && refs) {
-        mapped.product_sku = refs.products.find(r => r.id === row.product_id)?.sku ?? '';
-        mapped.branch_code = refs.branches.find(r => r.id === row.branch_id)?.code ?? '';
+        mapped['product_sku'] = refs.products.find(r => r['id'] === row['product_id'])?.['sku'] ?? '';
+        mapped['branch_code'] = refs.branches.find(r => r['id'] === row['branch_id'])?.['code'] ?? '';
       }
       if (module === 'staff' && refs) {
-        const ids = Array.isArray(row.branch_ids) && row.branch_ids.length ? row.branch_ids : row.branch_id ? [row.branch_id] : [];
-        mapped.branch_codes = ids.map(id => refs.branches.find(r => r.id === id)?.code ?? '').join(';');
+        const ids = Array.isArray(row['branch_ids']) && row['branch_ids'].length ? row['branch_ids'] : row['branch_id'] ? [row['branch_id']] : [];
+        mapped['branch_codes'] = ids.map(id => refs.branches.find(r => r['id'] === id)?.['code'] ?? '').join(';');
       }
       return mapped;
     });
@@ -1058,12 +1058,12 @@ export class EntryService {
     const r = await this.referenceRows(pid);
     const staff = await WorkspaceService.getStaff(pid);
     return {
-      category_name: r.categories.filter(x=>String(x.is_active)!=='false').map(x=>({value:x.name ?? '',label:x.name ?? ''})),
-      supplier_name: r.suppliers.filter(x=>String(x.is_active)!=='false').map(x=>({value:x.name ?? '',label:x.name ?? ''})),
-      product_sku: r.products.filter(x=>x.sku).map(x=>({value:x.sku ?? '',label:`${x.name} (${x.sku})`})),
-      branch_code: r.branches.filter(x=>String(x.is_active)!=='false' && x.code).map(x=>({value:x.code ?? '',label:`${x.name} (${x.code})`})),
-      branch_codes: r.branches.filter(x=>x.code).map(x=>({value:x.code ?? '',label:`${x.name} (${x.code})`})),
-      manager_id: staff.filter(x=>x.role==='manager' && x.is_active).map(x=>({value:x.user_id,label:x.full_name})),
+      category_name: r.categories.filter(x=>String(x['is_active'])!=='false').map(x=>({value:x['name'] ?? '',label:x['name'] ?? ''})),
+      supplier_name: r.suppliers.filter(x=>String(x['is_active'])!=='false').map(x=>({value:x['name'] ?? '',label:x['name'] ?? ''})),
+      product_sku: r.products.filter(x=>x['sku']).map(x=>({value:x['sku'] ?? '',label:`${x['name']} (${x['sku']})`})),
+      branch_code: r.branches.filter(x=>String(x['is_active'])!=='false' && x['code']).map(x=>({value:x['code'] ?? '',label:`${x['name']} (${x['code']})`})),
+      branch_codes: r.branches.filter(x=>x['code']).map(x=>({value:x['code'] ?? '',label:`${x['name']} (${x['code']})`})),
+      manager_id: staff.filter(x=>x.role==='manager' && x['is_active']).map(x=>({value:x.user_id,label:x.full_name})),
     };
   }
   static async save(pid: string,module: EntryModule,row: EntryRow,id?: string): Promise<string> {
