@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { NotificationService } from '@/lib/pharmacy-service';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 export interface ExtraNotice { id: string; kind: 'warning' | 'info'; title: string; body?: string; link?: string }
@@ -15,16 +14,8 @@ export function NotificationBell({ extra = [] }: { extra?: ExtraNotice[] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { data: items = [] } = useQuery({ queryKey: ['notifications', user?.id], queryFn: () => NotificationService.list(), enabled: !!user, refetchInterval: 60_000 });
+  const { data: items = [] } = useQuery({ queryKey: ['notifications', user?.id], queryFn: () => NotificationService.list(), enabled: !!user, refetchInterval: 30_000 });
 
-  useEffect(() => {
-    if (!user) return;
-    const ch = supabase.channel(`notif-${user.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        () => void qc.invalidateQueries({ queryKey: ['notifications', user.id] }))
-      .subscribe();
-    return () => { void supabase.removeChannel(ch); };
-  }, [user, qc]);
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', h);

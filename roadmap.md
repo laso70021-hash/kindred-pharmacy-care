@@ -6,5 +6,5 @@
 - [x] 4. Supplier marketplace & restock orders with payment proof → auto-stock to branch
 - [x] 5. Cashier POS with product photo grid, cart, payments, cash drawer
 - [x] 6. Dispenser portal (prescription queue)
-- [ ] 7. Notifications + emails (signup, approval, invites, role changes, expiry 7d/1d, reports, AI recommendations), logo & favicon setup
+- [~] 7. Notifications (done), reports CSV (done), pharmacy logo (done), favicon (already set) — emails blocked: needs an email domain the user owns
 - [ ] 8. Role-based landing + view switcher for all portals
