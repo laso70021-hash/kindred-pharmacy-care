@@ -29,17 +29,26 @@ const stats = { pharmacies: 500, suppliers: 50, medicines: "1M+", accuracy: "98%
 
 function Home() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { data: plans = [] } = useQuery({
     queryKey: ["subscription-plans"],
     queryFn: () => PharmacyService.getPlans(),
   });
 
+  const openDashboard = () => {
+    if (!user) navigate({ to: "/auth", search: { mode: "signup" } });
+    else navigate({ to: isSuperAdmin ? "/admin" : "/account" });
+  };
+
   return (
     <div className="relative">
       <ViewSwitcher current="landing" />
       <LandingPage
-        onOpenDashboard={() => navigate({ to: "/admin" })}
+        onOpenDashboard={openDashboard}
+        onChoosePlan={(slug) => {
+          if (user) navigate({ to: isSuperAdmin ? "/admin" : "/account" });
+          else navigate({ to: "/auth", search: { mode: "signup", plan: slug } });
+        }}
         onSignIn={() => navigate({ to: "/auth" })}
         isSignedIn={Boolean(user)}
         plans={plans}

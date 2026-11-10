@@ -39,9 +39,11 @@ import {
 } from 'lucide-react';
 import { SubscriptionPlan } from '@/lib/pharmacy-types';
 import { formatNumber } from '@/lib/utils';
+import { TRIAL_DAYS, offersTrial, yearlyPrice } from '@/lib/billing';
 
 interface LandingPageProps {
   onOpenDashboard: () => void;
+  onChoosePlan: (planSlug: string) => void;
   onSignIn: () => void;
   isSignedIn: boolean;
   plans: SubscriptionPlan[];
@@ -53,8 +55,8 @@ interface LandingPageProps {
   };
 }
 
-export default function LandingPage({ onOpenDashboard, onSignIn, isSignedIn, plans, stats }: LandingPageProps) {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, isSignedIn, plans, stats }: LandingPageProps) {
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [showDemoModal, setShowDemoModal] = useState(false);
 
   const roles = [
@@ -694,9 +696,16 @@ export default function LandingPage({ onOpenDashboard, onSignIn, isSignedIn, pla
                           <span className="text-xs text-slate-500 font-semibold">/month</span>
                         </div>
                       )}
-                      {billingCycle === 'annual' && plan.slug !== 'enterprise' && (
+                      {plan.slug !== 'enterprise' && (
                         <div className="text-[11px] text-emerald-600 font-medium mt-1">
-                          Billed annually (20% off)
+                          {billingCycle === 'annual'
+                            ? `TZS ${formatNumber(yearlyPrice(plan))} billed yearly (20% off)`
+                            : `Paid yearly: TZS ${formatNumber(yearlyPrice(plan))} / year`}
+                        </div>
+                      )}
+                      {offersTrial(plan.slug) && (
+                        <div className="text-[11px] text-blue-600 font-bold mt-1">
+                          Includes a {TRIAL_DAYS}-day free trial
                         </div>
                       )}
                     </div>
@@ -713,7 +722,7 @@ export default function LandingPage({ onOpenDashboard, onSignIn, isSignedIn, pla
 
                   <div className="pt-8">
                     <button
-                      onClick={onOpenDashboard}
+                      onClick={() => onChoosePlan(plan.slug)}
                       className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
                         isPopular
                           ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
