@@ -1293,7 +1293,7 @@ export class WorkspaceService {
     const { error: mErr } = await supabase.from('stock_movements').insert({
       pharmacy_id: pharmacyId,
       product_id: input.product_id,
-      batch_id: batch.id,
+      batch_id: batch?.id ?? null,
       movement_type: 'stock_in',
       quantity: input.quantity,
       notes: `Received batch ${input.batch_number}`,
