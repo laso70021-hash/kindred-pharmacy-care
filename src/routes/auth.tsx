@@ -22,6 +22,7 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): AuthSearch => ({
     ...(search["mode"] === "signup" ? { mode: "signup" as const } : {}),
     ...(typeof search["plan"] === "string" ? { plan: search["plan"] } : {}),
+    ...(typeof search["invite"] === "string" ? { invite: search["invite"] } : {}),
   }),
   component: AuthPage,
 });
@@ -29,9 +30,10 @@ export const Route = createFileRoute("/auth")({
 interface AuthSearch {
   mode?: "signup";
   plan?: string;
+  invite?: string;
 }
 
-type Mode = "signin" | "signup" | "forgot";
+type Mode = "signin" | "signup" | "forgot" | "staff";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
@@ -52,8 +54,9 @@ function AuthPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const { user, isLoading, isSuperAdmin } = useAuth();
-  const [mode, setMode] = useState<Mode>(search.mode === "signup" ? "signup" : "signin");
-  const [email, setEmail] = useState("");
+  const [mode, setMode] = useState<Mode>(search.invite ? "staff" : search.mode === "signup" ? "signup" : "signin");
+  const [email, setEmail] = useState(search.invite ?? "");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -93,7 +96,18 @@ function AuthPage() {
     setBusy(true);
     setNotice(null);
     try {
-      if (mode === "signin") {
+      if (mode === "staff") {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin + "/account", data: { full_name: fullName } },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          setNotice("Account created! Confirm your email, then sign in to accept your invitation.");
+          setMode("signin");
+        }
+      } else if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
@@ -119,7 +133,7 @@ function AuthPage() {
     }
   };
 
-  const heading = mode === "signin" ? "Sign In to Swahivo" : mode === "signup" ? "Register your business" : "Reset your password";
+  const heading = mode === "signin" ? "Sign In to Swahivo" : mode === "signup" ? "Register your business" : mode === "staff" ? "Join your pharmacy team" : "Reset your password";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50/60 via-white to-slate-50 flex items-center justify-center p-4 font-sans">
@@ -167,6 +181,12 @@ function AuthPage() {
 
         {mode !== "signup" && (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "staff" && (
+            <div>
+              <label className={labelClass} htmlFor="fullName">Full name</label>
+              <input id="fullName" required className={inputClass} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </div>
+          )}
           <div>
             <label className={labelClass} htmlFor="email">Email Address</label>
             <input id="email" type="email" required className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@pharmacy.com" />
@@ -189,7 +209,7 @@ function AuthPage() {
             disabled={busy}
             className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold text-sm shadow-md transition-all"
           >
-            {busy ? "Please wait…" : mode === "signin" ? "Sign In" : "Send reset link"}
+            {busy ? "Please wait…" : mode === "signin" ? "Sign In" : mode === "staff" ? "Create staff account" : "Send reset link"}
           </button>
         </form>
         )}
@@ -200,7 +220,7 @@ function AuthPage() {
               New to Swahivo?{" "}
               <button onClick={() => setMode("signup")} className="text-blue-600 font-semibold hover:underline">Register your pharmacy or supplier business</button>
             </>
-          ) : mode === "signup" ? (
+          ) : mode === "signup" || mode === "staff" ? (
             <>
               Already registered?{" "}
               <button onClick={() => setMode("signin")} className="text-blue-600 font-semibold hover:underline">Sign in</button>
