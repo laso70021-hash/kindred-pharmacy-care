@@ -339,21 +339,26 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
   }, []);
 
   // Live KPI Calculations derived strictly from Supabase records
-  const totalPharmaciesCount = pharmacies.length;
-  const totalUsersCount = users.length;
+  const totalPharmaciesCount = allPharmacies.length;
+  const totalUsersCount = allUsers.length;
   const totalSalesVolume = sales.reduce((acc, curr) => acc + (curr.total || 0), 0);
   const totalOrdersCount = sales.length + purchases.length;
   const totalPlatformRevenue = Math.round(totalSalesVolume * 0.1) + (totalPharmaciesCount * 19000);
   const stockAlertsCount = batches.filter((b) => (b.days_to_expiry ?? 100) <= 90 || b.quantity <= 20).length;
 
-  // Chart Data derived from sales
-  const salesTrendData: SalesDataPoint[] = sales.length > 0
-    ? sales.slice(0, 10).map((s) => ({
-        date: s.created_at.slice(0, 6),
-        sales: s.total,
-        orders: 1,
-        revenue: Math.round(s.total * 0.1)
-      }))
+  // Chart Data: filtered sales grouped per day, oldest first
+  const salesByDay = new Map<string, SalesDataPoint>();
+  for (const s of sales) {
+    const key = recordDayKey(s.created_at);
+    if (!key) continue;
+    const point = salesByDay.get(key) ?? { date: formatDayKey(key).slice(0, 6), sales: 0, orders: 0, revenue: 0 };
+    point.sales += s.total || 0;
+    point.orders += 1;
+    point.revenue += Math.round((s.total || 0) * 0.1);
+    salesByDay.set(key, point);
+  }
+  const salesTrendData: SalesDataPoint[] = allSales.length > 0
+    ? [...salesByDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, p]) => p)
     : [
         { date: '02 Oct', sales: 3200000, orders: 380, revenue: 800000 },
         { date: '08 Oct', sales: 6200000, orders: 740, revenue: 1550000 },
@@ -835,21 +840,28 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
               </p>
             </div>
 
-            <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs text-xs font-semibold text-slate-700">
-              <span className="text-slate-400 text-[11px] uppercase tracking-wider font-bold">
-                Date Range
-              </span>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-slate-800 border border-slate-200/80">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <span>02 Oct 2026, 00:00</span>
-              </div>
-              <span className="text-slate-400">to</span>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-slate-800 border border-slate-200/80">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <span>01 Nov 2026, 23:59</span>
-              </div>
-            </div>
+            {dateScopedCounts[activeNav] && (
+              <DateRangeFilter value={dateRange} onChange={setDateRange} />
+            )}
           </div>
+
+          {dateScopedCounts[activeNav] &&
+            dateRange &&
+            (dateRange.from || dateRange.to) &&
+            dateScopedCounts[activeNav][0] < dateScopedCounts[activeNav][1] && (
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 text-xs text-blue-900">
+                <span className="font-semibold">
+                  Showing {dateScopedCounts[activeNav][0]} of {dateScopedCounts[activeNav][1]} records in the selected dates.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDateRange(presetRange('all'))}
+                  className="font-bold text-blue-700 hover:underline"
+                >
+                  Show all time
+                </button>
+              </div>
+            )}
 
           {/* ========================================================
               MODULE 1: DASHBOARD OVERVIEW
