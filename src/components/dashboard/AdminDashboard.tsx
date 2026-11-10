@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { BRAND } from '@/lib/brand';
 import { NotificationBell } from '@/components/common/NotificationBell';
 import React, { useState, useEffect } from 'react';
@@ -1412,9 +1413,25 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                           <div className="text-[11px] text-slate-400 font-mono">{u.email}</div>
                         </td>
                         <td className="py-3">
-                          <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase">
-                            {u.system_role.replace(/_/g, ' ')}
-                          </span>
+                          <select
+                            aria-label={`Role for ${u.full_name}`}
+                            className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-bold text-[11px] border border-blue-100"
+                            value={u.system_role}
+                            onChange={async (e) => {
+                              const role = e.target.value as UserProfile['system_role'];
+                              try {
+                                await PharmacyService.setUserRole(u.id, role);
+                                setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, system_role: role, is_super_admin: role === 'super_admin' } : x)));
+                                toast.success('Role updated');
+                              } catch (err: any) {
+                                toast.error(err?.message || 'Could not change role');
+                              }
+                            }}
+                          >
+                            {[['super_admin','Platform Admin'],['pharmacy_owner','Pharmacy Owner'],['supplier','Supplier'],['manager','Manager'],['pharmacist','Pharmacist'],['cashier','Cashier'],['accountant','Accountant'],['inventory_manager','Inventory Manager'],['delivery_rider','Delivery Rider']].map(([v,l]) => (
+                              <option key={v} value={v}>{l}</option>
+                            ))}
+                          </select>
                         </td>
                         <td className="py-3 text-slate-600">{u.phone}</td>
                         <td className="py-3">
