@@ -146,7 +146,7 @@ export function RegistrationWizard({ mode, initialPlan, defaultName, busy, onSub
 
       {step === 1 && (
         <form onSubmit={next} className="space-y-4">
-          <p className="text-sm text-slate-600">Choose your plan. All plans are paid yearly; Starter can begin with a free {TRIAL_DAYS}-day trial.</p>
+          <p className="text-sm text-slate-600">Choose your plan. Every plan begins with a free {TRIAL_DAYS}-day trial, then is paid yearly.</p>
           {plansLoading ? (
             <div className="text-xs text-slate-500 p-6 text-center">Loading plans…</div>
           ) : (
@@ -178,7 +178,7 @@ export function RegistrationWizard({ mode, initialPlan, defaultName, busy, onSub
                           TZS {formatNumber(yearly)} <span className="text-xs font-semibold text-slate-500">/ year</span>
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          TZS {formatNumber(p.price_tzs_annual)}/mo × 12
+                          TZS {formatNumber(p.price_tzs_monthly)}/month
                           {saving > 0 && <span className="text-emerald-600 font-semibold"> · save TZS {formatNumber(saving)}</span>}
                         </div>
                       </>

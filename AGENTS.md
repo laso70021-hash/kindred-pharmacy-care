@@ -36,7 +36,7 @@ use the editor.
 - Roles live only in `public.user_roles` (enum `user_role`), checked with `has_role` / `is_platform_admin`; never store roles on `profiles` — prevents privilege escalation.
 - The signup trigger gives the first account `super_admin`; provider roles (`pharmacy_owner` / `supplier`) are granted only by the admin approval functions — bootstraps the platform owner without hardcoded IDs and keeps roles off user-editable metadata.
 - Business registrations live in `pharmacies` (`business_type` pharmacy|supplier). Signup form data travels in auth metadata `registration` and is saved by `create_registration`; signed-in users call `submit_registration`. A trigger blocks non-admins from changing status/plan/billing dates — approval, payment confirmation and trial extension go through admin-only SQL functions.
-- Subscription pricing/expiry rules live in `src/lib/billing.ts` (mirrored by `plan_yearly_price` in SQL); "expired" is derived from end dates at read time, not stored.
+- Subscription pricing/expiry rules live in `src/lib/billing.ts` (mirrored by `plan_yearly_price` in SQL; `price_tzs_annual` holds the exact yearly total); "expired" is derived from end dates at read time, not stored.
 - Payment receipts go to the private `payment-receipts` bucket under `<user id>/…`; admins view them via short-lived signed URLs.
 - Extra admins come from `public.admin_email_allowlist` (no client access); `super_admin` is granted only once the email is confirmed — so nobody can claim admin by signing up with an address they don't own.
 - Tenant tables are scoped by `user_belongs_to_pharmacy(pharmacy_id)`; rows with null `pharmacy_id` are platform-level and admin-only.
