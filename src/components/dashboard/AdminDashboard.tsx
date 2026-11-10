@@ -554,7 +554,15 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
   };
 
   // 18 Sidebar Navigation Items
-  const navItems = [
+  const navItems: {
+    id: string;
+    label: string;
+    icon: typeof LayoutDashboard;
+    badge?: string;
+    hasSub?: boolean;
+    isOpen?: boolean;
+    toggle?: () => void;
+  }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     {
       id: 'registrations',
