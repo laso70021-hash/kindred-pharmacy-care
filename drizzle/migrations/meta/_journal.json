@@ -29,6 +29,13 @@
       "when": 1794298403646,
       "tag": "0003_registration_and_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794298422716,
+      "tag": "0004_registration_guard_bypass",
+      "breakpoints": true
     }
   ]
 }
