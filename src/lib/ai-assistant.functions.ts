@@ -2,11 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type AssistantContext = {
-  totalPharmacies?: number;
-  totalSales?: number;
-  stockAlerts?: number;
-  customersCount?: number;
-  suppliersCount?: number;
+  totalPharmacies?: number | undefined;
+  totalSales?: number | undefined;
+  stockAlerts?: number | undefined;
+  customersCount?: number | undefined;
+  suppliersCount?: number | undefined;
 };
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);

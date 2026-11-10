@@ -51,9 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile({
       id: currentUser.id,
       email: row?.email || currentUser.email || "",
-      full_name: row?.full_name || (currentUser.user_metadata?.full_name as string | undefined) || "User",
-      phone: row?.phone ?? undefined,
-      avatar_url: row?.avatar_url ?? undefined,
+      full_name: row?.full_name || (currentUser.user_metadata?.["full_name"] as string | undefined) || "User",
+      ...(row?.phone ? { phone: row.phone } : {}),
+      ...(row?.avatar_url ? { avatar_url: row.avatar_url } : {}),
       system_role: admin ? "super_admin" : roles[0] || "pharmacy_owner",
       is_super_admin: admin,
       created_at: row?.created_at || currentUser.created_at,
