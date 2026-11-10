@@ -1,3 +1,5 @@
+import { RecordsTab } from './RecordsTab';
+import { ImportsTab } from './ImportsTab';
 import { BRAND } from '@/lib/brand';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
@@ -46,6 +48,10 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     { id: 'overview', label: 'Overview', Icon: LayoutDashboard, show: true },
     { id: 'pos', label: 'Cashier (POS)', Icon: Store, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
+    { id: 'imports', label: 'Bulk imports', Icon: ClipboardList, show: can(ws.role, 'manageStock', 'active') || can(ws.role, 'manageStaff', 'active') },
+    { id: 'suppliers', label: 'Suppliers', Icon: Store, show: can(ws.role, 'manageStock', 'active') },
+    { id: 'categories', label: 'Categories', Icon: Boxes, show: can(ws.role, 'manageStock', 'active') },
+    { id: 'settings', label: 'Business settings', Icon: GitBranch, show: ws.role === 'owner' || ws.role === 'admin' },
     { id: 'inventory', label: ws.business_type === 'supplier' ? 'Wholesale catalog' : 'Inventory', Icon: Boxes, show: true },
     { id: 'restock', label: 'Restock (suppliers)', Icon: ShoppingCart, show: ws.business_type === 'pharmacy' && canOrderStock(ws.role) },
     { id: 'orders', label: ws.business_type === 'supplier' ? 'Wholesale orders' : 'Supplier orders', Icon: ClipboardList, show: canOrderStock(ws.role) },
@@ -100,6 +106,8 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           {(tab === 'overview' || tab === 'expenses') && (
             <div className="flex justify-end gap-2">{can(ws.role, 'viewFinance', 'active') && <ReportButton ws={ws} range={range} />}<DateRangeFilter value={range} onChange={setRange} /></div>)}
           {tab === 'overview' && <OverviewTab ws={ws} range={range} isMounted={isMounted} />}
+          {tab === 'imports' && <ImportsTab ws={ws} />}
+          {(['suppliers','categories','settings'] as const).map(module => tab === module && <RecordsTab key={module} ws={ws} module={module} />)}
           {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} />}
           {tab === 'pos' && <PosTab ws={ws} />}
           {tab === 'rx' && <DispenserTab ws={ws} userId={userId} />}

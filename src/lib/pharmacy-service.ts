@@ -1058,7 +1058,7 @@ export class EntryService {
     const r = await this.referenceRows(pid);
     const staff = await WorkspaceService.getStaff(pid);
     return {
-      category_name: r.categories.filter(x=>x.is_active !== false as unknown).map(x=>({value:x.name ?? '',label:x.name ?? ''})),
+      category_name: r.categories.filter(x=>String(x.is_active)!=='false').map(x=>({value:x.name ?? '',label:x.name ?? ''})),
       supplier_name: r.suppliers.filter(x=>String(x.is_active)!=='false').map(x=>({value:x.name ?? '',label:x.name ?? ''})),
       product_sku: r.products.filter(x=>x.sku).map(x=>({value:x.sku ?? '',label:`${x.name} (${x.sku})`})),
       branch_code: r.branches.filter(x=>String(x.is_active)!=='false' && x.code).map(x=>({value:x.code ?? '',label:`${x.name} (${x.code})`})),
@@ -1337,49 +1337,16 @@ export class WorkspaceService {
     userId: string,
     input: { product_id: string; branch_id: string; batch_number: string; quantity: number; cost_per_unit: number; expiry_date: string }
   ): Promise<void> {
-    const { data: batch, error } = await supabase
-      .from('inventory_batches')
-      .insert({
-        pharmacy_id: pharmacyId,
-        branch_id: input.branch_id,
-        product_id: input.product_id,
-        batch_number: input.batch_number,
-        quantity: input.quantity,
-        cost_per_unit: input.cost_per_unit,
-        expiry_date: input.expiry_date,
-        received_date: new Date().toISOString().slice(0, 10),
-      })
-      .select('id')
-      .single();
-    fail(error);
-    const { error: mErr } = await supabase.from('stock_movements').insert({
-      pharmacy_id: pharmacyId,
-      product_id: input.product_id,
-      batch_id: batch?.id ?? null,
-      movement_type: 'stock_in',
-      quantity: input.quantity,
-      notes: `Received batch ${input.batch_number}`,
-      created_by: userId,
-    });
-    fail(mErr);
+    const [{data:product,error:pErr},{data:branch,error:bErr}] = await Promise.all([
+      supabase.from('products').select('sku').eq('id',input.product_id).eq('pharmacy_id',pharmacyId).single(),
+      supabase.from('branches').select('code').eq('id',input.branch_id).eq('pharmacy_id',pharmacyId).single(),
+    ]);
+    fail(pErr); fail(bErr);
+    await EntryService.save(pharmacyId,'batches',{product_sku:product?.sku ?? '',branch_code:branch?.code ?? '',batch_number:input.batch_number,quantity:String(input.quantity),cost_per_unit:String(input.cost_per_unit),expiry_date:input.expiry_date});
   }
 
   static async adjustBatch(pharmacyId: string, userId: string, batch: WsBatch, newQuantity: number, reason: string): Promise<void> {
-    const { error } = await supabase
-      .from('inventory_batches')
-      .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
-      .eq('id', batch.id);
-    fail(error);
-    const { error: mErr } = await supabase.from('stock_movements').insert({
-      pharmacy_id: pharmacyId,
-      product_id: batch.product_id,
-      batch_id: batch.id,
-      movement_type: 'adjustment',
-      quantity: newQuantity - batch.quantity,
-      notes: reason || 'Stock count adjustment',
-      created_by: userId,
-    });
-    fail(mErr);
+    const {error}=await supabase.rpc('correct_batch_stock',{_pharmacy:pharmacyId,_batch:batch.id,_quantity:newQuantity,_reason:reason}); fail(error);
   }
 
   // ---------- money ----------

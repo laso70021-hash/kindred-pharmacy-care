@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { GitBranch, Plus, Star, MapPin, Phone, Pencil, Power } from 'lucide-react';
-import { WorkspaceService } from '@/lib/pharmacy-service';
+import { EntryForm } from './EntryForm';
+import { EntryService, WorkspaceService } from '@/lib/pharmacy-service';
 import type { Workspace, WsBranch } from '@/lib/pharmacy-types';
 import { can, limitLabel, limitReached } from '@/lib/workspace';
 import { cardCls, Empty, Field, Modal, SectionHeader, errorText, ghostBtn, inputCls, primaryBtn } from './ws-ui';
@@ -13,6 +14,8 @@ export function BranchesTab({ ws }: { ws: Workspace }) {
   const editable = can(ws.role, 'manageBranches', ws.status);
   const { data: branches = [], isLoading } = useQuery({ queryKey: ['ws', pid, 'branches'], queryFn: () => WorkspaceService.getBranches(pid) });
   const { data: products = [] } = useQuery({ queryKey: ['ws', pid, 'products'], queryFn: () => WorkspaceService.getProducts(pid) });
+  const { data: entryRows = [] } = useQuery({ queryKey: ['entry', pid, 'branches'], queryFn: () => EntryService.list(pid, 'branches') });
+  const { data: refs = {} } = useQuery({ queryKey: ['entry-refs', pid], queryFn: () => EntryService.references(pid) });
   const [editing, setEditing] = useState<Partial<WsBranch> | null>(null);
   const [busy, setBusy] = useState(false);
   const full = ws.role !== 'admin' && limitReached(branches.length, ws.limits.max_branches);
@@ -113,60 +116,8 @@ export function BranchesTab({ ws }: { ws: Workspace }) {
         </div>
       )}
 
-      {editing && (
-        <BranchForm
-          initial={editing}
-          isFirst={branches.length === 0}
-          busy={busy}
-          onClose={() => setEditing(null)}
-          onSave={(input) =>
-            void run(async () => {
-              await WorkspaceService.saveBranch(pid, input);
-              setEditing(null);
-            }, input.id ? 'Branch updated' : 'Branch added')
-          }
-        />
-      )}
-    </div>
-  );
-}
+      {editing && <EntryForm module="branches" initial={editing.id ? entryRows.find(r=>r.id===editing.id) : undefined} references={refs} existing={entryRows} onClose={()=>setEditing(null)} onSave={async row=>{await EntryService.save(pid,'branches',row,editing.id);refresh();void qc.invalidateQueries({queryKey:['entry',pid]});void qc.invalidateQueries({queryKey:['entry-refs',pid]});}} />}
 
-function BranchForm({
-  initial,
-  isFirst,
-  busy,
-  onClose,
-  onSave,
-}: {
-  initial: Partial<WsBranch>;
-  isFirst: boolean;
-  busy: boolean;
-  onClose: () => void;
-  onSave: (input: { id?: string; name: string; code: string; address: string; phone: string }) => void;
-}) {
-  const [name, setName] = useState(initial.name ?? (isFirst ? 'Main Branch' : ''));
-  const [code, setCode] = useState(initial.code ?? (isFirst ? 'MAIN' : ''));
-  const [address, setAddress] = useState(initial.address ?? '');
-  const [phone, setPhone] = useState(initial.phone ?? '');
-  return (
-    <Modal title={initial.id ? 'Edit branch' : 'Add branch'} onClose={onClose}>
-      <form
-        className="space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!name.trim()) return;
-          onSave({ ...(initial.id ? { id: initial.id } : {}), name: name.trim(), code: code.trim(), address: address.trim(), phone: phone.trim() });
-        }}
-      >
-        {isFirst && <p className="text-xs text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">Your first branch becomes the main branch.</p>}
-        <Field label="Branch name"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required /></Field>
-        <Field label="Short code"><input className={inputCls} value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. KKO" /></Field>
-        <Field label="Address"><input className={inputCls} value={address} onChange={(e) => setAddress(e.target.value)} /></Field>
-        <Field label="Phone"><input className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
-        <button type="submit" disabled={busy} className={`${primaryBtn} w-full justify-center py-2.5`}>
-          {busy ? 'Saving…' : 'Save branch'}
-        </button>
-      </form>
-    </Modal>
+    </div>
   );
 }

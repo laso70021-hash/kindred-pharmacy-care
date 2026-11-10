@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { UserPlus, Copy, X, Mail } from 'lucide-react';
-import { WorkspaceService } from '@/lib/pharmacy-service';
+import { EntryForm } from './EntryForm';
+import { EntryService, WorkspaceService } from '@/lib/pharmacy-service';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { STAFF_ROLES, can, limitLabel, limitReached, roleLabel, type StaffRole } from '@/lib/workspace';
 import { formatDateDeterministic } from '@/lib/utils';
@@ -20,6 +21,7 @@ export function StaffTab({ ws }: { ws: Workspace }) {
   const { data: staff = [], isLoading } = useQuery({ queryKey: ['ws', pid, 'staff'], queryFn: () => WorkspaceService.getStaff(pid) });
   const { data: invites = [] } = useQuery({ queryKey: ['ws', pid, 'invites'], queryFn: () => WorkspaceService.getInvites(pid) });
   const { data: branches = [] } = useQuery({ queryKey: ['ws', pid, 'branches'], queryFn: () => WorkspaceService.getBranches(pid) });
+  const { data: refs = {} } = useQuery({ queryKey: ['entry-refs', pid], queryFn: () => EntryService.references(pid) });
   const [inviting, setInviting] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -178,75 +180,8 @@ export function StaffTab({ ws }: { ws: Workspace }) {
         )}
       </div>
 
-      {inviting && (
-        <InviteForm
-          branches={branches.map((b) => ({ id: b.id, name: b.name }))}
-          busy={busy}
-          onClose={() => setInviting(false)}
-          onSave={(input) =>
-            void run(async () => {
-              await WorkspaceService.inviteStaff(pid, input);
-              setInviting(false);
-              void navigator.clipboard?.writeText(inviteLink(input.email)).catch(() => undefined);
-            }, 'Invitation created — link copied to share')
-          }
-        />
-      )}
-    </div>
-  );
-}
+      {inviting && <EntryForm module="staff" references={refs} onClose={()=>setInviting(false)} onSave={async row=>{await EntryService.save(pid,'staff',row);refresh();toast.success('Invitation created');}} />}
 
-function InviteForm({
-  branches,
-  busy,
-  onClose,
-  onSave,
-}: {
-  branches: { id: string; name: string }[];
-  busy: boolean;
-  onClose: () => void;
-  onSave: (input: { email: string; full_name: string; role: StaffRole; branch_id: string | null }) => void;
-}) {
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<StaffRole>('cashier');
-  const [branchId, setBranchId] = useState('');
-  return (
-    <Modal title="Invite a staff member" onClose={onClose}>
-      <form
-        className="space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSave({ email, full_name: fullName.trim(), role, branch_id: branchId || null });
-        }}
-      >
-        <Field label="Full name"><input className={inputCls} value={fullName} onChange={(e) => setFullName(e.target.value)} /></Field>
-        <Field label="Email"><input type="email" required className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-        <Field label="Role">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {STAFF_ROLES.map((r) => (
-              <button
-                type="button"
-                key={r.value}
-                onClick={() => setRole(r.value)}
-                className={`text-left px-3 py-2 rounded-xl border text-xs transition-colors ${role === r.value ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 hover:bg-slate-50'}`}
-              >
-                <div className="font-bold text-slate-900">{r.label}</div>
-                <div className="text-[11px] text-slate-500">{r.description}</div>
-              </button>
-            ))}
-          </div>
-        </Field>
-        <Field label="Branch">
-          <select className={inputCls} value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-            <option value="">All branches</option>
-            {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-        </Field>
-        <button type="submit" disabled={busy} className={`${primaryBtn} w-full justify-center py-2.5`}>
-          {busy ? 'Sending…' : 'Create invitation'}
-        </button>
-      </form>
-    </Modal>
+    </div>
   );
 }
