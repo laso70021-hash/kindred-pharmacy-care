@@ -24,7 +24,6 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
   const [editing, setEditing] = useState<Partial<WsProduct> | null>(null);
   const [receiving, setReceiving] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [photoProduct,setPhotoProduct]=useState<string|null>(null);
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['ws', pid, 'products'] });

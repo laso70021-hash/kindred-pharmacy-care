@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { UserPlus, Copy, X, Mail } from 'lucide-react';
 import { EntryForm } from './EntryForm';
 import { EntryService, WorkspaceService } from '@/lib/pharmacy-service';
+import type { EntryRow } from '@/lib/entry-model';
+import { Button } from '@/components/ui/button';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { STAFF_ROLES, can, limitLabel, limitReached, roleLabel, type StaffRole } from '@/lib/workspace';
 import { formatDateDeterministic } from '@/lib/utils';
@@ -24,12 +26,15 @@ export function StaffTab({ ws }: { ws: Workspace }) {
   const { data: refs = {} } = useQuery({ queryKey: ['entry-refs', pid], queryFn: () => EntryService.references(pid) });
   const [inviting, setInviting] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [editing,setEditing]=useState<EntryRow|null>(null);
+  const { data: details = [] } = useQuery({ queryKey: ['staff-details',pid], queryFn:()=>EntryService.staffDetails(pid), enabled:editable });
 
   const activeCount = staff.filter((s) => s.is_active).length;
   const used = activeCount + invites.length;
   const full = ws.role !== 'admin' && limitReached(used, ws.limits.max_employees);
 
   const refresh = () => {
+    void qc.invalidateQueries({queryKey:['staff-details',pid]});
     void qc.invalidateQueries({ queryKey: ['ws', pid, 'staff'] });
     void qc.invalidateQueries({ queryKey: ['ws', pid, 'invites'] });
   };
@@ -91,6 +96,7 @@ export function StaffTab({ ws }: { ws: Workspace }) {
                   <td className="py-2.5">
                     <div className="font-bold text-slate-900">{s.full_name}</div>
                     <div className="text-slate-400">{s.email}</div>
+                    {editable&&<Button variant="link" size="sm" onClick={()=>{const d=details.find(x=>x.id===s.membership_id);const ids=d?.branch_ids?.length?d.branch_ids:d?.branch_id?[d.branch_id]:[];setEditing({id:s.membership_id,full_name:s.full_name,email:s.email,phone:d?.phone??'',staff_id:d?.staff_id??'',job_title:d?.job_title??'',role:s.role,employment_status:d?.employment_status??'active',branch_codes:ids.map((id:string)=>branches.find(b=>b.id===id)?.code??'').join(';')});}}>Edit staff details</Button>}
                   </td>
                   <td className="py-2.5">
                     {editable ? (
@@ -181,6 +187,7 @@ export function StaffTab({ ws }: { ws: Workspace }) {
       </div>
 
       {inviting && <EntryForm module="staff" references={refs} onClose={()=>setInviting(false)} onSave={async row=>{await EntryService.save(pid,'staff',row);refresh();toast.success('Invitation created');}} />}
+      {editing&&<EntryForm module="staff" initial={editing} references={refs} onClose={()=>setEditing(null)} onSave={async row=>{const id=editing['id'];if(!id)return;await EntryService.updateStaff(pid,id,row);refresh();toast.success('Staff updated');}}/>}
 
     </div>
   );

@@ -1230,7 +1230,7 @@ export class WorkspaceService {
   }
 
   static async updateMembership(membershipId: string, patch: { role?: StaffRole; branch_id?: string | null; is_active?: boolean }): Promise<void> {
-    const { error } = await supabase.from('pharmacy_memberships').update(patch).eq('id', membershipId);
+    const { error } = await supabase.from('pharmacy_memberships').update('branch_id' in patch ? {...patch,branch_ids:patch.branch_id?[patch.branch_id]:[]} : patch).eq('id', membershipId);
     fail(error);
   }
 
