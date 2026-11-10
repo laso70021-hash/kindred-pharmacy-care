@@ -1,3 +1,4 @@
+import { NotificationBell } from '@/components/common/NotificationBell';
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -83,6 +84,7 @@ function AccountPage() {
             </div>
           </Link>
           <div className="flex items-center gap-3 text-xs">
+            <NotificationBell />
             <span className="hidden sm:inline text-slate-500 font-medium">{profile?.email || user?.email}</span>
             <button onClick={() => void signOut()} className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1.5">
               <LogOut className="w-3.5 h-3.5" /> Sign out

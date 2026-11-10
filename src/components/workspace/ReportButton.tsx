@@ -15,8 +15,8 @@ export function ReportButton({ ws, range }: { ws: Workspace; range: DateRange | 
     setBusy(true);
     try {
       const [sales, expenses] = await Promise.all([WorkspaceService.getSales(ws.id), WorkspaceService.getExpenses(ws.id)]);
-      const s = filterByRange(sales, range, (x) => x.created_at);
-      const e = filterByRange(expenses, range, (x) => x.expense_date || x.created_at);
+      const s = filterByRange(sales, (x) => x.created_at, range);
+      const e = filterByRange(expenses, (x) => x.expense_date || x.created_at, range);
       const p = profitSummary(s, e.map((x) => x.amount));
       const body = csv([
         [`${ws.name} report`, range ? `${range.from} to ${range.to}` : 'All time'], [],

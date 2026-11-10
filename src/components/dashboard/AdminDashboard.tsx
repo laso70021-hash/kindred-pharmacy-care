@@ -1,3 +1,4 @@
+import { NotificationBell } from '@/components/common/NotificationBell';
 import React, { useState, useEffect } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { Link } from '@tanstack/react-router';
@@ -786,13 +787,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
               Platform Admin
             </span>
 
-            {/* Notification Bell */}
-            <button className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-xs">
-                {stockAlertsCount || 3}
-              </span>
-            </button>
+            <NotificationBell />
 
             {/* Profile Avatar & Details */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
