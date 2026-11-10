@@ -72,7 +72,7 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
                     <span className={`self-start text-[10px] font-bold px-2 py-0.5 rounded-md ${st === 'out' ? 'bg-rose-100 text-rose-700' : st === 'low' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'}`}>
                       {st === 'out' ? 'Out of stock' : `${qty(p)} in stock`}
                     </span>
-                    {editable && <div className="flex gap-1.5 pt-1 mt-auto">
+                    {editable && <div className="flex flex-wrap gap-1.5 pt-1 mt-auto">
                       <button className={ghostBtn} onClick={() => setEditing(p)}>Edit</button>
                       <button className={ghostBtn} disabled={!branches.length} onClick={() => setReceiving(p.id)}>+ Stock</button>
                       <label className={ghostBtn}>Photo<input aria-label={`Photo for ${p.name}`} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e=>{const file=e.target.files?.[0];if(file)void run(()=>EntryService.photo(pid,p.id,file),'Photo saved');}}/></label>

@@ -81,15 +81,15 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
 
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="bg-white border-b border-slate-200 px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0 flex-1">
             {all.length > 1 ? (
-              <select aria-label="Pharmacy" className="font-black text-slate-900 bg-transparent text-sm max-w-[220px]" value={ws.id} onChange={(e) => onSwitch(e.target.value)}>
+              <select aria-label="Pharmacy" className="font-black text-slate-900 bg-transparent text-sm w-full sm:w-auto max-w-[220px] min-w-0" value={ws.id} onChange={(e) => onSwitch(e.target.value)}>
                 {all.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             ) : <span className="font-black text-slate-900 text-sm truncate">{ws.name}</span>}
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">{ws.plan_name} · {STATUS_LABELS[ws.status]}</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 self-start truncate max-w-full">{ws.plan_name} · {STATUS_LABELS[ws.status]}</span>
           </div>
-          <div className="flex items-center gap-2"><NotificationBell extra={extra} /><span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">{roleLabel(ws.role)}</span></div>
+          <div className="flex items-center gap-2 shrink-0"><NotificationBell extra={extra} /><span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">{roleLabel(ws.role)}</span></div>
         </header>
         <div className="md:hidden flex overflow-x-auto gap-1 bg-white border-b border-slate-200 px-2 py-2">
           {nav.map((n) => <button key={n.id} onClick={() => setTab(n.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${tab === n.id ? 'bg-blue-600 text-white' : 'text-slate-600'}`}>{n.label}</button>)}
