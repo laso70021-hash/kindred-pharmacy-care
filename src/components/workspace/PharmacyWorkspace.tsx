@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/brand';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
 import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList, Store, Pill } from 'lucide-react';
@@ -58,7 +59,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
       <aside className="hidden md:flex w-60 bg-[#0F172A] text-slate-300 flex-col shrink-0">
         <div className="p-4 border-b border-slate-800 flex items-center gap-3">
           <label title={ws.role === 'owner' ? 'Upload logo' : ws.name} className={`w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xl overflow-hidden shrink-0 ${ws.role === 'owner' ? 'cursor-pointer' : ''}`}>
-            {logo ? <img src={logo} alt={`${ws.name} logo`} className="w-full h-full object-cover" /> : '+'}
+            {logo ? <img src={logo} alt={`${ws.name} logo`} className="w-full h-full object-cover" /> : <img src={BRAND.markUrl} alt="Swahivo" className="w-full h-full object-cover" />}
             {ws.role === 'owner' && <input type="file" accept="image/*" className="hidden" onChange={(e) => void uploadLogo(e.target.files?.[0])} />}
           </label>
           <div><div className="font-extrabold text-white text-sm">Swahivo</div><div className="text-[11px] text-blue-400 font-bold">{ws.business_type === 'supplier' ? 'Supplier Dashboard' : 'Pharmacy Dashboard'}</div></div>

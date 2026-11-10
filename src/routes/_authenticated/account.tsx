@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { NotificationBell } from '@/components/common/NotificationBell';
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -74,14 +75,8 @@ function AccountPage() {
       <ViewSwitcher current="account" />
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-md">
-              <span className="text-xl font-black leading-none">+</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-black tracking-tight text-blue-900 leading-none">SWAHIVO</span>
-              <span className="text-[10px] font-bold tracking-widest text-blue-600 uppercase">Pharmacy AI</span>
-            </div>
+          <Link to="/" className="flex items-center">
+            <img src={BRAND.logoUrl} alt="Swahivo" className="h-10 w-auto" />
           </Link>
           <div className="flex items-center gap-3 text-xs">
             <NotificationBell />

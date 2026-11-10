@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { SubscriptionPlan } from '@/lib/pharmacy-types';
 import { formatNumber } from '@/lib/utils';
+import { BRAND, telHref } from '@/lib/brand';
 import { TRIAL_DAYS, yearlyPrice } from '@/lib/billing';
 
 interface LandingPageProps {
@@ -166,19 +167,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <span className="text-2xl font-black leading-none">+</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight text-blue-900 leading-none">
-                SWAHIVO
-              </span>
-              <span className="text-[10px] font-bold tracking-widest text-blue-600 uppercase">
-                Pharmacy AI
-              </span>
-            </div>
-          </div>
+          <a href="/" className="flex items-center"><img src={BRAND.logoUrl} alt="Swahivo" className="h-11 w-auto" /></a>
 
           {/* Nav Links */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
@@ -782,18 +771,20 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
             <div className="col-span-2">
-              <div className="flex items-center gap-2 text-white font-extrabold text-base mb-3">
-                <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
-                  +
-                </div>
-                <span>SWAHIVO PHARMACY AI</span>
-              </div>
+              <img src={BRAND.logoUrl} alt="Swahivo Pharmacy AI" className="h-10 w-auto mb-3 bg-white rounded-full px-1" />
               <p className="text-slate-400 text-xs max-w-sm mb-4">
                 The premier digital pharmacy operating system in East Africa and across the globe.
                 Multi-branch POS, AI inventory forecasting, and real-time supply chain integration.
               </p>
               <div className="text-[11px] text-slate-500">
-                Connected to a secure cloud database & Gemini AI.
+                Connected to a secure cloud database & AI assistant.
+              </div>
+              <div id="contact" className="mt-4 space-y-1 text-slate-300">
+                <div className="text-white font-bold uppercase tracking-wider text-[11px]">Contact us</div>
+                <a href={`mailto:${BRAND.email}`} className="block hover:text-white">{BRAND.email}</a>
+                {BRAND.phones.map((p) => (
+                  <a key={p} href={telHref(p)} className="block hover:text-white">{p}</a>
+                ))}
               </div>
             </div>
 

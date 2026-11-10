@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/brand';
 import { NotificationBell } from '@/components/common/NotificationBell';
 import React, { useState, useEffect } from 'react';
 import { useServerFn } from '@tanstack/react-start';
@@ -633,9 +634,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
         {/* Brand Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-md">
-              +
-            </div>
+            <img src={BRAND.markUrl} alt="" className="w-9 h-9 rounded-full" />
             <div>
               <div className="font-extrabold text-white text-sm tracking-tight leading-tight">
                 Swahivo
@@ -2176,7 +2175,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   <h3 className="font-bold text-sm text-slate-900">Database & Security</h3>
                   <div>
                     <label className="block text-slate-500 font-bold mb-1">Database</label>
-                    <input type="text" readOnly value="Lovable Cloud" className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 font-mono text-[11px]" />
+                    <input type="text" readOnly value="Secure cloud database" className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 font-mono text-[11px]" />
                   </div>
                   <div>
                     <label className="block text-slate-500 font-bold mb-1">Designated Super Admin UID</label>
