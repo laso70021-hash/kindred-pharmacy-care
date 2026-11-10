@@ -6,7 +6,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { RegistrationWizard, type AccountFields } from "@/components/registration/RegistrationWizard";
 import type { RegistrationInput } from "@/lib/pharmacy-types";
-import "@lovable.dev/cloud-auth-js/styles.css";
+import { BRAND } from "@/lib/brand";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -125,7 +125,7 @@ function AuthPage() {
     }
   };
 
-  const handleOAuth = async (provider: "google" | "lovable") => {
+  const handleOAuth = async (provider: "google") => {
     const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin + "/auth" });
     if (result.error) {
       toast.error(result.error.message || "Sign-in failed");
@@ -138,14 +138,8 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50/60 via-white to-slate-50 flex items-center justify-center p-4 font-sans">
       <div className={`bg-white rounded-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-5 ${mode === "signup" ? "max-w-2xl" : "max-w-md"}`}>
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <span className="text-2xl font-black leading-none">+</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black tracking-tight text-blue-900 leading-none">SWAHIVO</span>
-            <span className="text-[10px] font-bold tracking-widest text-blue-600 uppercase">Pharmacy AI</span>
-          </div>
+        <Link to="/" className="flex items-center">
+          <img src={BRAND.logoUrl} alt="Swahivo" className="h-11 w-auto" />
         </Link>
 
         <h1 className="font-bold text-slate-900 text-lg pt-1">{heading}</h1>
@@ -169,9 +163,6 @@ function AuthPage() {
             >
               <GoogleLogo />
               Continue with Google
-            </button>
-            <button type="button" className="lovable-auth-button w-full" onClick={() => void handleOAuth("lovable")}>
-              Continue with Lovable
             </button>
             <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-400 uppercase pt-1">
               <span className="h-px flex-1 bg-slate-200" /> or <span className="h-px flex-1 bg-slate-200" />
