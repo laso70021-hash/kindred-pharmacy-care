@@ -286,6 +286,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_active: boolean | null
           name: string
           pharmacy_id: string | null
           slug: string
@@ -294,6 +295,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_active?: boolean | null
           name: string
           pharmacy_id?: string | null
           slug: string
@@ -302,6 +304,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string
           pharmacy_id?: string | null
           slug?: string
@@ -466,6 +469,56 @@ export type Database = {
           },
         ]
       }
+      import_history: {
+        Row: {
+          created_at: string
+          created_by: string
+          error_message: string | null
+          failed_count: number
+          file_name: string
+          fingerprint: string
+          id: string
+          module: string
+          pharmacy_id: string
+          status: string
+          successful_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          failed_count?: number
+          file_name: string
+          fingerprint: string
+          id?: string
+          module: string
+          pharmacy_id: string
+          status: string
+          successful_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          failed_count?: number
+          file_name?: string
+          fingerprint?: string
+          id?: string
+          module?: string
+          pharmacy_id?: string
+          status?: string
+          successful_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_history_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_batches: {
         Row: {
           batch_number: string
@@ -474,6 +527,7 @@ export type Database = {
           created_at: string
           expiry_date: string
           id: string
+          manufacturing_date: string | null
           pharmacy_id: string
           product_id: string
           quantity: number
@@ -487,6 +541,7 @@ export type Database = {
           created_at?: string
           expiry_date: string
           id?: string
+          manufacturing_date?: string | null
           pharmacy_id: string
           product_id: string
           quantity?: number
@@ -500,6 +555,7 @@ export type Database = {
           created_at?: string
           expiry_date?: string
           id?: string
+          manufacturing_date?: string | null
           pharmacy_id?: string
           product_id?: string
           quantity?: number
@@ -671,37 +727,52 @@ export type Database = {
         Row: {
           accepted_at: string | null
           branch_id: string | null
+          branch_ids: string[] | null
           created_at: string
           email: string
+          employment_status: string | null
           full_name: string | null
           id: string
           invited_by: string | null
+          job_title: string | null
           pharmacy_id: string
+          phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          staff_id: string | null
           status: string
         }
         Insert: {
           accepted_at?: string | null
           branch_id?: string | null
+          branch_ids?: string[] | null
           created_at?: string
           email: string
+          employment_status?: string | null
           full_name?: string | null
           id?: string
           invited_by?: string | null
+          job_title?: string | null
           pharmacy_id: string
+          phone?: string | null
           role: Database["public"]["Enums"]["user_role"]
+          staff_id?: string | null
           status?: string
         }
         Update: {
           accepted_at?: string | null
           branch_id?: string | null
+          branch_ids?: string[] | null
           created_at?: string
           email?: string
+          employment_status?: string | null
           full_name?: string | null
           id?: string
           invited_by?: string | null
+          job_title?: string | null
           pharmacy_id?: string
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          staff_id?: string | null
           status?: string
         }
         Relationships: [
@@ -724,29 +795,44 @@ export type Database = {
       pharmacy_memberships: {
         Row: {
           branch_id: string | null
+          branch_ids: string[] | null
           created_at: string
+          employment_status: string | null
           id: string
           is_active: boolean | null
+          job_title: string | null
           pharmacy_id: string
+          phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          staff_id: string | null
           user_id: string
         }
         Insert: {
           branch_id?: string | null
+          branch_ids?: string[] | null
           created_at?: string
+          employment_status?: string | null
           id?: string
           is_active?: boolean | null
+          job_title?: string | null
           pharmacy_id: string
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          staff_id?: string | null
           user_id: string
         }
         Update: {
           branch_id?: string | null
+          branch_ids?: string[] | null
           created_at?: string
+          employment_status?: string | null
           id?: string
           is_active?: boolean | null
+          job_title?: string | null
           pharmacy_id?: string
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          staff_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -873,9 +959,11 @@ export type Database = {
       products: {
         Row: {
           barcode: string | null
+          brand_name: string | null
           category_id: string | null
           cost_price: number | null
           created_at: string
+          description: string | null
           dosage_form: string | null
           generic_name: string | null
           id: string
@@ -884,17 +972,22 @@ export type Database = {
           is_prescription_required: boolean | null
           min_stock_level: number | null
           name: string
+          packaging: string | null
           pharmacy_id: string | null
           selling_price: number
           sku: string | null
           strength: string | null
+          supplier_id: string | null
+          unit_of_measurement: string | null
           updated_at: string
         }
         Insert: {
           barcode?: string | null
+          brand_name?: string | null
           category_id?: string | null
           cost_price?: number | null
           created_at?: string
+          description?: string | null
           dosage_form?: string | null
           generic_name?: string | null
           id?: string
@@ -903,17 +996,22 @@ export type Database = {
           is_prescription_required?: boolean | null
           min_stock_level?: number | null
           name: string
+          packaging?: string | null
           pharmacy_id?: string | null
           selling_price?: number
           sku?: string | null
           strength?: string | null
+          supplier_id?: string | null
+          unit_of_measurement?: string | null
           updated_at?: string
         }
         Update: {
           barcode?: string | null
+          brand_name?: string | null
           category_id?: string | null
           cost_price?: number | null
           created_at?: string
+          description?: string | null
           dosage_form?: string | null
           generic_name?: string | null
           id?: string
@@ -922,10 +1020,13 @@ export type Database = {
           is_prescription_required?: boolean | null
           min_stock_level?: number | null
           name?: string
+          packaging?: string | null
           pharmacy_id?: string | null
           selling_price?: number
           sku?: string | null
           strength?: string | null
+          supplier_id?: string | null
+          unit_of_measurement?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -941,6 +1042,13 @@ export type Database = {
             columns: ["pharmacy_id"]
             isOneToOne: false
             referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -1808,6 +1916,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      correct_batch_stock: {
+        Args: {
+          _batch: string
+          _pharmacy: string
+          _quantity: number
+          _reason: string
+        }
+        Returns: undefined
+      }
       create_registration: {
         Args: { _payload: Json; _user_id: string }
         Returns: string
@@ -1840,6 +1957,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      import_business_rows: {
+        Args: {
+          _file_name: string
+          _fingerprint: string
+          _module: string
+          _pharmacy: string
+          _rows: Json
+        }
+        Returns: Json
       }
       is_pharmacy_owner: { Args: { _pharmacy_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
@@ -1911,6 +2038,10 @@ export type Database = {
       review_wholesale_order: {
         Args: { _decision: string; _note: string; _order: string }
         Returns: undefined
+      }
+      save_business_entry: {
+        Args: { _id?: string; _module: string; _pharmacy: string; _row: Json }
+        Returns: string
       }
       submit_registration: { Args: { _payload: Json }; Returns: string }
       submit_subscription_payment: {
