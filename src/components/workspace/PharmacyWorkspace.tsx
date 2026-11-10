@@ -1,8 +1,8 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
-import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList } from 'lucide-react';
 import type { Workspace } from '@/lib/pharmacy-types';
-import { can, isReadOnly, roleLabel } from '@/lib/workspace';
+import { can, canOrderStock, isReadOnly, roleLabel } from '@/lib/workspace';
 import { STATUS_LABELS } from '@/lib/billing';
 import { presetRange, type DateRange } from '@/lib/date-range';
 import { DateRangeFilter } from '@/components/dashboard/DateRangeFilter';
@@ -11,6 +11,8 @@ import { BranchesTab } from './BranchesTab';
 import { StaffTab } from './StaffTab';
 import { InventoryTab } from './InventoryTab';
 import { ExpensesTab } from './ExpensesTab';
+import { MarketplaceTab } from './MarketplaceTab';
+import { OrdersTab } from './OrdersTab';
 
 const sub = () => () => {};
 
@@ -23,7 +25,9 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
 
   const nav = [
     { id: 'overview', label: 'Overview', Icon: LayoutDashboard, show: true },
-    { id: 'inventory', label: 'Inventory', Icon: Boxes, show: true },
+    { id: 'inventory', label: ws.business_type === 'supplier' ? 'Wholesale catalog' : 'Inventory', Icon: Boxes, show: true },
+    { id: 'restock', label: 'Restock (suppliers)', Icon: ShoppingCart, show: ws.business_type === 'pharmacy' && canOrderStock(ws.role) },
+    { id: 'orders', label: ws.business_type === 'supplier' ? 'Wholesale orders' : 'Supplier orders', Icon: ClipboardList, show: canOrderStock(ws.role) },
     { id: 'branches', label: 'Branches', Icon: GitBranch, show: true },
     { id: 'staff', label: 'Staff & Roles', Icon: Users2, show: can(ws.role, 'manageBranches', 'active') },
     { id: 'expenses', label: 'Expenses', Icon: DollarSign, show: can(ws.role, 'viewFinance', ws.status) },
@@ -34,7 +38,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
       <aside className="hidden md:flex w-60 bg-[#0F172A] text-slate-300 flex-col shrink-0">
         <div className="p-4 border-b border-slate-800 flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xl">+</div>
-          <div><div className="font-extrabold text-white text-sm">Swahivo</div><div className="text-[11px] text-blue-400 font-bold">Pharmacy Dashboard</div></div>
+          <div><div className="font-extrabold text-white text-sm">Swahivo</div><div className="text-[11px] text-blue-400 font-bold">{ws.business_type === 'supplier' ? 'Supplier Dashboard' : 'Pharmacy Dashboard'}</div></div>
         </div>
         <nav className="p-3 space-y-1 flex-1">
           {nav.map((n) => (
@@ -73,6 +77,8 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
             <div className="flex justify-end"><DateRangeFilter value={range} onChange={setRange} /></div>)}
           {tab === 'overview' && <OverviewTab ws={ws} range={range} isMounted={isMounted} />}
           {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} />}
+          {tab === 'restock' && <MarketplaceTab ws={ws} userId={userId} onOrdered={() => setTab('orders')} />}
+          {tab === 'orders' && <OrdersTab ws={ws} />}
           {tab === 'branches' && <BranchesTab ws={ws} />}
           {tab === 'staff' && <StaffTab ws={ws} />}
           {tab === 'expenses' && <ExpensesTab ws={ws} userId={userId} range={range} />}

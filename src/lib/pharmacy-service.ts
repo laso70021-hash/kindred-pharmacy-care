@@ -1369,3 +1369,100 @@ export class WorkspaceService {
     fail(error);
   }
 }
+
+// ---------- wholesale marketplace (pharmacy ⇄ supplier) ----------
+export interface CatalogItem {
+  product_id: string; supplier_id: string; supplier_name: string; supplier_city: string;
+  name: string; generic_name: string; dosage_form: string; strength: string;
+  unit_price: number; image_src: string | null; is_prescription_required: boolean; stock: number;
+}
+export interface WholesaleOrder {
+  id: string; order_number: string; buyer_pharmacy_id: string; buyer_name: string; supplier_id: string; supplier_name: string;
+  branch_id: string | null; branch_name: string; status: 'payment_submitted' | 'completed' | 'rejected';
+  total_amount: number; payment_method: string; payment_reference: string | null; receipt_path: string | null;
+  supplier_note: string | null; created_at: string; reviewed_at: string | null;
+  items: { product_name: string; quantity: number; unit_price: number; total_price: number }[];
+}
+
+export class WholesaleService {
+  static async catalog(): Promise<CatalogItem[]> {
+    const { data, error } = await supabase.rpc('supplier_catalog');
+    fail(error);
+    const rows = (data || []) as any[];
+    const paths = rows.map((r) => r.image_url).filter(Boolean) as string[];
+    const signed = new Map<string, string>();
+    if (paths.length) {
+      const { data: urls } = await supabase.storage.from('product-images').createSignedUrls(paths, 3600);
+      for (const u of urls || []) if (u.path && u.signedUrl) signed.set(u.path, u.signedUrl);
+    }
+    return rows.map((r) => ({
+      product_id: r.product_id, supplier_id: r.supplier_id, supplier_name: r.supplier_name, supplier_city: r.supplier_city || '',
+      name: r.name, generic_name: r.generic_name || '', dosage_form: r.dosage_form || '', strength: r.strength || '',
+      unit_price: Number(r.unit_price || 0), image_src: r.image_url ? signed.get(r.image_url) ?? null : null,
+      is_prescription_required: Boolean(r.is_prescription_required), stock: Number(r.stock || 0),
+    }));
+  }
+
+  static async placeOrder(args: {
+    userId: string; buyerId: string; supplierId: string; branchId: string;
+    items: { product_id: string; quantity: number }[]; method: string; reference: string; file?: File | null;
+  }): Promise<string> {
+    let receiptPath: string | null = null;
+    if (args.file) {
+      const safe = args.file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60);
+      receiptPath = `${args.userId}/wholesale-${Date.now()}-${safe}`;
+      const { error: upErr } = await supabase.storage.from('payment-receipts')
+        .upload(receiptPath, args.file, { contentType: args.file.type || 'application/octet-stream' });
+      if (upErr) throw new Error(`Receipt upload failed: ${upErr.message}`);
+    }
+    const { data, error } = await supabase.rpc('place_wholesale_order', {
+      _buyer: args.buyerId, _supplier: args.supplierId, _branch: args.branchId, _items: args.items as any,
+      _method: args.method, _reference: args.reference, _receipt_path: receiptPath as any,
+    });
+    fail(error);
+    return data as string;
+  }
+
+  static async orders(pharmacyId: string, side: 'buyer' | 'supplier'): Promise<WholesaleOrder[]> {
+    const col = side === 'buyer' ? 'buyer_pharmacy_id' : 'supplier_id';
+    const { data, error } = await supabase
+      .from('wholesale_orders')
+      .select('*, wholesale_order_items(product_name, quantity, unit_price, total_price)')
+      .eq(col, pharmacyId)
+      .order('created_at', { ascending: false });
+    fail(error);
+    const rows = (data || []) as any[];
+    const ids = [...new Set(rows.flatMap((r) => [r.buyer_pharmacy_id, r.supplier_id]))];
+    const branchIds = [...new Set(rows.map((r) => r.branch_id).filter(Boolean))];
+    const names = new Map<string, string>();
+    if (ids.length) {
+      const { data: ph } = await supabase.from('pharmacies').select('id, name').in('id', ids);
+      for (const p of ph || []) names.set(p.id, p.name);
+    }
+    const branches = new Map<string, string>();
+    if (branchIds.length) {
+      const { data: br } = await supabase.from('branches').select('id, name').in('id', branchIds);
+      for (const b of br || []) branches.set(b.id, b.name);
+    }
+    return rows.map((r) => ({
+      id: r.id, order_number: r.order_number, buyer_pharmacy_id: r.buyer_pharmacy_id,
+      buyer_name: names.get(r.buyer_pharmacy_id) || 'Pharmacy', supplier_id: r.supplier_id,
+      supplier_name: names.get(r.supplier_id) || 'Supplier', branch_id: r.branch_id,
+      branch_name: r.branch_id ? branches.get(r.branch_id) || 'Branch' : '—', status: r.status,
+      total_amount: Number(r.total_amount || 0), payment_method: r.payment_method, payment_reference: r.payment_reference,
+      receipt_path: r.receipt_path, supplier_note: r.supplier_note, created_at: r.created_at, reviewed_at: r.reviewed_at,
+      items: (r.wholesale_order_items || []).map((i: any) => ({ ...i, unit_price: Number(i.unit_price), total_price: Number(i.total_price) })),
+    }));
+  }
+
+  static async review(orderId: string, decision: 'accept' | 'reject', note: string): Promise<void> {
+    const { error } = await supabase.rpc('review_wholesale_order', { _order: orderId, _decision: decision, _note: note });
+    fail(error);
+  }
+
+  static async receiptUrl(path: string): Promise<string> {
+    const { data, error } = await supabase.storage.from('payment-receipts').createSignedUrl(path, 600);
+    if (error || !data) throw new Error(error?.message || 'Receipt not available');
+    return data.signedUrl;
+  }
+}

@@ -102,3 +102,22 @@ export function stockState(quantity: number, minLevel: number): StockState {
   if (quantity <= minLevel) return 'low';
   return 'ok';
 }
+
+export interface CartLine { product_id: string; supplier_id: string; unit_price: number; quantity: number; stock: number }
+
+/** A wholesale order goes to one supplier at a time; quantities are capped by the supplier's stock. */
+export function addToCart(cart: CartLine[], item: Omit<CartLine, 'quantity'>, qty = 1): CartLine[] {
+  const base = cart.length && cart[0]!.supplier_id !== item.supplier_id ? [] : cart;
+  const existing = base.find((l) => l.product_id === item.product_id);
+  const next = Math.min(item.stock, (existing?.quantity ?? 0) + qty);
+  if (next <= 0) return base.filter((l) => l.product_id !== item.product_id);
+  return existing ? base.map((l) => (l.product_id === item.product_id ? { ...l, quantity: next } : l)) : [...base, { ...item, quantity: next }];
+}
+
+export function cartTotal(cart: CartLine[]): number {
+  return cart.reduce((a, l) => a + l.unit_price * l.quantity, 0);
+}
+
+export function canOrderStock(role: WorkspaceRole): boolean {
+  return role === 'owner' || role === 'admin' || role === 'manager' || role === 'inventory_manager';
+}

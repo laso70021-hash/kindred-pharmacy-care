@@ -1544,6 +1544,130 @@ export type Database = {
         }
         Relationships: []
       }
+      wholesale_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_name: string
+          quantity: number
+          supplier_product_id: string | null
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_name: string
+          quantity: number
+          supplier_product_id?: string | null
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_name?: string
+          quantity?: number
+          supplier_product_id?: string | null
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesale_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "wholesale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wholesale_order_items_supplier_product_id_fkey"
+            columns: ["supplier_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wholesale_orders: {
+        Row: {
+          branch_id: string | null
+          buyer_pharmacy_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          order_number: string
+          payment_method: string
+          payment_reference: string | null
+          receipt_path: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          supplier_id: string
+          supplier_note: string | null
+          total_amount: number
+        }
+        Insert: {
+          branch_id?: string | null
+          buyer_pharmacy_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          order_number: string
+          payment_method: string
+          payment_reference?: string | null
+          receipt_path?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          supplier_id: string
+          supplier_note?: string | null
+          total_amount?: number
+        }
+        Update: {
+          branch_id?: string | null
+          buyer_pharmacy_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          order_number?: string
+          payment_method?: string
+          payment_reference?: string | null
+          receipt_path?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          supplier_id?: string
+          supplier_note?: string | null
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesale_orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wholesale_orders_buyer_pharmacy_id_fkey"
+            columns: ["buyer_pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wholesale_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1610,6 +1734,18 @@ export type Database = {
           user_id: string
         }[]
       }
+      place_wholesale_order: {
+        Args: {
+          _branch: string
+          _buyer: string
+          _items: Json
+          _method: string
+          _receipt_path: string
+          _reference: string
+          _supplier: string
+        }
+        Returns: string
+      }
       plan_yearly_price: { Args: { _plan_id: string }; Returns: number }
       review_registration: {
         Args: { _decision: string; _note?: string; _pharmacy_id: string }
@@ -1617,6 +1753,10 @@ export type Database = {
       }
       review_subscription_payment: {
         Args: { _decision: string; _note?: string; _payment_id: string }
+        Returns: undefined
+      }
+      review_wholesale_order: {
+        Args: { _decision: string; _note: string; _order: string }
         Returns: undefined
       }
       submit_registration: { Args: { _payload: Json }; Returns: string }
@@ -1629,6 +1769,23 @@ export type Database = {
           _reference: string
         }
         Returns: string
+      }
+      supplier_catalog: {
+        Args: never
+        Returns: {
+          dosage_form: string
+          generic_name: string
+          image_url: string
+          is_prescription_required: boolean
+          name: string
+          product_id: string
+          stock: number
+          strength: string
+          supplier_city: string
+          supplier_id: string
+          supplier_name: string
+          unit_price: number
+        }[]
       }
       try_uuid: { Args: { _value: string }; Returns: string }
       user_belongs_to_pharmacy: {
