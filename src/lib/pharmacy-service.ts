@@ -1477,3 +1477,29 @@ export class PosService {
     return data as string;
   }
 }
+
+export interface RxItem { product_id: string; name: string; quantity: number; instructions: string }
+export interface Prescription {
+  id: string; branch_id: string | null; patient_name: string; patient_phone: string; prescriber: string; notes: string;
+  items: RxItem[]; status: 'pending' | 'dispensed' | 'rejected'; review_note: string | null; created_at: string; dispensed_at: string | null;
+}
+
+export class PrescriptionService {
+  static async list(pharmacyId: string): Promise<Prescription[]> {
+    const { data, error } = await supabase.from('prescriptions').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false });
+    fail(error);
+    return (data || []).map((r: any) => ({
+      id: r.id, branch_id: r.branch_id, patient_name: r.patient_name, patient_phone: r.patient_phone || '', prescriber: r.prescriber || '',
+      notes: r.notes || '', items: Array.isArray(r.items) ? r.items : [], status: r.status, review_note: r.review_note,
+      created_at: r.created_at, dispensed_at: r.dispensed_at,
+    }));
+  }
+  static async add(pharmacyId: string, userId: string, input: { branch_id: string; patient_name: string; patient_phone: string; prescriber: string; notes: string; items: RxItem[] }): Promise<void> {
+    const { error } = await supabase.from('prescriptions').insert({ pharmacy_id: pharmacyId, created_by: userId, ...input, items: input.items as any });
+    fail(error);
+  }
+  static async review(id: string, decision: 'dispense' | 'reject', method: string, note: string): Promise<void> {
+    const { error } = await supabase.rpc('review_prescription', { _id: id, _decision: decision, _method: method, _note: note });
+    fail(error);
+  }
+}

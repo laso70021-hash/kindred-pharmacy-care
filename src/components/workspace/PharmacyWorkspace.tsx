@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
-import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList, Store } from 'lucide-react';
+import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList, Store, Pill } from 'lucide-react';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { can, canOrderStock, isReadOnly, roleLabel } from '@/lib/workspace';
 import { STATUS_LABELS } from '@/lib/billing';
@@ -14,6 +14,7 @@ import { ExpensesTab } from './ExpensesTab';
 import { MarketplaceTab } from './MarketplaceTab';
 import { OrdersTab } from './OrdersTab';
 import { PosTab } from './PosTab';
+import { DispenserTab } from './DispenserTab';
 
 const sub = () => () => {};
 
@@ -27,6 +28,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
   const nav = [
     { id: 'overview', label: 'Overview', Icon: LayoutDashboard, show: true },
     { id: 'pos', label: 'Cashier (POS)', Icon: Store, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
+    { id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { id: 'inventory', label: ws.business_type === 'supplier' ? 'Wholesale catalog' : 'Inventory', Icon: Boxes, show: true },
     { id: 'restock', label: 'Restock (suppliers)', Icon: ShoppingCart, show: ws.business_type === 'pharmacy' && canOrderStock(ws.role) },
     { id: 'orders', label: ws.business_type === 'supplier' ? 'Wholesale orders' : 'Supplier orders', Icon: ClipboardList, show: canOrderStock(ws.role) },
@@ -80,6 +82,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           {tab === 'overview' && <OverviewTab ws={ws} range={range} isMounted={isMounted} />}
           {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} />}
           {tab === 'pos' && <PosTab ws={ws} />}
+          {tab === 'rx' && <DispenserTab ws={ws} userId={userId} />}
           {tab === 'restock' && <MarketplaceTab ws={ws} userId={userId} onOrdered={() => setTab('orders')} />}
           {tab === 'orders' && <OrdersTab ws={ws} />}
           {tab === 'branches' && <BranchesTab ws={ws} />}
