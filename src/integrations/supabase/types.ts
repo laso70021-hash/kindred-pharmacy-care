@@ -530,6 +530,50 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          pharmacy_id: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          pharmacy_id?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          pharmacy_id?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pharmacies: {
         Row: {
           address: string | null
@@ -1802,6 +1846,17 @@ export type Database = {
           pharmacy_name: string
           role: Database["public"]["Enums"]["user_role"]
         }[]
+      }
+      notify_user: {
+        Args: {
+          _body: string
+          _kind: string
+          _link: string
+          _pharmacy: string
+          _title: string
+          _user: string
+        }
+        Returns: undefined
       }
       pharmacy_is_current: { Args: { _pharmacy_id: string }; Returns: boolean }
       pharmacy_plan_limits: {
