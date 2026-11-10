@@ -121,3 +121,17 @@ export function cartTotal(cart: CartLine[]): number {
 export function canOrderStock(role: WorkspaceRole): boolean {
   return role === 'owner' || role === 'admin' || role === 'manager' || role === 'inventory_manager';
 }
+
+/** Cash drawer for one branch/day: expected cash = opening float + cash sales; over/short = counted − expected. */
+export function drawerSummary(sales: { total: number; payment_method: string }[], openingFloat: number, counted: number | null) {
+  const byMethod: Record<string, number> = {};
+  for (const s of sales) byMethod[s.payment_method] = (byMethod[s.payment_method] || 0) + s.total;
+  const cashSales = byMethod['cash'] || 0;
+  const expectedCash = openingFloat + cashSales;
+  return { byMethod, cashSales, expectedCash, total: sales.reduce((a, s) => a + s.total, 0), overShort: counted == null ? null : counted - expectedCash };
+}
+
+/** Change due to the customer; null when the cash given doesn't cover the total. */
+export function changeDue(total: number, tendered: number): number | null {
+  return tendered >= total ? tendered - total : null;
+}

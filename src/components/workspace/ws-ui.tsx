@@ -10,7 +10,7 @@ export const ghostBtn =
   'px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 text-xs font-bold transition-colors inline-flex items-center gap-1.5';
 export const cardCls = 'bg-white rounded-2xl border border-slate-200/80 shadow-2xs';
 
-export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string | undefined }) {
   return (
     <label className="block">
       <span className={labelCls}>{label}</span>
