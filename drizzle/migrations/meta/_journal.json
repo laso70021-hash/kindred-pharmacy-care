@@ -50,6 +50,13 @@
       "when": 1794299813858,
       "tag": "0006_product_images_read_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794323964437,
+      "tag": "0007_wholesale_marketplace",
+      "breakpoints": true
     }
   ]
 }
