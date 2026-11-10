@@ -2115,7 +2115,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                 </table>
                 {auditLogs.length === 0 && (
                   <div className="p-8 text-center text-slate-500 text-xs">
-                    No audit records logged yet in `audit_logs`. Run SQL SCRIPT 2.
+                    No audit records logged yet in `audit_logs`..
                   </div>
                 )}
               </div>
@@ -2177,7 +2177,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                 </table>
                 {tickets.length === 0 && (
                   <div className="p-8 text-center text-slate-500 text-xs">
-                    No support tickets open. Click &quot;Open New Ticket&quot; to create one in Supabase.
+                    No support tickets open. Click &quot;Open New Ticket&quot; to create one.
                   </div>
                 )}
               </div>
@@ -2278,7 +2278,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-sm"
                 >
-                  Save to Supabase
+                  Save
                 </button>
               </div>
             </form>
@@ -2426,7 +2426,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-sm"
                 >
-                  Save to Supabase
+                  Save
                 </button>
               </div>
             </form>
