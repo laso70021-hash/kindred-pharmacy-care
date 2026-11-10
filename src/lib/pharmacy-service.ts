@@ -20,8 +20,19 @@ import {
   SubscriptionPlan,
   BusinessRegistration,
   SubscriptionPayment,
-  RegistrationInput
+  RegistrationInput,
+  Workspace,
+  WsBranch,
+  WsStaff,
+  WsInvite,
+  MyInvitation,
+  WsProduct,
+  WsProductInput,
+  WsBatch,
+  WsSale,
+  WsExpense
 } from '@/lib/pharmacy-types';
+import type { WorkspaceRole, StaffRole } from './workspace';
 import { formatDateDeterministic } from './utils';
 import { effectiveStatus, yearlyPrice } from './billing';
 
@@ -1005,5 +1016,356 @@ export class PharmacyService {
     const { data, error } = await supabase.storage.from('payment-receipts').createSignedUrl(path, 600);
     if (error || !data) throw new Error(error?.message || 'Receipt not available');
     return data.signedUrl;
+  }
+}
+
+// ==========================================
+// PHARMACY WORKSPACE (owner + staff) — every call is scoped to one pharmacy id
+// ==========================================
+function fail(error: { message: string } | null): void {
+  if (error) throw new Error(error.message);
+}
+
+function daysUntil(dateStr: string): number {
+  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
+}
+
+export class WorkspaceService {
+  static async listWorkspaces(userId: string, isAdmin: boolean): Promise<Workspace[]> {
+    const [{ data: rows, error }, { data: memberships }] = await Promise.all([
+      supabase
+        .from('pharmacies')
+        .select('id, name, business_type, city, owner_id, status, trial_ends_at, subscription_ends_at, created_at, subscription_plans!pharmacies_plan_id_fkey(name, slug, max_branches, max_employees)')
+        .order('created_at', { ascending: true }),
+      supabase.from('pharmacy_memberships').select('pharmacy_id, role, is_active').eq('user_id', userId),
+    ]);
+    fail(error);
+    const roleByPharmacy = new Map<string, string>();
+    for (const m of memberships || []) if (m.is_active !== false) roleByPharmacy.set(m.pharmacy_id, m.role);
+
+    return (rows || [])
+      .map((d: any): Workspace | null => {
+        let role: WorkspaceRole | null = null;
+        if (d.owner_id === userId) role = 'owner';
+        else if (roleByPharmacy.has(d.id)) role = roleByPharmacy.get(d.id) as StaffRole;
+        else if (isAdmin) role = 'admin';
+        if (!role) return null;
+        const plan = d.subscription_plans || {};
+        return {
+          id: d.id,
+          name: d.name,
+          business_type: d.business_type === 'supplier' ? 'supplier' : 'pharmacy',
+          city: d.city ?? null,
+          role,
+          status: effectiveStatus(d),
+          plan_name: plan.name || 'Starter',
+          plan_slug: plan.slug || 'starter',
+          limits: { max_branches: plan.max_branches ?? 1, max_employees: plan.max_employees ?? 3 },
+          trial_ends_at: d.trial_ends_at ?? null,
+          subscription_ends_at: d.subscription_ends_at ?? null,
+        };
+      })
+      .filter((w): w is Workspace => w !== null);
+  }
+
+  // ---------- branches ----------
+  static async getBranches(pharmacyId: string): Promise<WsBranch[]> {
+    const { data, error } = await supabase
+      .from('branches')
+      .select('*')
+      .eq('pharmacy_id', pharmacyId)
+      .order('is_main', { ascending: false })
+      .order('created_at', { ascending: true });
+    fail(error);
+    return (data || []).map((b: any) => ({
+      id: b.id,
+      name: b.name,
+      code: b.code || '',
+      address: b.address || '',
+      phone: b.phone || '',
+      is_main: Boolean(b.is_main),
+      is_active: b.is_active !== false,
+      created_at: b.created_at,
+    }));
+  }
+
+  static async saveBranch(pharmacyId: string, input: { id?: string; name: string; code: string; address: string; phone: string }): Promise<void> {
+    const row = { name: input.name, code: input.code || null, address: input.address || null, phone: input.phone || null, updated_at: new Date().toISOString() };
+    const { error } = input.id
+      ? await supabase.from('branches').update(row).eq('id', input.id)
+      : await supabase.from('branches').insert({ ...row, pharmacy_id: pharmacyId, is_active: true });
+    fail(error);
+  }
+
+  static async setBranchActive(branchId: string, isActive: boolean): Promise<void> {
+    const { error } = await supabase.from('branches').update({ is_active: isActive }).eq('id', branchId);
+    fail(error);
+  }
+
+  static async setMainBranch(pharmacyId: string, branchId: string): Promise<void> {
+    const { error: e1 } = await supabase.from('branches').update({ is_main: false }).eq('pharmacy_id', pharmacyId).neq('id', branchId);
+    fail(e1);
+    const { error: e2 } = await supabase.from('branches').update({ is_main: true, is_active: true }).eq('id', branchId);
+    fail(e2);
+  }
+
+  // ---------- staff ----------
+  static async getStaff(pharmacyId: string): Promise<WsStaff[]> {
+    const { data, error } = await supabase.rpc('pharmacy_staff', { _pharmacy_id: pharmacyId });
+    fail(error);
+    return (data || []).map((s: any) => ({
+      membership_id: s.membership_id,
+      user_id: s.user_id,
+      full_name: s.full_name || s.email,
+      email: s.email,
+      role: s.role,
+      branch_id: s.branch_id,
+      is_active: s.is_active !== false,
+      created_at: s.created_at,
+    }));
+  }
+
+  static async getInvites(pharmacyId: string): Promise<WsInvite[]> {
+    const { data, error } = await supabase
+      .from('pharmacy_invites')
+      .select('*')
+      .eq('pharmacy_id', pharmacyId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+    fail(error);
+    return (data || []) as WsInvite[];
+  }
+
+  static async inviteStaff(pharmacyId: string, input: { email: string; full_name: string; role: StaffRole; branch_id: string | null }): Promise<void> {
+    const { error } = await supabase.from('pharmacy_invites').insert({
+      pharmacy_id: pharmacyId,
+      email: input.email.trim().toLowerCase(),
+      full_name: input.full_name || null,
+      role: input.role,
+      branch_id: input.branch_id,
+    });
+    if (error?.code === '23505') throw new Error('This person already has a pending invitation.');
+    fail(error);
+  }
+
+  static async revokeInvite(inviteId: string): Promise<void> {
+    const { error } = await supabase.from('pharmacy_invites').update({ status: 'revoked' }).eq('id', inviteId);
+    fail(error);
+  }
+
+  static async updateMembership(membershipId: string, patch: { role?: StaffRole; branch_id?: string | null; is_active?: boolean }): Promise<void> {
+    const { error } = await supabase.from('pharmacy_memberships').update(patch).eq('id', membershipId);
+    fail(error);
+  }
+
+  static async myInvitations(): Promise<MyInvitation[]> {
+    const { data, error } = await supabase.rpc('my_invitations');
+    fail(error);
+    return (data || []) as MyInvitation[];
+  }
+
+  static async acceptInvitation(inviteId: string): Promise<string> {
+    const { data, error } = await supabase.rpc('accept_invitation', { _invite_id: inviteId });
+    fail(error);
+    return data as string;
+  }
+
+  // ---------- products & stock ----------
+  static async getProducts(pharmacyId: string): Promise<WsProduct[]> {
+    const [{ data: rows, error }, { data: batches, error: bErr }] = await Promise.all([
+      supabase.from('products').select('*').eq('pharmacy_id', pharmacyId).order('name', { ascending: true }),
+      supabase.from('inventory_batches').select('product_id, branch_id, quantity, expiry_date').eq('pharmacy_id', pharmacyId).gt('quantity', 0),
+    ]);
+    fail(error);
+    fail(bErr);
+
+    const paths = (rows || []).map((p: any) => p.image_url).filter(Boolean) as string[];
+    const signed = new Map<string, string>();
+    if (paths.length) {
+      const { data: urls } = await supabase.storage.from('product-images').createSignedUrls(paths, 3600);
+      for (const u of urls || []) if (u.path && u.signedUrl) signed.set(u.path, u.signedUrl);
+    }
+
+    return (rows || []).map((p: any) => {
+      const own = (batches || []).filter((b: any) => b.product_id === p.id);
+      const byBranch: Record<string, number> = {};
+      for (const b of own) byBranch[b.branch_id || 'none'] = (byBranch[b.branch_id || 'none'] || 0) + (b.quantity || 0);
+      const expiries = own.map((b: any) => b.expiry_date as string).sort();
+      return {
+        id: p.id,
+        name: p.name,
+        generic_name: p.generic_name || '',
+        sku: p.sku || '',
+        barcode: p.barcode || '',
+        dosage_form: p.dosage_form || '',
+        strength: p.strength || '',
+        cost_price: Number(p.cost_price || 0),
+        selling_price: Number(p.selling_price || 0),
+        min_stock_level: p.min_stock_level ?? 10,
+        is_prescription_required: Boolean(p.is_prescription_required),
+        is_active: p.is_active !== false,
+        image_path: p.image_url || null,
+        image_src: p.image_url ? signed.get(p.image_url) ?? null : null,
+        stock: own.reduce((a: number, b: any) => a + (b.quantity || 0), 0),
+        stock_by_branch: byBranch,
+        nearest_expiry: expiries[0] ?? null,
+        created_at: p.created_at,
+      };
+    });
+  }
+
+  private static async uploadProductPhoto(pharmacyId: string, file: File): Promise<string> {
+    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60);
+    const path = `${pharmacyId}/${Date.now()}-${safe}`;
+    const { error } = await supabase.storage.from('product-images').upload(path, file, { contentType: file.type || 'image/jpeg' });
+    if (error) throw new Error(`Photo upload failed: ${error.message}`);
+    return path;
+  }
+
+  static async saveProduct(pharmacyId: string, input: WsProductInput & { id?: string }, photo?: File | null): Promise<void> {
+    const row: Record<string, unknown> = {
+      name: input.name,
+      generic_name: input.generic_name || null,
+      sku: input.sku || null,
+      barcode: input.barcode || null,
+      dosage_form: input.dosage_form || null,
+      strength: input.strength || null,
+      cost_price: input.cost_price || 0,
+      selling_price: input.selling_price,
+      min_stock_level: input.min_stock_level,
+      is_prescription_required: input.is_prescription_required,
+      updated_at: new Date().toISOString(),
+    };
+    if (photo) row['image_url'] = await this.uploadProductPhoto(pharmacyId, photo);
+    const { error } = input.id
+      ? await supabase.from('products').update(row).eq('id', input.id)
+      : await supabase.from('products').insert({ ...row, pharmacy_id: pharmacyId, is_active: true });
+    fail(error);
+  }
+
+  static async setProductActive(productId: string, isActive: boolean): Promise<void> {
+    const { error } = await supabase.from('products').update({ is_active: isActive }).eq('id', productId);
+    fail(error);
+  }
+
+  static async getBatches(pharmacyId: string): Promise<WsBatch[]> {
+    const { data, error } = await supabase
+      .from('inventory_batches')
+      .select('*, products(name)')
+      .eq('pharmacy_id', pharmacyId)
+      .order('expiry_date', { ascending: true });
+    fail(error);
+    return (data || []).map((b: any) => ({
+      id: b.id,
+      product_id: b.product_id,
+      product_name: b.products?.name || 'Product',
+      branch_id: b.branch_id,
+      batch_number: b.batch_number,
+      quantity: b.quantity || 0,
+      cost_per_unit: Number(b.cost_per_unit || 0),
+      expiry_date: b.expiry_date,
+      received_date: b.received_date,
+      days_to_expiry: daysUntil(b.expiry_date),
+      created_at: b.created_at,
+    }));
+  }
+
+  static async receiveStock(
+    pharmacyId: string,
+    userId: string,
+    input: { product_id: string; branch_id: string; batch_number: string; quantity: number; cost_per_unit: number; expiry_date: string }
+  ): Promise<void> {
+    const { data: batch, error } = await supabase
+      .from('inventory_batches')
+      .insert({
+        pharmacy_id: pharmacyId,
+        branch_id: input.branch_id,
+        product_id: input.product_id,
+        batch_number: input.batch_number,
+        quantity: input.quantity,
+        cost_per_unit: input.cost_per_unit,
+        expiry_date: input.expiry_date,
+        received_date: new Date().toISOString().slice(0, 10),
+      })
+      .select('id')
+      .single();
+    fail(error);
+    const { error: mErr } = await supabase.from('stock_movements').insert({
+      pharmacy_id: pharmacyId,
+      product_id: input.product_id,
+      batch_id: batch.id,
+      movement_type: 'stock_in',
+      quantity: input.quantity,
+      notes: `Received batch ${input.batch_number}`,
+      created_by: userId,
+    });
+    fail(mErr);
+  }
+
+  static async adjustBatch(pharmacyId: string, userId: string, batch: WsBatch, newQuantity: number, reason: string): Promise<void> {
+    const { error } = await supabase
+      .from('inventory_batches')
+      .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
+      .eq('id', batch.id);
+    fail(error);
+    const { error: mErr } = await supabase.from('stock_movements').insert({
+      pharmacy_id: pharmacyId,
+      product_id: batch.product_id,
+      batch_id: batch.id,
+      movement_type: 'adjustment',
+      quantity: newQuantity - batch.quantity,
+      notes: reason || 'Stock count adjustment',
+      created_by: userId,
+    });
+    fail(mErr);
+  }
+
+  // ---------- money ----------
+  static async getSales(pharmacyId: string): Promise<WsSale[]> {
+    const { data, error } = await supabase
+      .from('sales')
+      .select('id, invoice_number, total, branch_id, payment_method, created_at, sale_items(quantity, products(cost_price), inventory_batches(cost_per_unit))')
+      .eq('pharmacy_id', pharmacyId)
+      .order('created_at', { ascending: false });
+    fail(error);
+    return (data || []).map((s: any) => ({
+      id: s.id,
+      invoice_number: s.invoice_number,
+      total: Number(s.total || 0),
+      branch_id: s.branch_id,
+      payment_method: s.payment_method || 'cash',
+      created_at: s.created_at,
+      items: (s.sale_items || []).map((i: any) => ({
+        quantity: i.quantity || 0,
+        unit_cost: Number(i.inventory_batches?.cost_per_unit ?? i.products?.cost_price ?? 0),
+      })),
+    }));
+  }
+
+  static async getExpenses(pharmacyId: string): Promise<WsExpense[]> {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('pharmacy_id', pharmacyId)
+      .order('expense_date', { ascending: false });
+    fail(error);
+    return (data || []).map((e: any) => ({
+      id: e.id,
+      category: e.category,
+      amount: Number(e.amount || 0),
+      description: e.description || '',
+      expense_date: e.expense_date || e.created_at?.slice(0, 10),
+      created_at: e.created_at,
+    }));
+  }
+
+  static async addExpense(pharmacyId: string, userId: string, input: { category: string; amount: number; description: string; expense_date: string }): Promise<void> {
+    const { error } = await supabase.from('expenses').insert({ ...input, pharmacy_id: pharmacyId, recorded_by: userId });
+    fail(error);
+  }
+
+  static async deleteExpense(id: string): Promise<void> {
+    const { error } = await supabase.from('expenses').delete().eq('id', id);
+    fail(error);
   }
 }

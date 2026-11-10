@@ -298,3 +298,128 @@ export interface RegistrationInput {
   payment_method?: string;
   payment_reference?: string;
 }
+
+// ==========================================
+// PHARMACY WORKSPACE (owner + staff)
+// ==========================================
+export interface Workspace {
+  id: string;
+  name: string;
+  business_type: BusinessType;
+  city: string | null;
+  role: import('./workspace').WorkspaceRole;
+  status: import('./billing').AccountStatus;
+  plan_name: string;
+  plan_slug: string;
+  limits: import('./workspace').PlanLimits;
+  trial_ends_at: string | null;
+  subscription_ends_at: string | null;
+}
+
+export interface WsBranch {
+  id: string;
+  name: string;
+  code: string;
+  address: string;
+  phone: string;
+  is_main: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface WsStaff {
+  membership_id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  branch_id: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface WsInvite {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  branch_id: string | null;
+  status: 'pending' | 'accepted' | 'revoked';
+  created_at: string;
+}
+
+export interface MyInvitation {
+  id: string;
+  pharmacy_id: string;
+  pharmacy_name: string;
+  role: string;
+  branch_name: string | null;
+  created_at: string;
+}
+
+export interface WsProduct {
+  id: string;
+  name: string;
+  generic_name: string;
+  sku: string;
+  barcode: string;
+  dosage_form: string;
+  strength: string;
+  cost_price: number;
+  selling_price: number;
+  min_stock_level: number;
+  is_prescription_required: boolean;
+  is_active: boolean;
+  image_path: string | null;
+  image_src: string | null;
+  stock: number;
+  stock_by_branch: Record<string, number>;
+  nearest_expiry: string | null;
+  created_at: string;
+}
+
+export interface WsProductInput {
+  name: string;
+  generic_name: string;
+  sku: string;
+  barcode: string;
+  dosage_form: string;
+  strength: string;
+  cost_price: number;
+  selling_price: number;
+  min_stock_level: number;
+  is_prescription_required: boolean;
+}
+
+export interface WsBatch {
+  id: string;
+  product_id: string;
+  product_name: string;
+  branch_id: string | null;
+  batch_number: string;
+  quantity: number;
+  cost_per_unit: number;
+  expiry_date: string;
+  received_date: string | null;
+  days_to_expiry: number;
+  created_at: string;
+}
+
+export interface WsSale {
+  id: string;
+  invoice_number: string;
+  total: number;
+  branch_id: string | null;
+  payment_method: string;
+  created_at: string;
+  items: { quantity: number; unit_cost: number }[];
+}
+
+export interface WsExpense {
+  id: string;
+  category: string;
+  amount: number;
+  description: string;
+  expense_date: string;
+  created_at: string;
+}
