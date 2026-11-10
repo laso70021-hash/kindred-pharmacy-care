@@ -84,3 +84,13 @@ export const PAYMENT_METHODS = [
 export function paymentMethodLabel(value: string): string {
   return PAYMENT_METHODS.find((m) => m.value === value)?.label ?? value.replace(/_/g, ' ');
 }
+
+/** Expiry reminder for the in-app bell: shown 7 days and 1 day before the trial/paid year ends, and once expired. */
+export function expiryReminder(endIso: string | null | undefined, now: Date = new Date()): { level: 'week' | 'day' | 'expired'; days: number } | null {
+  if (!endIso) return null;
+  const d = daysLeft(endIso, now);
+  if (d <= 0) return { level: 'expired', days: d };
+  if (d <= 1) return { level: 'day', days: d };
+  if (d <= 7) return { level: 'week', days: d };
+  return null;
+}
