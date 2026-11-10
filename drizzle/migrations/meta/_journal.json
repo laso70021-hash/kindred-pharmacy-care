@@ -43,6 +43,13 @@
       "when": 1794299797189,
       "tag": "0005_owner_workspace_staff_branches_readonly",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794299813858,
+      "tag": "0006_product_images_read_policy",
+      "breakpoints": true
     }
   ]
 }
