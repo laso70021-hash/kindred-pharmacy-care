@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
+import { RegistrationWizard, type AccountFields } from "@/components/registration/RegistrationWizard";
+import type { RegistrationInput } from "@/lib/pharmacy-types";
 import "@lovable.dev/cloud-auth-js/styles.css";
 
 export const Route = createFileRoute("/auth")({
@@ -17,8 +19,17 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): AuthSearch => ({
+    ...(search["mode"] === "signup" ? { mode: "signup" as const } : {}),
+    ...(typeof search["plan"] === "string" ? { plan: search["plan"] } : {}),
+  }),
   component: AuthPage,
 });
+
+interface AuthSearch {
+  mode?: "signup";
+  plan?: string;
+}
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -39,17 +50,43 @@ function GoogleLogo() {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
-  const [mode, setMode] = useState<Mode>("signin");
+  const search = Route.useSearch();
+  const { user, isLoading, isSuperAdmin } = useAuth();
+  const [mode, setMode] = useState<Mode>(search.mode === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // Once signed in (and roles are loaded), send admins to the admin dashboard and everyone else to their account.
   useEffect(() => {
-    if (!isLoading && user) navigate({ to: "/admin", replace: true });
-  }, [isLoading, user, navigate]);
+    if (!isLoading && user) navigate({ to: isSuperAdmin ? "/admin" : "/account", replace: true });
+  }, [isLoading, user, isSuperAdmin, navigate]);
+
+  const handleRegister = async ({ registration, account }: { registration: RegistrationInput; account: AccountFields }) => {
+    setBusy(true);
+    setNotice(null);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: account.email,
+        password: account.password,
+        options: {
+          emailRedirectTo: window.location.origin + "/account",
+          data: { full_name: account.fullName, registration },
+        },
+      });
+      if (error) throw error;
+      if (!data.session) {
+        setEmail(account.email);
+        setNotice("Registration received! Check your email to confirm your address, then sign in to follow your approval.");
+        setMode("signin");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -59,20 +96,6 @@ function AuthPage() {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/admin", replace: true });
-      } else if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin + "/admin", data: { full_name: fullName } },
-        });
-        if (error) throw error;
-        if (data.session) {
-          navigate({ to: "/admin", replace: true });
-        } else {
-          setNotice("Check your email to confirm your account, then sign in.");
-          setMode("signin");
-        }
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -94,15 +117,13 @@ function AuthPage() {
       toast.error(result.error.message || "Sign-in failed");
       return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/admin", replace: true });
   };
 
-  const heading = mode === "signin" ? "Sign In to Swahivo" : mode === "signup" ? "Create your account" : "Reset your password";
+  const heading = mode === "signin" ? "Sign In to Swahivo" : mode === "signup" ? "Register your business" : "Reset your password";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50/60 via-white to-slate-50 flex items-center justify-center p-4 font-sans">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+      <div className={`bg-white rounded-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-5 ${mode === "signup" ? "max-w-2xl" : "max-w-md"}`}>
         <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
             <span className="text-2xl font-black leading-none">+</span>
@@ -121,7 +142,11 @@ function AuthPage() {
           </div>
         )}
 
-        {mode !== "forgot" && (
+        {mode === "signup" && (
+          <RegistrationWizard mode="signup" initialPlan={search.plan} busy={busy} onSubmit={handleRegister} />
+        )}
+
+        {mode === "signin" && (
           <div className="space-y-2">
             <button
               type="button"
@@ -140,13 +165,8 @@ function AuthPage() {
           </div>
         )}
 
+        {mode !== "signup" && (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === "signup" && (
-            <div>
-              <label className={labelClass} htmlFor="fullName">Full name</label>
-              <input id="fullName" className={inputClass} value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your name" />
-            </div>
-          )}
           <div>
             <label className={labelClass} htmlFor="email">Email Address</label>
             <input id="email" type="email" required className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@pharmacy.com" />
@@ -169,15 +189,21 @@ function AuthPage() {
             disabled={busy}
             className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold text-sm shadow-md transition-all"
           >
-            {busy ? "Please wait…" : mode === "signin" ? "Sign In" : mode === "signup" ? "Create Account" : "Send reset link"}
+            {busy ? "Please wait…" : mode === "signin" ? "Sign In" : "Send reset link"}
           </button>
         </form>
+        )}
 
         <div className="text-center text-xs text-slate-500">
           {mode === "signin" ? (
             <>
               New to Swahivo?{" "}
-              <button onClick={() => setMode("signup")} className="text-blue-600 font-semibold hover:underline">Create an account</button>
+              <button onClick={() => setMode("signup")} className="text-blue-600 font-semibold hover:underline">Register your pharmacy or supplier business</button>
+            </>
+          ) : mode === "signup" ? (
+            <>
+              Already registered?{" "}
+              <button onClick={() => setMode("signin")} className="text-blue-600 font-semibold hover:underline">Sign in</button>
             </>
           ) : (
             <button onClick={() => setMode("signin")} className="text-blue-600 font-semibold hover:underline">Back to sign in</button>
