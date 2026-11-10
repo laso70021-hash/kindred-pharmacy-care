@@ -1902,6 +1902,7 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _invite_id: string }; Returns: string }
+      admin_register_business: { Args: { _payload: Json }; Returns: string }
       admin_set_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -2076,6 +2077,10 @@ export type Database = {
         }[]
       }
       try_uuid: { Args: { _value: string }; Returns: string }
+      update_staff_details: {
+        Args: { _membership: string; _pharmacy: string; _row: Json }
+        Returns: undefined
+      }
       user_belongs_to_pharmacy: {
         Args: { pharmacy_uuid: string }
         Returns: boolean
