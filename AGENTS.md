@@ -31,7 +31,7 @@ use the editor.
 
 ## Project rules
 
-- Pages: public homepage at `/` (`src/components/landing/LandingPage.tsx`), sign-in at `/auth` and `/reset-password`, admin dashboard at `/_authenticated/admin` (`src/components/dashboard/AdminDashboard.tsx`) — ported from the original Next.js app, so keep their markup and Tailwind classes when editing.
+- Pages: public homepage at `/` (`src/components/landing/LandingPage.tsx`), sign-in + business registration wizard at `/auth` (`?mode=signup&plan=`) and `/reset-password`, provider account/approval status at `/_authenticated/account`, admin dashboard at `/_authenticated/admin` (`src/components/dashboard/AdminDashboard.tsx`) — ported from the original Next.js app, so keep their markup and Tailwind classes when editing.
 - Data access goes through `src/lib/pharmacy-service.ts` (browser client, RLS applies); keep row mapping there so components stay schema-agnostic.
 - Roles live only in `public.user_roles` (enum `user_role`), checked with `has_role` / `is_platform_admin`; never store roles on `profiles` — prevents privilege escalation.
 - The signup trigger gives the first account `super_admin`; provider roles (`pharmacy_owner` / `supplier`) are granted only by the admin approval functions — bootstraps the platform owner without hardcoded IDs and keeps roles off user-editable metadata.
