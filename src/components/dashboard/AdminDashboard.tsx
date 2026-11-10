@@ -369,10 +369,10 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
       ];
 
   const planChartData = [
-    { name: 'Standard', value: Math.max(1, pharmacies.filter((p) => p.plan === 'Standard').length), color: '#3B82F6', pct: '48%' },
-    { name: 'Professional', value: Math.max(1, pharmacies.filter((p) => p.plan === 'Professional').length), color: '#8B5CF6', pct: '28%' },
-    { name: 'Enterprise', value: Math.max(1, pharmacies.filter((p) => p.plan === 'Enterprise').length), color: '#10B981', pct: '14%' },
-    { name: 'Trial', value: Math.max(1, pharmacies.filter((p) => p.plan === 'Trial').length), color: '#F59E0B', pct: '10%' }
+    { name: 'Standard', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Standard').length), color: '#3B82F6', pct: '48%' },
+    { name: 'Professional', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Professional').length), color: '#8B5CF6', pct: '28%' },
+    { name: 'Enterprise', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Enterprise').length), color: '#10B981', pct: '14%' },
+    { name: 'Trial', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Trial').length), color: '#F59E0B', pct: '10%' }
   ];
 
   // Actions
