@@ -1466,3 +1466,14 @@ export class WholesaleService {
     return data.signedUrl;
   }
 }
+
+export class PosService {
+  static async createSale(args: { pharmacyId: string; branchId: string; items: { product_id: string; quantity: number }[]; method: string; discount: number; reference: string }): Promise<string> {
+    const { data, error } = await supabase.rpc('create_sale', {
+      _pharmacy: args.pharmacyId, _branch: args.branchId, _items: args.items as any,
+      _method: args.method, _discount: args.discount, _reference: args.reference,
+    });
+    fail(error);
+    return data as string;
+  }
+}
