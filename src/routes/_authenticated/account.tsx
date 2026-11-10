@@ -107,15 +107,14 @@ function AccountPage() {
               onSubmit={async ({ registration, receipt }) => {
                 setBusy(true);
                 try {
-                  const reference = registration.payment_reference || "";
-                  const { payment_method, payment_reference, ...rest } = registration;
+                  const { payment_method: payMethod, payment_reference: reference = "", ...rest } = registration;
                   const pharmacyId = await PharmacyService.submitRegistration(rest);
                   if (rest.billing_choice === "annual" && (reference || receipt)) {
                     await PharmacyService.submitPayment({
                       userId,
                       pharmacyId,
                       planSlug: rest.plan_slug,
-                      method: payment_method || "mpesa",
+                      method: payMethod || "mpesa",
                       reference,
                       file: receipt,
                     });
