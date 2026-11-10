@@ -894,7 +894,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-slate-900">{totalPharmaciesCount}</span>
-                    <span className="text-[11px] font-bold text-emerald-600">Active</span>
+                    <span className="text-[11px] font-bold text-emerald-600">+{pharmacies.length} in period</span>
                   </div>
                   <div className="text-[11px] text-slate-400 font-medium mt-1">Tenant businesses</div>
                 </div>
@@ -908,7 +908,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-slate-900">{totalUsersCount}</span>
-                    <span className="text-[11px] font-bold text-emerald-600">Profiles</span>
+                    <span className="text-[11px] font-bold text-emerald-600">+{users.length} in period</span>
                   </div>
                   <div className="text-[11px] text-slate-400 font-medium mt-1">All platform users</div>
                 </div>
