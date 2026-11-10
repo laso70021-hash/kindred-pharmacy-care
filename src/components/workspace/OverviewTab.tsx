@@ -37,6 +37,11 @@ export function OverviewTab({ ws, range, isMounted }: { ws: Workspace; range: Da
     queryFn: () => WorkspaceService.getStaff(pid),
     enabled: canSeeStaff,
   });
+  const { data: invites = [] } = useQuery({
+    queryKey: ['ws', pid, 'invites'],
+    queryFn: () => WorkspaceService.getInvites(pid),
+    enabled: canSeeStaff,
+  });
 
   const sales = filterByRange(allSales, (s) => s.created_at, range);
   const expenses = filterByRange(allExpenses, (e) => e.expense_date, range);
@@ -86,7 +91,7 @@ export function OverviewTab({ ws, range, isMounted }: { ws: Workspace; range: Da
         <Kpi
           label="Plan usage"
           value={`${limitLabel(branches.length, ws.limits.max_branches)} branches`}
-          sub={canSeeStaff ? `${limitLabel(staff.filter((s) => s.is_active).length, ws.limits.max_employees)} staff · ${ws.plan_name}` : ws.plan_name}
+          sub={canSeeStaff ? `${limitLabel(staff.filter((s) => s.is_active).length + invites.length, ws.limits.max_employees)} staff · ${ws.plan_name}` : ws.plan_name}
           Icon={canSeeStaff ? Users2 : GitBranch}
           tone="bg-slate-100 text-slate-600"
         />

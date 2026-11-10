@@ -43,3 +43,8 @@ use the editor.
 - The AI assistant is the `askPharmacyAssistant` server function (admin-only, Lovable AI Gateway); keep model calls server-side.
 - Auth state comes from `AuthProvider` in `src/hooks/useAuth.tsx`, mounted once in `__root.tsx`; it owns the single `onAuthStateChange` listener.
 - Dashboard date filtering uses `src/lib/date-range.ts` (inclusive local calendar days; accepts ISO and "DD Mon YYYY" display dates); filter loaded records in the component, keep totals that describe the whole platform unfiltered — one rule for every dashboard.
+- Pharmacy workspace lives at `/_authenticated/pharmacy` (`src/components/workspace/*`, data via `WorkspaceService` in `src/lib/pharmacy-service.ts`, UI rules in `src/lib/workspace.ts`); every query is filtered by one pharmacy id so admins can open any business with `?id=`.
+- Tenant tables use two policies: members read via `user_belongs_to_pharmacy`, writes via `can_write_pharmacy(id, roles)` (owner counts as every role; requires a current trial/paid year) — this is what makes expired accounts read-only server-side.
+- Plan limits (branches, staff seats incl. pending invites) are enforced by triggers reading `subscription_plans`; the UI only mirrors them.
+- Staff join only via `pharmacy_invites` matched to a confirmed email (`my_invitations` / `accept_invitation`); pharmacy-scoped roles live in `pharmacy_memberships`, never in `user_roles`.
+- Product photos are paths in the private `product-images` bucket (`<pharmacy id>/…`), shown via signed URLs — public buckets are blocked on this project.

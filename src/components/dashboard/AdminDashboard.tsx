@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useServerFn } from '@tanstack/react-start';
+import { Link } from '@tanstack/react-router';
 import {
   LayoutDashboard,
   Building2,
@@ -1349,7 +1350,14 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                             </span>
                           </td>
                           <td className="py-3 text-slate-500">{ph.registered_at}</td>
-                          <td className="py-3 text-right">
+                          <td className="py-3 text-right whitespace-nowrap">
+                            <Link
+                              to="/pharmacy"
+                              search={{ id: ph.id }}
+                              className="px-2.5 py-1 mr-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-[11px] inline-block"
+                            >
+                              Open
+                            </Link>
                             <button
                               onClick={async () => {
                                 await PharmacyService.togglePharmacyStatus(ph.id, ph.status);
