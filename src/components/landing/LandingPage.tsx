@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import { SubscriptionPlan } from '@/lib/pharmacy-types';
 import { formatNumber } from '@/lib/utils';
-import { TRIAL_DAYS, offersTrial, yearlyPrice } from '@/lib/billing';
+import { TRIAL_DAYS, yearlyPrice } from '@/lib/billing';
 
 interface LandingPageProps {
   onOpenDashboard: () => void;
@@ -647,95 +647,100 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span>Annual</span>
+                <span>Yearly</span>
                 <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                  Save Up to 20%
+                  2 months free
                 </span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 items-stretch">
             {plans.map((plan) => {
               const isPopular = plan.slug === 'professional';
-              const price =
-                billingCycle === 'annual' ? plan.price_tzs_annual : plan.price_tzs_monthly;
+              const isCustom = plan.price_tzs_monthly === 0 && plan.price_tzs_annual === 0;
+              const yearly = yearlyPrice(plan);
+              const original = plan.price_tzs_monthly * 12;
+              const savedMonths = plan.price_tzs_monthly ? Math.round((original - yearly) / plan.price_tzs_monthly) : 0;
+              const blurb: Record<string, string> = {
+                starter: 'Best for a single outlet (ADDO or cosmetic shop)',
+                growth: 'Best for retail only pharmacy',
+                professional: 'Best for wholesale and retail pharmacy',
+                network: 'Best for multi-branch pharmacies with up to 6 pharmacies',
+                enterprise: 'For pharmacy chains & hospitals',
+              };
 
               return (
                 <div
                   key={plan.id}
-                  className={`rounded-2xl p-6 flex flex-col justify-between transition-all relative ${
+                  className={`rounded-2xl p-6 flex flex-col bg-white relative transition-all ${
                     isPopular
-                      ? 'bg-white border-2 border-blue-600 shadow-xl ring-2 ring-blue-500/20'
-                      : 'bg-slate-50 border border-slate-200/90 hover:border-slate-300 shadow-sm hover:shadow'
+                      ? 'border-2 border-blue-600 shadow-xl'
+                      : 'border border-slate-200 shadow-sm hover:shadow-md'
                   }`}
                 >
                   {isPopular && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                       Most Popular
                     </div>
                   )}
-
-                  <div>
-                    <h3 className="font-extrabold text-lg text-slate-900">{plan.name}</h3>
-                    <p className="text-xs text-slate-500 mt-1 min-h-[32px]">
-                      {plan.slug === 'starter' && 'For small pharmacies.'}
-                      {plan.slug === 'growth' && 'For growing pharmacies.'}
-                      {plan.slug === 'professional' && 'For multi-branch pharmacies.'}
-                      {plan.slug === 'enterprise' && 'For pharmacy chains & hospitals.'}
-                    </p>
-
-                    <div className="mt-4 mb-6">
-                      {plan.slug === 'enterprise' ? (
-                        <div className="text-2xl font-black text-slate-900">Custom Pricing</div>
+                  <div className="text-center">
+                    <span className="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                      {TRIAL_DAYS}-Day Free Trial
+                    </span>
+                    <h3 className="font-extrabold text-lg text-slate-900 uppercase mt-3">{plan.name}</h3>
+                    <p className="text-xs text-slate-500 mt-1 min-h-[32px]">{blurb[plan.slug] ?? ''}</p>
+                    <div className="mt-4 mb-5 min-h-[96px]">
+                      {isCustom ? (
+                        <>
+                          <div className="text-xs text-slate-500">Custom pricing</div>
+                          <div className="text-2xl font-black text-blue-600 mt-1">Contact Sales</div>
+                        </>
+                      ) : billingCycle === 'monthly' ? (
+                        <>
+                          <div className="text-xs text-slate-500">Est. for monthly</div>
+                          <div className="text-2xl font-black text-blue-600 mt-1">TZS {formatNumber(plan.price_tzs_monthly)}/=</div>
+                          <div className="text-xs text-slate-600 mt-1">per month</div>
+                        </>
                       ) : (
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl sm:text-3xl font-black text-slate-900">
-                            TZS {formatNumber(price)}
-                          </span>
-                          <span className="text-xs text-slate-500 font-semibold">/month</span>
-                        </div>
-                      )}
-                      {plan.slug !== 'enterprise' && (
-                        <div className="text-[11px] text-emerald-600 font-medium mt-1">
-                          {billingCycle === 'annual'
-                            ? `TZS ${formatNumber(yearlyPrice(plan))} billed yearly (20% off)`
-                            : `Paid yearly: TZS ${formatNumber(yearlyPrice(plan))} / year`}
-                        </div>
-                      )}
-                      {offersTrial(plan.slug) && (
-                        <div className="text-[11px] text-blue-600 font-bold mt-1">
-                          Includes a {TRIAL_DAYS}-day free trial
-                        </div>
+                        <>
+                          <div className="text-xs text-slate-500">Est. for yearly</div>
+                          <div className="text-2xl font-black text-blue-600 mt-1">TZS {formatNumber(yearly)}/=</div>
+                          {savedMonths > 0 && (
+                            <span className="inline-block mt-1 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                              {savedMonths} {savedMonths === 1 ? 'month' : 'months'} free
+                            </span>
+                          )}
+                          <div className="text-xs text-slate-600 mt-1">
+                            <span className="line-through text-slate-400">TZS {formatNumber(original)}</span> · per year
+                          </div>
+                          <div className="text-[11px] text-emerald-600 font-semibold">You save TZS {formatNumber(original - yearly)}</div>
+                        </>
                       )}
                     </div>
-
-                    <div className="space-y-2.5 pt-4 border-t border-slate-200">
-                      {plan.features.map((feature, fIdx) => (
-                        <div key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700">
-                          <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 stroke-[2.5]" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
-
-                  <div className="pt-8">
-                    <button
-                      onClick={() => onChoosePlan(plan.slug)}
-                      className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
-                        isPopular
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
-                          : 'bg-white hover:bg-slate-100 text-blue-700 border border-blue-200'
-                      }`}
-                    >
-                      {plan.slug === 'enterprise' ? 'Contact Sales' : 'Get Started'}
-                    </button>
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">What's included</div>
+                  <div className="space-y-2 flex-1">
+                    {plan.features.map((feature, fIdx) => (
+                      <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-700">
+                        <Check className="w-4 h-4 text-blue-600 shrink-0 mt-0.5 stroke-[2.5]" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
                   </div>
+                  <button
+                    onClick={() => onChoosePlan(plan.slug)}
+                    className="mt-6 w-full py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all"
+                  >
+                    {isCustom ? 'Request Enterprise Trial' : 'Start Free Trial'}
+                  </button>
                 </div>
               );
             })}
           </div>
+          <p className="text-center text-xs text-slate-500 mt-6">
+            Every plan starts with a {TRIAL_DAYS}-day free trial. No payment during the trial.
+          </p>
         </div>
       </section>
 
