@@ -20,7 +20,6 @@ import {
   FileText,
   HelpCircle,
   Bell,
-  Calendar,
   ChevronDown,
   ChevronRight,
   TrendingUp,

@@ -43,9 +43,10 @@ export function recordDayKey(value: string | null | undefined): string | null {
 
   const display = /^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\s+(\d{4})/.exec(trimmed);
   if (display) {
-    const month = MONTHS.indexOf(display[2].toLowerCase());
+    const [, day = '', mon = '', year = ''] = display;
+    const month = MONTHS.indexOf(mon.toLowerCase());
     if (month === -1) return null;
-    return `${display[3]}-${String(month + 1).padStart(2, '0')}-${display[1].padStart(2, '0')}`;
+    return `${year}-${String(month + 1).padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
 
   // Plain date with no time: take as-is (no timezone shift)
