@@ -1503,3 +1503,41 @@ export class PrescriptionService {
     fail(error);
   }
 }
+
+export interface AppNotification { id: string; kind: string; title: string; body: string | null; link: string | null; read_at: string | null; created_at: string }
+
+export class NotificationService {
+  static async list(): Promise<AppNotification[]> {
+    const { data, error } = await supabase.from('notifications').select('id, kind, title, body, link, read_at, created_at').order('created_at', { ascending: false }).limit(40);
+    fail(error);
+    return (data || []) as AppNotification[];
+  }
+  static async markAllRead(): Promise<void> {
+    const { error } = await supabase.from('notifications').update({ read_at: new Date().toISOString() }).is('read_at', null);
+    fail(error);
+  }
+  static async markRead(id: string): Promise<void> {
+    const { error } = await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id);
+    fail(error);
+  }
+}
+
+export class BrandingService {
+  static async getLogoUrl(pharmacyId: string): Promise<string | null> {
+    const { data } = await supabase.from('pharmacies').select('settings').eq('id', pharmacyId).maybeSingle();
+    const path = (data?.settings as any)?.logo_path as string | undefined;
+    if (!path) return null;
+    const { data: s } = await supabase.storage.from('product-images').createSignedUrl(path, 3600);
+    return s?.signedUrl ?? null;
+  }
+  static async uploadLogo(pharmacyId: string, file: File): Promise<void> {
+    if (file.size > 2 * 1024 * 1024) throw new Error('Logo must be under 2 MB');
+    const path = `${pharmacyId}/logo-${Date.now()}.${(file.name.split('.').pop() || 'png').toLowerCase()}`;
+    const { error: up } = await supabase.storage.from('product-images').upload(path, file, { contentType: file.type || 'image/png' });
+    if (up) throw new Error(`Logo upload failed: ${up.message}`);
+    const { data } = await supabase.from('pharmacies').select('settings').eq('id', pharmacyId).maybeSingle();
+    const settings = { ...((data?.settings as Record<string, unknown>) || {}), logo_path: path };
+    const { error } = await supabase.from('pharmacies').update({ settings: settings as any }).eq('id', pharmacyId);
+    fail(error);
+  }
+}
