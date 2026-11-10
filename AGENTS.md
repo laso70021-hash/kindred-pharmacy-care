@@ -35,6 +35,7 @@ use the editor.
 - Data access goes through `src/lib/pharmacy-service.ts` (browser client, RLS applies); keep row mapping there so components stay schema-agnostic.
 - Roles live only in `public.user_roles` (enum `user_role`), checked with `has_role` / `is_platform_admin`; never store roles on `profiles` — prevents privilege escalation.
 - The signup trigger gives the first account `super_admin` and later accounts `pharmacy_owner` — bootstraps the platform owner without hardcoded IDs.
+- Extra admins come from `public.admin_email_allowlist` (no client access); `super_admin` is granted only once the email is confirmed — so nobody can claim admin by signing up with an address they don't own.
 - Tenant tables are scoped by `user_belongs_to_pharmacy(pharmacy_id)`; rows with null `pharmacy_id` are platform-level and admin-only.
 - The AI assistant is the `askPharmacyAssistant` server function (admin-only, Lovable AI Gateway); keep model calls server-side.
 - Auth state comes from `AuthProvider` in `src/hooks/useAuth.tsx`, mounted once in `__root.tsx`; it owns the single `onAuthStateChange` listener.
