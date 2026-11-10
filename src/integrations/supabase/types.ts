@@ -533,6 +533,10 @@ export type Database = {
       pharmacies: {
         Row: {
           address: string | null
+          approved_at: string | null
+          approved_by: string | null
+          billing_choice: string
+          business_type: string
           city: string | null
           country: string | null
           created_at: string
@@ -544,14 +548,20 @@ export type Database = {
           phone: string | null
           plan_id: string | null
           registration_number: string | null
+          review_note: string | null
           settings: Json | null
           status: Database["public"]["Enums"]["pharmacy_status"] | null
+          subscription_ends_at: string | null
           tax_number: string | null
           trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          billing_choice?: string
+          business_type?: string
           city?: string | null
           country?: string | null
           created_at?: string
@@ -563,14 +573,20 @@ export type Database = {
           phone?: string | null
           plan_id?: string | null
           registration_number?: string | null
+          review_note?: string | null
           settings?: Json | null
           status?: Database["public"]["Enums"]["pharmacy_status"] | null
+          subscription_ends_at?: string | null
           tax_number?: string | null
           trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          billing_choice?: string
+          business_type?: string
           city?: string | null
           country?: string | null
           created_at?: string
@@ -582,8 +598,10 @@ export type Database = {
           phone?: string | null
           plan_id?: string | null
           registration_number?: string | null
+          review_note?: string | null
           settings?: Json | null
           status?: Database["public"]["Enums"]["pharmacy_status"] | null
+          subscription_ends_at?: string | null
           tax_number?: string | null
           trial_ends_at?: string | null
           updated_at?: string
@@ -1178,6 +1196,72 @@ export type Database = {
           },
         ]
       }
+      subscription_payments: {
+        Row: {
+          amount_tzs: number
+          created_at: string
+          id: string
+          method: string
+          period_months: number
+          pharmacy_id: string
+          plan_id: string | null
+          receipt_path: string | null
+          reference: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_by: string | null
+        }
+        Insert: {
+          amount_tzs?: number
+          created_at?: string
+          id?: string
+          method?: string
+          period_months?: number
+          pharmacy_id: string
+          plan_id?: string | null
+          receipt_path?: string | null
+          reference?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by?: string | null
+        }
+        Update: {
+          amount_tzs?: number
+          created_at?: string
+          id?: string
+          method?: string
+          period_months?: number
+          pharmacy_id?: string
+          plan_id?: string | null
+          receipt_path?: string | null
+          reference?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_payments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -1408,6 +1492,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_registration: {
+        Args: { _payload: Json; _user_id: string }
+        Returns: string
+      }
+      extend_trial: {
+        Args: { _days: number; _pharmacy_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -1416,13 +1508,39 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      plan_yearly_price: { Args: { _plan_id: string }; Returns: number }
+      review_registration: {
+        Args: { _decision: string; _note?: string; _pharmacy_id: string }
+        Returns: undefined
+      }
+      review_subscription_payment: {
+        Args: { _decision: string; _note?: string; _payment_id: string }
+        Returns: undefined
+      }
+      submit_registration: { Args: { _payload: Json }; Returns: string }
+      submit_subscription_payment: {
+        Args: {
+          _method: string
+          _pharmacy_id: string
+          _plan_slug: string
+          _receipt_path: string
+          _reference: string
+        }
+        Returns: string
+      }
       user_belongs_to_pharmacy: {
         Args: { pharmacy_uuid: string }
         Returns: boolean
       }
     }
     Enums: {
-      pharmacy_status: "active" | "pending" | "suspended" | "trial" | "expired"
+      pharmacy_status:
+        | "active"
+        | "pending"
+        | "suspended"
+        | "trial"
+        | "expired"
+        | "rejected"
       user_role:
         | "super_admin"
         | "pharmacy_owner"
@@ -1560,7 +1678,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      pharmacy_status: ["active", "pending", "suspended", "trial", "expired"],
+      pharmacy_status: [
+        "active",
+        "pending",
+        "suspended",
+        "trial",
+        "expired",
+        "rejected",
+      ],
       user_role: [
         "super_admin",
         "pharmacy_owner",
