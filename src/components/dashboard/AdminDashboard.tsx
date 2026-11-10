@@ -20,7 +20,6 @@ import {
   FileText,
   HelpCircle,
   Bell,
-  Calendar,
   ChevronDown,
   ChevronRight,
   TrendingUp,
@@ -90,6 +89,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { askPharmacyAssistant } from '@/lib/ai-assistant.functions';
 import { RegistrationsPanel, useRegistrations, needsAction } from '@/components/dashboard/RegistrationsPanel';
 import { STATUS_LABELS } from '@/lib/billing';
+import { filterByRange, presetRange, recordDayKey, formatDayKey, type DateRange } from '@/lib/date-range';
+import { DateRangeFilter } from '@/components/dashboard/DateRangeFilter';
 
 interface AdminDashboardProps {
   onBackToLanding: () => void;
@@ -115,22 +116,51 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
   const [productsOpen, setProductsOpen] = useState(false);
 
   // Core Data States (Direct from Supabase)
-  const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
+  const [allPharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [allCustomers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [batches, setBatches] = useState<InventoryBatch[]>([]);
-  const [sales, setSales] = useState<SaleTransaction[]>([]);
-  const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
+  const [allSales, setSales] = useState<SaleTransaction[]>([]);
+  const [allPurchases, setPurchases] = useState<PurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [allExpenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [allUsers, setUsers] = useState<UserProfile[]>([]);
   const [aiFeatures, setAiFeatures] = useState<AIFeatureState[]>([]);
   const [recommendations, setRecommendations] = useState<AIRecommendationItem[]>([]);
   const [systemHealth, setSystemHealth] = useState<SystemHealthItem[]>([]);
-  const [auditLogs, setAuditLogs] = useState<ActivityLogItem[]>([]);
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [allAuditLogs, setAuditLogs] = useState<ActivityLogItem[]>([]);
+  const [allTickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Date Range filter — set after mount so server and browser agree on "today"
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  useEffect(() => {
+    setDateRange(presetRange('last30'));
+  }, []);
+
+  const pharmacies = filterByRange(allPharmacies, (p) => p.registered_at, dateRange);
+  const customers = filterByRange(allCustomers, (c) => c.created_at, dateRange);
+  const sales = filterByRange(allSales, (s) => s.created_at, dateRange);
+  const purchases = filterByRange(allPurchases, (po) => po.order_date || po.created_at, dateRange);
+  const expenses = filterByRange(allExpenses, (e) => e.expense_date || e.created_at, dateRange);
+  const users = filterByRange(allUsers, (u) => u.created_at, dateRange);
+  const auditLogs = filterByRange(allAuditLogs, (a) => a.time, dateRange);
+  const tickets = filterByRange(allTickets, (t) => t.created_at, dateRange);
+
+  // Sections where the date filter applies, with "shown / total" counts
+  const dateScopedCounts: Record<string, [number, number]> = {
+    dashboard: [sales.length + purchases.length, allSales.length + allPurchases.length],
+    businesses: [pharmacies.length, allPharmacies.length],
+    users: [users.length, allUsers.length],
+    orders: [sales.length, allSales.length],
+    purchases: [purchases.length, allPurchases.length],
+    customers: [customers.length, allCustomers.length],
+    expenses: [expenses.length, allExpenses.length],
+    reports: [sales.length + expenses.length + purchases.length, allSales.length + allExpenses.length + allPurchases.length],
+    'audit-logs': [auditLogs.length, allAuditLogs.length],
+    support: [tickets.length, allTickets.length]
+  };
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -308,35 +338,33 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
   }, []);
 
   // Live KPI Calculations derived strictly from Supabase records
-  const totalPharmaciesCount = pharmacies.length;
-  const totalUsersCount = users.length;
+  const totalPharmaciesCount = allPharmacies.length;
+  const totalUsersCount = allUsers.length;
   const totalSalesVolume = sales.reduce((acc, curr) => acc + (curr.total || 0), 0);
   const totalOrdersCount = sales.length + purchases.length;
   const totalPlatformRevenue = Math.round(totalSalesVolume * 0.1) + (totalPharmaciesCount * 19000);
   const stockAlertsCount = batches.filter((b) => (b.days_to_expiry ?? 100) <= 90 || b.quantity <= 20).length;
 
-  // Chart Data derived from sales
-  const salesTrendData: SalesDataPoint[] = sales.length > 0
-    ? sales.slice(0, 10).map((s) => ({
-        date: s.created_at.slice(0, 6),
-        sales: s.total,
-        orders: 1,
-        revenue: Math.round(s.total * 0.1)
-      }))
-    : [
-        { date: '02 Oct', sales: 3200000, orders: 380, revenue: 800000 },
-        { date: '08 Oct', sales: 6200000, orders: 740, revenue: 1550000 },
-        { date: '14 Oct', sales: 15400000, orders: 1820, revenue: 3850000 },
-        { date: '20 Oct', sales: 19800000, orders: 2330, revenue: 4950000 },
-        { date: '26 Oct', sales: 6400000, orders: 750, revenue: 1600000 },
-        { date: '01 Nov', sales: 5200000, orders: 610, revenue: 1300000 }
-      ];
+  // Chart Data: filtered sales grouped per day, oldest first
+  const salesByDay = new Map<string, SalesDataPoint>();
+  for (const s of sales) {
+    const key = recordDayKey(s.created_at);
+    if (!key) continue;
+    const point = salesByDay.get(key) ?? { date: formatDayKey(key).slice(0, 6), sales: 0, orders: 0, revenue: 0 };
+    point.sales += s.total || 0;
+    point.orders += 1;
+    point.revenue += Math.round((s.total || 0) * 0.1);
+    salesByDay.set(key, point);
+  }
+  const salesTrendData: SalesDataPoint[] = [...salesByDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, p]) => p);
 
   const planChartData = [
-    { name: 'Standard', value: Math.max(1, pharmacies.filter((p) => p.plan === 'Standard').length), color: '#3B82F6', pct: '48%' },
-    { name: 'Professional', value: Math.max(1, pharmacies.filter((p) => p.plan === 'Professional').length), color: '#8B5CF6', pct: '28%' },
-    { name: 'Enterprise', value: Math.max(1, pharmacies.filter((p) => p.plan === 'Enterprise').length), color: '#10B981', pct: '14%' },
-    { name: 'Trial', value: Math.max(1, pharmacies.filter((p) => p.plan === 'Trial').length), color: '#F59E0B', pct: '10%' }
+    { name: 'Standard', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Standard').length), color: '#3B82F6', pct: '48%' },
+    { name: 'Professional', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Professional').length), color: '#8B5CF6', pct: '28%' },
+    { name: 'Enterprise', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Enterprise').length), color: '#10B981', pct: '14%' },
+    { name: 'Trial', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Trial').length), color: '#F59E0B', pct: '10%' }
   ];
 
   // Actions
@@ -804,21 +832,28 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
               </p>
             </div>
 
-            <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs text-xs font-semibold text-slate-700">
-              <span className="text-slate-400 text-[11px] uppercase tracking-wider font-bold">
-                Date Range
-              </span>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-slate-800 border border-slate-200/80">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <span>02 Oct 2026, 00:00</span>
-              </div>
-              <span className="text-slate-400">to</span>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-slate-800 border border-slate-200/80">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <span>01 Nov 2026, 23:59</span>
-              </div>
-            </div>
+            {dateScopedCounts[activeNav] && (
+              <DateRangeFilter value={dateRange} onChange={setDateRange} />
+            )}
           </div>
+
+          {dateScopedCounts[activeNav] &&
+            dateRange &&
+            (dateRange.from || dateRange.to) &&
+            dateScopedCounts[activeNav][0] < dateScopedCounts[activeNav][1] && (
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 text-xs text-blue-900">
+                <span className="font-semibold">
+                  Showing {dateScopedCounts[activeNav][0]} of {dateScopedCounts[activeNav][1]} records in the selected dates.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDateRange(presetRange('all'))}
+                  className="font-bold text-blue-700 hover:underline"
+                >
+                  Show all time
+                </button>
+              </div>
+            )}
 
           {/* ========================================================
               MODULE 1: DASHBOARD OVERVIEW
@@ -851,7 +886,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-slate-900">{totalPharmaciesCount}</span>
-                    <span className="text-[11px] font-bold text-emerald-600">Active</span>
+                    <span className="text-[11px] font-bold text-emerald-600">+{pharmacies.length} in period</span>
                   </div>
                   <div className="text-[11px] text-slate-400 font-medium mt-1">Tenant businesses</div>
                 </div>
@@ -865,7 +900,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-slate-900">{totalUsersCount}</span>
-                    <span className="text-[11px] font-bold text-emerald-600">Profiles</span>
+                    <span className="text-[11px] font-bold text-emerald-600">+{users.length} in period</span>
                   </div>
                   <div className="text-[11px] text-slate-400 font-medium mt-1">All platform users</div>
                 </div>
@@ -1046,7 +1081,11 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   </div>
 
                   <div className="h-64 w-full">
-                    {isMounted ? (
+                    {isMounted && salesTrendData.length === 0 ? (
+                      <div className="h-full w-full rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center text-xs font-semibold text-slate-400">
+                        No sales recorded in the selected dates
+                      </div>
+                    ) : isMounted ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={salesTrendData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />

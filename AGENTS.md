@@ -42,3 +42,4 @@ use the editor.
 - Tenant tables are scoped by `user_belongs_to_pharmacy(pharmacy_id)`; rows with null `pharmacy_id` are platform-level and admin-only.
 - The AI assistant is the `askPharmacyAssistant` server function (admin-only, Lovable AI Gateway); keep model calls server-side.
 - Auth state comes from `AuthProvider` in `src/hooks/useAuth.tsx`, mounted once in `__root.tsx`; it owns the single `onAuthStateChange` listener.
+- Dashboard date filtering uses `src/lib/date-range.ts` (inclusive local calendar days; accepts ISO and "DD Mon YYYY" display dates); filter loaded records in the component, keep totals that describe the whole platform unfiltered — one rule for every dashboard.

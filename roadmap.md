@@ -1,7 +1,7 @@
 # Swahivo roadmap (unified master plan)
 
 - [x] 1. Registration with plan selection (owner / supplier), 30-day Starter trial, yearly payment proof, admin approval
-- [ ] 2. Working date-range filter on dashboards
+- [x] 2. Working date-range filter on dashboards
 - [ ] 3. Pharmacy Owner dashboard (branches, staff invites & roles, inventory/profit) — also block data access for expired accounts
 - [ ] 4. Supplier marketplace & restock orders with payment proof → auto-stock to branch
 - [ ] 5. Cashier POS with product photo grid, cart, payments, cash drawer
