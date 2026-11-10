@@ -17,9 +17,13 @@ import {
   SystemHealthItem,
   ActivityLogItem,
   SalesDataPoint,
-  SubscriptionPlan
+  SubscriptionPlan,
+  BusinessRegistration,
+  SubscriptionPayment,
+  RegistrationInput
 } from '@/lib/pharmacy-types';
 import { formatDateDeterministic } from './utils';
+import { effectiveStatus, yearlyPrice } from './billing';
 
 // Rows are mapped defensively below (the source app tolerated several schema
 // versions), so this layer reads through an untyped client.
@@ -72,8 +76,8 @@ export class PharmacyService {
             id: d.id,
             slug: planCode,
             name: d.plan_name || d.name || 'Plan',
-            price_tzs_monthly: d.monthly_price ?? d.price_tzs_monthly ?? 0,
-            price_tzs_annual: d.annual_price ? Math.round(d.annual_price / 12) : (d.monthly_price ? Math.round(d.monthly_price * 0.8) : 0),
+            price_tzs_monthly: Number(d.monthly_price ?? d.price_tzs_monthly ?? 0),
+            price_tzs_annual: d.price_tzs_annual != null ? Number(d.price_tzs_annual) : d.annual_price ? Math.round(d.annual_price / 12) : (d.monthly_price ? Math.round(d.monthly_price * 0.8) : 0),
             max_branches: d.max_branches ?? 999,
             max_employees: d.max_employees ?? 999,
             has_ai_insights: Boolean(d.has_ai_insights || d.features?.prescription_assistant || d.features?.advanced_analytics),
@@ -99,7 +103,7 @@ export class PharmacyService {
     try {
       const { data, error } = await supabase
         .from('pharmacies')
-        .select('*')
+        .select('*, subscription_plans!pharmacies_plan_id_fkey(name, slug)')
         .order('created_at', { ascending: false });
 
       if (!error && data) {
@@ -110,10 +114,10 @@ export class PharmacyService {
           tax_number: d.tax_number || '',
           owner_name: d.owner_name || 'Owner',
           owner_email: d.email || 'info@' + (d.name || 'pharmacy').toLowerCase().replace(/\s+/g, '') + '.com',
-          plan: (d.plan_name || (d.plan_id ? 'Professional' : 'Standard')) as any,
-          plan_slug: d.plan_slug || 'professional',
+          plan: (d.subscription_plans?.name || d.plan_name || 'Standard') as any,
+          plan_slug: d.subscription_plans?.slug || d.plan_slug || 'starter',
           registered_at: formatDateDeterministic(d.created_at),
-          status: (d.status === 'active' || d.status === 'Active') ? 'Active' : (d.status === 'suspended' ? 'Suspended' : 'Pending'),
+          status: (['active', 'trial'].includes(effectiveStatus(d))) ? 'Active' : (d.status === 'suspended' ? 'Suspended' : 'Pending'),
           sales_total: d.sales_total || 0,
           branches_count: d.branches_count || 1,
           employees_count: d.employees_count || 3,
@@ -863,5 +867,143 @@ export class PharmacyService {
     } catch (err: any) {
       return { data: null, error: err.message };
     }
+  }
+
+  // ==========================================
+  // REGISTRATIONS, APPROVALS & YEARLY BILLING
+  // ==========================================
+  private static readonly registrationSelect =
+    '*, subscription_plans!pharmacies_plan_id_fkey(name, slug, price_tzs_monthly, price_tzs_annual), subscription_payments(*)';
+
+  private static mapRegistration(d: any): BusinessRegistration {
+    const plan = d.subscription_plans || {};
+    const payments: SubscriptionPayment[] = (d.subscription_payments || [])
+      .map((p: any) => ({
+        id: p.id,
+        pharmacy_id: p.pharmacy_id,
+        plan_id: p.plan_id ?? null,
+        amount_tzs: Number(p.amount_tzs) || 0,
+        method: p.method || 'mobile_money',
+        reference: p.reference ?? null,
+        receipt_path: p.receipt_path ?? null,
+        status: p.status,
+        review_note: p.review_note ?? null,
+        created_at: p.created_at,
+        reviewed_at: p.reviewed_at ?? null,
+      }))
+      .sort((a: SubscriptionPayment, b: SubscriptionPayment) => b.created_at.localeCompare(a.created_at));
+    return {
+      id: d.id,
+      name: d.name,
+      business_type: d.business_type === 'supplier' ? 'supplier' : 'pharmacy',
+      owner_id: d.owner_id ?? null,
+      owner_name: d.owner_name ?? null,
+      email: d.email ?? null,
+      phone: d.phone ?? null,
+      city: d.city ?? null,
+      address: d.address ?? null,
+      registration_number: d.registration_number ?? null,
+      tax_number: d.tax_number ?? null,
+      plan_id: d.plan_id ?? null,
+      plan_slug: plan.slug || 'starter',
+      plan_name: plan.name || 'No plan',
+      yearly_price: yearlyPrice({
+        slug: plan.slug || '',
+        price_tzs_monthly: Number(plan.price_tzs_monthly) || 0,
+        price_tzs_annual: Number(plan.price_tzs_annual) || 0,
+      }),
+      billing_choice: d.billing_choice === 'annual' ? 'annual' : 'trial',
+      status: d.status,
+      effective_status: effectiveStatus(d),
+      trial_ends_at: d.trial_ends_at ?? null,
+      subscription_ends_at: d.subscription_ends_at ?? null,
+      approved_at: d.approved_at ?? null,
+      review_note: d.review_note ?? null,
+      created_at: d.created_at,
+      payments,
+    };
+  }
+
+  static async getMyBusiness(userId: string): Promise<BusinessRegistration | null> {
+    const { data, error } = await supabase
+      .from('pharmacies')
+      .select(this.registrationSelect)
+      .eq('owner_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? this.mapRegistration(data) : null;
+  }
+
+  static async getRegistrations(): Promise<BusinessRegistration[]> {
+    const { data, error } = await supabase
+      .from('pharmacies')
+      .select(this.registrationSelect)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data || []).map((d: any) => this.mapRegistration(d));
+  }
+
+  static async submitRegistration(input: RegistrationInput): Promise<string> {
+    const { data, error } = await supabase.rpc('submit_registration', { _payload: input });
+    if (error) throw new Error(error.message);
+    return data as string;
+  }
+
+  static async submitPayment(args: {
+    userId: string;
+    pharmacyId: string;
+    planSlug: string;
+    method: string;
+    reference: string;
+    file?: File | null;
+  }): Promise<void> {
+    let receiptPath = '';
+    if (args.file) {
+      const safe = args.file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
+      receiptPath = `${args.userId}/${Date.now()}-${safe}`;
+      const { error: upErr } = await supabase.storage
+        .from('payment-receipts')
+        .upload(receiptPath, args.file, { contentType: args.file.type || 'application/octet-stream' });
+      if (upErr) throw new Error(`Receipt upload failed: ${upErr.message}`);
+    }
+    const { error } = await supabase.rpc('submit_subscription_payment', {
+      _pharmacy_id: args.pharmacyId,
+      _plan_slug: args.planSlug,
+      _method: args.method,
+      _reference: args.reference,
+      _receipt_path: receiptPath,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  static async reviewRegistration(pharmacyId: string, decision: 'approve' | 'reject', note?: string): Promise<void> {
+    const { error } = await supabase.rpc('review_registration', {
+      _pharmacy_id: pharmacyId,
+      _decision: decision,
+      _note: note || null,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  static async reviewPayment(paymentId: string, decision: 'confirm' | 'reject', note?: string): Promise<void> {
+    const { error } = await supabase.rpc('review_subscription_payment', {
+      _payment_id: paymentId,
+      _decision: decision,
+      _note: note || null,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  static async extendTrial(pharmacyId: string, days: number): Promise<void> {
+    const { error } = await supabase.rpc('extend_trial', { _pharmacy_id: pharmacyId, _days: days });
+    if (error) throw new Error(error.message);
+  }
+
+  static async getReceiptUrl(path: string): Promise<string> {
+    const { data, error } = await supabase.storage.from('payment-receipts').createSignedUrl(path, 600);
+    if (error || !data) throw new Error(error?.message || 'Receipt not available');
+    return data.signedUrl;
   }
 }
