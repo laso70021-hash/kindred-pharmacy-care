@@ -356,16 +356,9 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
     point.revenue += Math.round((s.total || 0) * 0.1);
     salesByDay.set(key, point);
   }
-  const salesTrendData: SalesDataPoint[] = allSales.length > 0
-    ? [...salesByDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, p]) => p)
-    : [
-        { date: '02 Oct', sales: 3200000, orders: 380, revenue: 800000 },
-        { date: '08 Oct', sales: 6200000, orders: 740, revenue: 1550000 },
-        { date: '14 Oct', sales: 15400000, orders: 1820, revenue: 3850000 },
-        { date: '20 Oct', sales: 19800000, orders: 2330, revenue: 4950000 },
-        { date: '26 Oct', sales: 6400000, orders: 750, revenue: 1600000 },
-        { date: '01 Nov', sales: 5200000, orders: 610, revenue: 1300000 }
-      ];
+  const salesTrendData: SalesDataPoint[] = [...salesByDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, p]) => p);
 
   const planChartData = [
     { name: 'Standard', value: Math.max(1, allPharmacies.filter((p) => p.plan === 'Standard').length), color: '#3B82F6', pct: '48%' },
@@ -1088,7 +1081,11 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                   </div>
 
                   <div className="h-64 w-full">
-                    {isMounted ? (
+                    {isMounted && salesTrendData.length === 0 ? (
+                      <div className="h-full w-full rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center text-xs font-semibold text-slate-400">
+                        No sales recorded in the selected dates
+                      </div>
+                    ) : isMounted ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={salesTrendData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
