@@ -35,6 +35,7 @@ import {
 import type { WorkspaceRole, StaffRole } from './workspace';
 import { formatDateDeterministic } from './utils';
 import { effectiveStatus, yearlyPrice } from './billing';
+import type { EntryModule, EntryRow, EntryReferences } from './entry-model';
 
 // Rows are mapped defensively below (the source app tolerated several schema
 // versions), so this layer reads through an untyped client.
@@ -1024,6 +1025,62 @@ export class PharmacyService {
   }
 }
 
+export class EntryService {
+  static async list(pid: string, module: EntryModule): Promise<(EntryRow & { id: string })[]> {
+    const tables = { products: 'products', batches: 'inventory_batches', branches: 'branches', categories: 'categories', suppliers: 'suppliers', staff: 'pharmacy_invites', settings: 'pharmacies' };
+    const { data, error } = await supabase.from(tables[module]).select('*').eq(module === 'settings' ? 'id' : 'pharmacy_id', pid);
+    fail(error);
+    const refs = module === 'products' || module === 'batches' || module === 'staff' ? await this.referenceRows(pid) : null;
+    return (data ?? []).map((row: Record<string, unknown>) => {
+      const mapped = Object.fromEntries(Object.entries(row).map(([k,v]) => [k, v == null ? '' : String(v)])) as EntryRow & { id: string };
+      if (module === 'products' && refs) {
+        mapped.category_name = refs.categories.find(r => r.id === row.category_id)?.name ?? '';
+        mapped.supplier_name = refs.suppliers.find(r => r.id === row.supplier_id)?.name ?? '';
+      }
+      if (module === 'batches' && refs) {
+        mapped.product_sku = refs.products.find(r => r.id === row.product_id)?.sku ?? '';
+        mapped.branch_code = refs.branches.find(r => r.id === row.branch_id)?.code ?? '';
+      }
+      if (module === 'staff' && refs) {
+        const ids = Array.isArray(row.branch_ids) && row.branch_ids.length ? row.branch_ids : row.branch_id ? [row.branch_id] : [];
+        mapped.branch_codes = ids.map(id => refs.branches.find(r => r.id === id)?.code ?? '').join(';');
+      }
+      return mapped;
+    });
+  }
+  private static async referenceRows(pid: string) {
+    const [categories,suppliers,branches,products] = await Promise.all(['categories','suppliers','branches','products'].map(async table => {
+      const { data,error } = await supabase.from(table).select('*').eq('pharmacy_id',pid); fail(error); return (data ?? []) as EntryRow[];
+    }));
+    return { categories: categories ?? [], suppliers: suppliers ?? [], branches: branches ?? [], products: products ?? [] };
+  }
+  static async references(pid: string): Promise<EntryReferences> {
+    const r = await this.referenceRows(pid);
+    const staff = await WorkspaceService.getStaff(pid);
+    return {
+      category_name: r.categories.filter(x=>String(x.is_active)!=='false').map(x=>({value:x.name ?? '',label:x.name ?? ''})),
+      supplier_name: r.suppliers.filter(x=>String(x.is_active)!=='false').map(x=>({value:x.name ?? '',label:x.name ?? ''})),
+      product_sku: r.products.filter(x=>x.sku).map(x=>({value:x.sku ?? '',label:`${x.name} (${x.sku})`})),
+      branch_code: r.branches.filter(x=>String(x.is_active)!=='false' && x.code).map(x=>({value:x.code ?? '',label:`${x.name} (${x.code})`})),
+      branch_codes: r.branches.filter(x=>x.code).map(x=>({value:x.code ?? '',label:`${x.name} (${x.code})`})),
+      manager_id: staff.filter(x=>x.role==='manager' && x.is_active).map(x=>({value:x.user_id,label:x.full_name})),
+    };
+  }
+  static async save(pid: string,module: EntryModule,row: EntryRow,id?: string): Promise<string> {
+    const { data,error } = await supabase.rpc('save_business_entry',{_pharmacy:pid,_module:module,_row:row,_id:id ?? null}); fail(error); return String(data);
+  }
+  static async import(pid: string,module: EntryModule,rows: EntryRow[],fileName: string) {
+    const bytes = new TextEncoder().encode(JSON.stringify({module,rows}));
+    const digest = await crypto.subtle.digest('SHA-256',bytes);
+    const fingerprint = Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+    const {data,error}=await supabase.rpc('import_business_rows',{_pharmacy:pid,_module:module,_rows:rows,_fingerprint:fingerprint,_file_name:fileName}); fail(error);
+    return data as {status:string;successful_count:number;failed_count:number;error?:string};
+  }
+  static async history(pid: string) {
+    const {data,error}=await supabase.from('import_history').select('*').eq('pharmacy_id',pid).order('created_at',{ascending:false}); fail(error); return data ?? [];
+  }
+}
+
 // ==========================================
 // PHARMACY WORKSPACE (owner + staff) — every call is scoped to one pharmacy id
 // ==========================================
@@ -1280,49 +1337,16 @@ export class WorkspaceService {
     userId: string,
     input: { product_id: string; branch_id: string; batch_number: string; quantity: number; cost_per_unit: number; expiry_date: string }
   ): Promise<void> {
-    const { data: batch, error } = await supabase
-      .from('inventory_batches')
-      .insert({
-        pharmacy_id: pharmacyId,
-        branch_id: input.branch_id,
-        product_id: input.product_id,
-        batch_number: input.batch_number,
-        quantity: input.quantity,
-        cost_per_unit: input.cost_per_unit,
-        expiry_date: input.expiry_date,
-        received_date: new Date().toISOString().slice(0, 10),
-      })
-      .select('id')
-      .single();
-    fail(error);
-    const { error: mErr } = await supabase.from('stock_movements').insert({
-      pharmacy_id: pharmacyId,
-      product_id: input.product_id,
-      batch_id: batch?.id ?? null,
-      movement_type: 'stock_in',
-      quantity: input.quantity,
-      notes: `Received batch ${input.batch_number}`,
-      created_by: userId,
-    });
-    fail(mErr);
+    const [{data:product,error:pErr},{data:branch,error:bErr}] = await Promise.all([
+      supabase.from('products').select('sku').eq('id',input.product_id).eq('pharmacy_id',pharmacyId).single(),
+      supabase.from('branches').select('code').eq('id',input.branch_id).eq('pharmacy_id',pharmacyId).single(),
+    ]);
+    fail(pErr); fail(bErr);
+    await EntryService.save(pharmacyId,'batches',{product_sku:product?.sku ?? '',branch_code:branch?.code ?? '',batch_number:input.batch_number,quantity:String(input.quantity),cost_per_unit:String(input.cost_per_unit),expiry_date:input.expiry_date});
   }
 
   static async adjustBatch(pharmacyId: string, userId: string, batch: WsBatch, newQuantity: number, reason: string): Promise<void> {
-    const { error } = await supabase
-      .from('inventory_batches')
-      .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
-      .eq('id', batch.id);
-    fail(error);
-    const { error: mErr } = await supabase.from('stock_movements').insert({
-      pharmacy_id: pharmacyId,
-      product_id: batch.product_id,
-      batch_id: batch.id,
-      movement_type: 'adjustment',
-      quantity: newQuantity - batch.quantity,
-      notes: reason || 'Stock count adjustment',
-      created_by: userId,
-    });
-    fail(mErr);
+    const {error}=await supabase.rpc('correct_batch_stock',{_pharmacy:pharmacyId,_batch:batch.id,_quantity:newQuantity,_reason:reason}); fail(error);
   }
 
   // ---------- money ----------

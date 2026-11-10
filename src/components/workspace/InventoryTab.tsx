@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, PackagePlus, Pill, Search } from 'lucide-react';
-import { WorkspaceService } from '@/lib/pharmacy-service';
+import { EntryForm } from './EntryForm';
+import { EntryService, WorkspaceService } from '@/lib/pharmacy-service';
 import type { Workspace, WsProduct } from '@/lib/pharmacy-types';
 import { can, stockState, EXPIRY_WARNING_DAYS } from '@/lib/workspace';
 import { formatNumber, formatDateDeterministic } from '@/lib/utils';
@@ -15,6 +16,8 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
   const { data: products = [], isLoading } = useQuery({ queryKey: ['ws', pid, 'products'], queryFn: () => WorkspaceService.getProducts(pid) });
   const { data: batches = [] } = useQuery({ queryKey: ['ws', pid, 'batches'], queryFn: () => WorkspaceService.getBatches(pid) });
   const { data: branches = [] } = useQuery({ queryKey: ['ws', pid, 'branches'], queryFn: () => WorkspaceService.getBranches(pid) });
+  const { data: entryProducts = [] } = useQuery({ queryKey: ['entry', pid, 'products'], queryFn: () => EntryService.list(pid, 'products') });
+  const { data: refs = {} } = useQuery({ queryKey: ['entry-refs', pid], queryFn: () => EntryService.references(pid) });
   const [view, setView] = useState<'grid' | 'batches'>('grid');
   const [q, setQ] = useState('');
   const [branch, setBranch] = useState('');
@@ -99,83 +102,9 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
         </div>
       )}
 
-      {editing && <ProductForm initial={editing} busy={busy} onClose={() => setEditing(null)} onSave={(input, photo, active) => void run(async () => {
-        await WorkspaceService.saveProduct(pid, input, photo);
-        if (input.id && active !== undefined) await WorkspaceService.setProductActive(input.id, active);
-        setEditing(null);
-      }, 'Product saved')} />}
-      {receiving !== null && <ReceiveForm products={products} branches={branches} initialProduct={receiving} busy={busy} onClose={() => setReceiving(null)} onSave={(input) => void run(async () => {
-        await WorkspaceService.receiveStock(pid, userId, input);
-        setReceiving(null);
-      }, 'Stock received')} />}
+      {editing && <EntryForm module="products" initial={editing.id ? entryProducts.find(p=>p.id===editing.id) : undefined} existing={entryProducts} references={refs} onClose={()=>setEditing(null)} onSave={async row=>{await EntryService.save(pid,'products',row,editing.id);refresh();void qc.invalidateQueries({queryKey:['entry',pid]});}} />}
+      {receiving !== null && <EntryForm module="batches" references={refs} onClose={()=>setReceiving(null)} onSave={async row=>{await EntryService.save(pid,'batches',row);refresh();}} />}
+
     </div>
-  );
-}
-
-function ProductForm({ initial, busy, onClose, onSave }: { initial: Partial<WsProduct>; busy: boolean; onClose: () => void; onSave: (i: any, photo: File | null, active?: boolean) => void }) {
-  const [f, setF] = useState({
-    name: initial.name ?? '', generic_name: initial.generic_name ?? '', sku: initial.sku ?? '', barcode: initial.barcode ?? '',
-    dosage_form: initial.dosage_form ?? 'Tablets', strength: initial.strength ?? '', cost_price: String(initial.cost_price ?? ''),
-    selling_price: String(initial.selling_price ?? ''), min_stock_level: String(initial.min_stock_level ?? 10), is_prescription_required: initial.is_prescription_required ?? false,
-  });
-  const [active, setActive] = useState(initial.is_active ?? true);
-  const [photo, setPhoto] = useState<File | null>(null);
-  const preview = photo ? URL.createObjectURL(photo) : initial.image_src ?? null;
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
-  return (
-    <Modal title={initial.id ? 'Edit product' : 'Add product'} onClose={onClose} wide>
-      <form className="grid grid-cols-1 sm:grid-cols-2 gap-3" onSubmit={(e) => {
-        e.preventDefault();
-        if (!f.name.trim() || !Number(f.selling_price)) return;
-        onSave({ ...(initial.id ? { id: initial.id } : {}), ...f, name: f.name.trim(), cost_price: Number(f.cost_price) || 0, selling_price: Number(f.selling_price), min_stock_level: Number(f.min_stock_level) || 0 }, photo, initial.id ? active : undefined);
-      }}>
-        <div className="sm:col-span-2 flex items-center gap-3">
-          <div className="w-20 h-20 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center">{preview ? <img src={preview} alt="" className="w-full h-full object-cover" /> : <Pill className="w-8 h-8 text-slate-300" />}</div>
-          <Field label="Photo" hint="JPG/PNG up to 5 MB — shown on the cashier grid"><input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} className="text-xs" /></Field>
-        </div>
-        <Field label="Name"><input className={inputCls} required value={f.name} onChange={set('name')} /></Field>
-        <Field label="Generic name"><input className={inputCls} value={f.generic_name} onChange={set('generic_name')} /></Field>
-        <Field label="Strength"><input className={inputCls} value={f.strength} onChange={set('strength')} placeholder="500mg" /></Field>
-        <Field label="Form"><input className={inputCls} value={f.dosage_form} onChange={set('dosage_form')} /></Field>
-        <Field label="SKU"><input className={inputCls} value={f.sku} onChange={set('sku')} /></Field>
-        <Field label="Barcode"><input className={inputCls} value={f.barcode} onChange={set('barcode')} /></Field>
-        <Field label="Cost price (TZS)"><input type="number" min={0} className={inputCls} value={f.cost_price} onChange={set('cost_price')} /></Field>
-        <Field label="Selling price (TZS)"><input type="number" min={1} required className={inputCls} value={f.selling_price} onChange={set('selling_price')} /></Field>
-        <Field label="Minimum stock"><input type="number" min={0} className={inputCls} value={f.min_stock_level} onChange={set('min_stock_level')} /></Field>
-        <div className="flex flex-col gap-2 justify-end text-xs font-semibold text-slate-700">
-          <label className="flex items-center gap-2"><input type="checkbox" checked={f.is_prescription_required} onChange={(e) => setF({ ...f, is_prescription_required: e.target.checked })} /> Prescription required</label>
-          {initial.id && <label className="flex items-center gap-2"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /> Available for sale</label>}
-        </div>
-        <button type="submit" disabled={busy} className={`${primaryBtn} sm:col-span-2 justify-center py-2.5`}>{busy ? 'Saving…' : 'Save product'}</button>
-      </form>
-    </Modal>
-  );
-}
-
-function ReceiveForm({ products, branches, initialProduct, busy, onClose, onSave }: { products: WsProduct[]; branches: { id: string; name: string; is_main: boolean }[]; initialProduct: string; busy: boolean; onClose: () => void; onSave: (i: { product_id: string; branch_id: string; batch_number: string; quantity: number; cost_per_unit: number; expiry_date: string }) => void }) {
-  const [productId, setProductId] = useState(initialProduct || products[0]?.id || '');
-  const [branchId, setBranchId] = useState(branches.find((b) => b.is_main)?.id ?? branches[0]?.id ?? '');
-  const [batch, setBatch] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [cost, setCost] = useState(String(products.find((p) => p.id === productId)?.cost_price || ''));
-  const [expiry, setExpiry] = useState('');
-  return (
-    <Modal title="Receive stock" onClose={onClose}>
-      <form className="space-y-3" onSubmit={(e) => {
-        e.preventDefault();
-        if (!productId || !branchId || !Number(quantity) || !expiry) return;
-        onSave({ product_id: productId, branch_id: branchId, batch_number: batch.trim() || `B-${Date.now().toString().slice(-6)}`, quantity: Number(quantity), cost_per_unit: Number(cost) || 0, expiry_date: expiry });
-      }}>
-        <Field label="Product"><select className={inputCls} value={productId} onChange={(e) => { setProductId(e.target.value); setCost(String(products.find((p) => p.id === e.target.value)?.cost_price || '')); }}>{products.map((p) => <option key={p.id} value={p.id}>{p.name} {p.strength}</option>)}</select></Field>
-        <Field label="Into branch"><select className={inputCls} value={branchId} onChange={(e) => setBranchId(e.target.value)}>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>
-        <Field label="Batch number"><input className={inputCls} value={batch} onChange={(e) => setBatch(e.target.value)} placeholder="Auto if empty" /></Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Quantity"><input type="number" min={1} required className={inputCls} value={quantity} onChange={(e) => setQuantity(e.target.value)} /></Field>
-          <Field label="Cost / unit (TZS)"><input type="number" min={0} className={inputCls} value={cost} onChange={(e) => setCost(e.target.value)} /></Field>
-        </div>
-        <Field label="Expiry date"><input type="date" required className={inputCls} value={expiry} onChange={(e) => setExpiry(e.target.value)} /></Field>
-        <button type="submit" disabled={busy} className={`${primaryBtn} w-full justify-center py-2.5`}>{busy ? 'Saving…' : 'Add to stock'}</button>
-      </form>
-    </Modal>
   );
 }
