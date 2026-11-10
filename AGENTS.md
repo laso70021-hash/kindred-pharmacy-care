@@ -28,3 +28,13 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- Pages: public homepage at `/` (`src/components/landing/LandingPage.tsx`), sign-in at `/auth` and `/reset-password`, admin dashboard at `/_authenticated/admin` (`src/components/dashboard/AdminDashboard.tsx`) — ported from the original Next.js app, so keep their markup and Tailwind classes when editing.
+- Data access goes through `src/lib/pharmacy-service.ts` (browser client, RLS applies); keep row mapping there so components stay schema-agnostic.
+- Roles live only in `public.user_roles` (enum `user_role`), checked with `has_role` / `is_platform_admin`; never store roles on `profiles` — prevents privilege escalation.
+- The signup trigger gives the first account `super_admin` and later accounts `pharmacy_owner` — bootstraps the platform owner without hardcoded IDs.
+- Tenant tables are scoped by `user_belongs_to_pharmacy(pharmacy_id)`; rows with null `pharmacy_id` are platform-level and admin-only.
+- The AI assistant is the `askPharmacyAssistant` server function (admin-only, Lovable AI Gateway); keep model calls server-side.
+- Auth state comes from `AuthProvider` in `src/hooks/useAuth.tsx`, mounted once in `__root.tsx`; it owns the single `onAuthStateChange` listener.

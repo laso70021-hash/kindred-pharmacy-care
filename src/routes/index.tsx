@@ -1,22 +1,49 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import LandingPage from "@/components/landing/LandingPage";
+import { ViewSwitcher } from "@/components/ViewSwitcher";
+import { PharmacyService } from "@/lib/pharmacy-service";
+import { useAuth } from "@/hooks/useAuth";
 
-// The home route ships no og:image, so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+const title = "Swahivo Pharmacy AI - Run Your Pharmacy Smarter with AI";
+const description =
+  "A complete pharmacy management system for pharmacies, chains and suppliers. Manage stock, sales, prescriptions, expiry, orders and deliveries — online and offline.";
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
+    ],
+  }),
+  component: Home,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+const stats = { pharmacies: 500, suppliers: 50, medicines: "1M+", accuracy: "98%" };
+
+function Home() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: plans = [] } = useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: () => PharmacyService.getPlans(),
+  });
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
+    <div className="relative">
+      <ViewSwitcher current="landing" />
+      <LandingPage
+        onOpenDashboard={() => navigate({ to: "/admin" })}
+        onSignIn={() => navigate({ to: "/auth" })}
+        isSignedIn={Boolean(user)}
+        plans={plans}
+        stats={stats}
       />
     </div>
   );
