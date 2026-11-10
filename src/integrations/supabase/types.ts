@@ -1685,6 +1685,17 @@ export type Database = {
         Args: { _payload: Json; _user_id: string }
         Returns: string
       }
+      create_sale: {
+        Args: {
+          _branch: string
+          _discount: number
+          _items: Json
+          _method: string
+          _pharmacy: string
+          _reference: string
+        }
+        Returns: string
+      }
       extend_trial: {
         Args: { _days: number; _pharmacy_id: string }
         Returns: undefined
