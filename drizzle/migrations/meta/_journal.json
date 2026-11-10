@@ -85,6 +85,13 @@
       "when": 1794325847046,
       "tag": "0011_exact_yearly_prices_trial_all_plans",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794329257829,
+      "tag": "0012_admin_set_user_role",
+      "breakpoints": true
     }
   ]
 }

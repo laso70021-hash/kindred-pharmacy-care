@@ -1794,6 +1794,13 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _invite_id: string }; Returns: string }
+      admin_set_user_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       can_write_pharmacy: {
         Args: {
           _pharmacy_id: string
