@@ -127,6 +127,13 @@
       "when": 1794332915110,
       "tag": "0017_repair_polymorphic_entry_validation",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794332983355,
+      "tag": "0018_scope_related_sales_records",
+      "breakpoints": true
     }
   ]
 }
