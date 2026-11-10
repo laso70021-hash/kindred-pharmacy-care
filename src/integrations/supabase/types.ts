@@ -1909,6 +1909,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_access_branch: {
+        Args: { _branch: string; _pharmacy: string }
+        Returns: boolean
+      }
       can_write_pharmacy: {
         Args: {
           _pharmacy_id: string
