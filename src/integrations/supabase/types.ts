@@ -623,6 +623,60 @@ export type Database = {
           },
         ]
       }
+      pharmacy_invites: {
+        Row: {
+          accepted_at: string | null
+          branch_id: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          invited_by: string | null
+          pharmacy_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          branch_id?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          invited_by?: string | null
+          pharmacy_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          branch_id?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          invited_by?: string | null
+          pharmacy_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pharmacy_invites_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_invites_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pharmacy_memberships: {
         Row: {
           branch_id: string | null
@@ -705,6 +759,7 @@ export type Database = {
           dosage_form: string | null
           generic_name: string | null
           id: string
+          image_url: string | null
           is_active: boolean | null
           is_prescription_required: boolean | null
           min_stock_level: number | null
@@ -723,6 +778,7 @@ export type Database = {
           dosage_form?: string | null
           generic_name?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           is_prescription_required?: boolean | null
           min_stock_level?: number | null
@@ -741,6 +797,7 @@ export type Database = {
           dosage_form?: string | null
           generic_name?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           is_prescription_required?: boolean | null
           min_stock_level?: number | null
@@ -1492,6 +1549,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: { Args: { _invite_id: string }; Returns: string }
+      can_write_pharmacy: {
+        Args: {
+          _pharmacy_id: string
+          _roles: Database["public"]["Enums"]["user_role"][]
+        }
+        Returns: boolean
+      }
       create_registration: {
         Args: { _payload: Json; _user_id: string }
         Returns: string
@@ -1500,6 +1565,13 @@ export type Database = {
         Args: { _days: number; _pharmacy_id: string }
         Returns: undefined
       }
+      has_pharmacy_role: {
+        Args: {
+          _pharmacy_id: string
+          _roles: Database["public"]["Enums"]["user_role"][]
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -1507,7 +1579,37 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_pharmacy_owner: { Args: { _pharmacy_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      my_invitations: {
+        Args: never
+        Returns: {
+          branch_name: string
+          created_at: string
+          id: string
+          pharmacy_id: string
+          pharmacy_name: string
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      pharmacy_is_current: { Args: { _pharmacy_id: string }; Returns: boolean }
+      pharmacy_plan_limits: {
+        Args: { _pharmacy_id: string }
+        Returns: Record<string, unknown>
+      }
+      pharmacy_staff: {
+        Args: { _pharmacy_id: string }
+        Returns: {
+          branch_id: string
+          created_at: string
+          email: string
+          full_name: string
+          is_active: boolean
+          membership_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
+      }
       plan_yearly_price: { Args: { _plan_id: string }; Returns: number }
       review_registration: {
         Args: { _decision: string; _note?: string; _pharmacy_id: string }
@@ -1528,6 +1630,7 @@ export type Database = {
         }
         Returns: string
       }
+      try_uuid: { Args: { _value: string }; Returns: string }
       user_belongs_to_pharmacy: {
         Args: { pharmacy_uuid: string }
         Returns: boolean
