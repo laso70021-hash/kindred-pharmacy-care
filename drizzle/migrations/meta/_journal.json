@@ -64,6 +64,13 @@
       "when": 1794324268447,
       "tag": "0008_pos_create_sale",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794324507429,
+      "tag": "0009_prescription_queue",
+      "breakpoints": true
     }
   ]
 }

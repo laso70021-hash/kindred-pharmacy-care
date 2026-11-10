@@ -750,6 +750,82 @@ export type Database = {
         }
         Relationships: []
       }
+      prescriptions: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          created_by: string | null
+          dispensed_at: string | null
+          dispensed_by: string | null
+          id: string
+          items: Json
+          notes: string | null
+          patient_name: string
+          patient_phone: string | null
+          pharmacy_id: string
+          prescriber: string | null
+          review_note: string | null
+          sale_id: string | null
+          status: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dispensed_at?: string | null
+          dispensed_by?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          patient_name: string
+          patient_phone?: string | null
+          pharmacy_id: string
+          prescriber?: string | null
+          review_note?: string | null
+          sale_id?: string | null
+          status?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dispensed_at?: string | null
+          dispensed_by?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          patient_name?: string
+          patient_phone?: string | null
+          pharmacy_id?: string
+          prescriber?: string | null
+          review_note?: string | null
+          sale_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           barcode: string | null
@@ -1758,6 +1834,10 @@ export type Database = {
         Returns: string
       }
       plan_yearly_price: { Args: { _plan_id: string }; Returns: number }
+      review_prescription: {
+        Args: { _decision: string; _id: string; _method: string; _note: string }
+        Returns: string
+      }
       review_registration: {
         Args: { _decision: string; _note?: string; _pharmacy_id: string }
         Returns: undefined
