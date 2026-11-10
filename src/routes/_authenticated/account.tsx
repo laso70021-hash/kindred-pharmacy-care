@@ -6,7 +6,8 @@ import { Clock, CheckCircle2, AlertTriangle, XCircle, LogOut, ShieldCheck, Build
 import { RegistrationWizard } from "@/components/registration/RegistrationWizard";
 import { PaymentProofForm } from "@/components/registration/PaymentProofForm";
 import { ViewSwitcher } from "@/components/ViewSwitcher";
-import { PharmacyService } from "@/lib/pharmacy-service";
+import { PharmacyService, WorkspaceService } from "@/lib/pharmacy-service";
+import { roleLabel } from "@/lib/workspace";
 import { useAuth } from "@/hooks/useAuth";
 import { formatNumber, formatDateDeterministic } from "@/lib/utils";
 import { STATUS_LABELS, TRIAL_DAYS, daysLeft, paymentMethodLabel, type AccountStatus } from "@/lib/billing";
@@ -54,6 +55,18 @@ function AccountPage() {
   });
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["my-business", userId] });
+  const { data: invitations = [], refetch: refetchInvites } = useQuery({
+    queryKey: ["my-invitations", userId],
+    queryFn: () => WorkspaceService.myInvitations(),
+    enabled: Boolean(userId),
+  });
+  const { data: workspaces = [] } = useQuery({
+    queryKey: ["workspaces", userId, false],
+    queryFn: () => WorkspaceService.listWorkspaces(userId, false),
+    enabled: Boolean(userId),
+  });
+  const staffOf = workspaces.filter((w) => w.role !== "owner" && w.business_type === "pharmacy");
+  const isStaff = staffOf.length > 0 || invitations.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50/60 via-white to-slate-50 font-sans">
@@ -90,9 +103,44 @@ function AccountPage() {
           </div>
         )}
 
+        {invitations.map((inv) => (
+          <div key={inv.id} className="rounded-2xl border border-blue-200 bg-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="text-sm">
+              <div className="font-black text-slate-900">You&apos;re invited to {inv.pharmacy_name}</div>
+              <div className="text-xs text-slate-500">As {roleLabel(inv.role)}{inv.branch_name ? ` · ${inv.branch_name}` : ""}</div>
+            </div>
+            <button
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+              onClick={async () => {
+                try {
+                  await WorkspaceService.acceptInvitation(inv.id);
+                  toast.success(`Welcome to ${inv.pharmacy_name}`);
+                  await refetchInvites();
+                  void queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Could not accept");
+                }
+              }}
+            >
+              Accept invitation
+            </button>
+          </div>
+        ))}
+
+        {(staffOf.length > 0 || (business && business.business_type === "pharmacy" && business.effective_status !== "rejected")) && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-between gap-3">
+            <div className="text-sm font-bold text-emerald-900">
+              {staffOf.length > 0 && !business ? `You work at ${staffOf.map((w) => w.name).join(", ")}.` : "Manage branches, staff, stock and profit."}
+            </div>
+            <Link to="/pharmacy" className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold whitespace-nowrap">
+              Open Pharmacy Dashboard
+            </Link>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="text-sm text-slate-500 text-center py-16">Loading your account…</div>
-        ) : !business || resubmit ? (
+        ) : !business && isStaff && !resubmit ? null : !business || resubmit ? (
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4 max-w-2xl mx-auto">
             <div>
               <h1 className="text-xl font-black text-slate-900">{resubmit ? "Update and resubmit your registration" : "Register your business"}</h1>
