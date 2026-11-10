@@ -88,6 +88,8 @@ import { PharmacyService } from '@/lib/pharmacy-service';
 import { formatNumber, formatDateDeterministic } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { askPharmacyAssistant } from '@/lib/ai-assistant.functions';
+import { RegistrationsPanel, useRegistrations, needsAction } from '@/components/dashboard/RegistrationsPanel';
+import { STATUS_LABELS } from '@/lib/billing';
 
 interface AdminDashboardProps {
   onBackToLanding: () => void;
@@ -99,6 +101,8 @@ const emptySubscribe = () => () => {};
 export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboardProps) {
   const { user, profile, isSuperAdmin, signOut } = useAuth();
   const askAssistant = useServerFn(askPharmacyAssistant);
+  const { data: registrations = [] } = useRegistrations(isSuperAdmin);
+  const pendingRegistrations = registrations.filter(needsAction).length;
 
   const isMounted = React.useSyncExternalStore(
     emptySubscribe,
@@ -552,6 +556,12 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
   // 18 Sidebar Navigation Items
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    {
+      id: 'registrations',
+      label: 'Registrations & Approvals',
+      icon: FileCheck2,
+      ...(pendingRegistrations > 0 ? { badge: String(pendingRegistrations) } : {})
+    },
     { id: 'businesses', label: 'Businesses (Pharmacies)', icon: Building2 },
     { id: 'users', label: 'Users & Roles', icon: Users2 },
     { id: 'branches', label: 'Branches', icon: GitBranch },
@@ -807,6 +817,21 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
              ======================================================== */}
           {activeNav === 'dashboard' && (
             <>
+              {pendingRegistrations > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-amber-900">
+                    <FileCheck2 className="w-4 h-4" />
+                    {pendingRegistrations} registration{pendingRegistrations > 1 ? 's' : ''} or payment{pendingRegistrations > 1 ? 's' : ''} waiting for your approval
+                  </div>
+                  <button
+                    onClick={() => setActiveNav('registrations')}
+                    className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold"
+                  >
+                    Review now
+                  </button>
+                </div>
+              )}
+
               {/* 6 KPI Cards */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs">
@@ -1203,6 +1228,8 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
               </div>
             </>
           )}
+
+          {activeNav === 'registrations' && <RegistrationsPanel />}
 
           {/* ========================================================
               MODULE 2: BUSINESSES (PHARMACIES)
@@ -1928,33 +1955,59 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-400 uppercase text-[10px] font-bold">
-                      <th className="py-2.5">Pharmacy</th>
+                      <th className="py-2.5">Business</th>
                       <th className="py-2.5">Active Plan</th>
-                      <th className="py-2.5">Monthly Fee</th>
+                      <th className="py-2.5">Yearly Fee</th>
                       <th className="py-2.5">Billing Status</th>
+                      <th className="py-2.5">Ends</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {pharmacies.map((ph) => (
-                      <tr key={ph.id} className="hover:bg-slate-50">
-                        <td className="py-3 font-bold text-slate-900">{ph.name}</td>
+                    {registrations.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50">
+                        <td className="py-3 font-bold text-slate-900">
+                          {r.name}
+                          <span className="ml-2 text-[10px] font-semibold text-slate-400">
+                            {r.business_type === 'supplier' ? 'Supplier' : 'Pharmacy'}
+                          </span>
+                        </td>
                         <td className="py-3">
                           <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                            {ph.plan}
+                            {r.plan_name}
                           </span>
                         </td>
                         <td className="py-3 font-bold text-slate-800">
-                          TZS {ph.plan === 'Professional' ? '69,000' : '19,000'} /mo
+                          {r.yearly_price ? `TZS ${formatNumber(r.yearly_price)} /yr` : 'Custom'}
                         </td>
                         <td className="py-3">
-                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                            Paid & Active
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              r.effective_status === 'active'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : r.effective_status === 'trial'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : r.effective_status === 'pending'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-rose-100 text-rose-800'
+                            }`}
+                          >
+                            {STATUS_LABELS[r.effective_status]}
                           </span>
+                        </td>
+                        <td className="py-3 text-slate-500">
+                          {r.effective_status === 'trial' || (r.effective_status === 'expired' && r.billing_choice === 'trial')
+                            ? formatDateDeterministic(r.trial_ends_at || '')
+                            : r.subscription_ends_at
+                              ? formatDateDeterministic(r.subscription_ends_at)
+                              : '—'}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {registrations.length === 0 && (
+                  <div className="p-8 text-center text-slate-500 text-xs">No subscriptions yet.</div>
+                )}
               </div>
             </div>
           )}
