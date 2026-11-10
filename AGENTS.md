@@ -49,3 +49,4 @@ use the editor.
 - Staff join only via `pharmacy_invites` matched to a confirmed email (`my_invitations` / `accept_invitation`); pharmacy-scoped roles live in `pharmacy_memberships`, never in `user_roles`.
 - Product photos are paths in the private `product-images` bucket (`<pharmacy id>/…`), shown via signed URLs — public buckets are blocked on this project.
 - Wholesale orders (`wholesale_orders`/`_items`) are written only via `place_wholesale_order` / `review_wholesale_order` (prices and stock checked in SQL); accepting moves stock FIFO from supplier batches into the buyer branch, creating the buyer product if missing — so neither side can fake prices or stock.
+- Till sales go only through `create_sale` (price from products, FIFO from the chosen branch's unexpired batches, payment row + stock movements in one transaction); the cash drawer is computed from that day's branch sales, not stored.
