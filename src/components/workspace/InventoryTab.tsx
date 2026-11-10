@@ -24,6 +24,7 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
   const [editing, setEditing] = useState<Partial<WsProduct> | null>(null);
   const [receiving, setReceiving] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [photoProduct,setPhotoProduct]=useState<string|null>(null);
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['ws', pid, 'products'] });
@@ -75,6 +76,7 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
                     {editable && <div className="flex gap-1.5 pt-1 mt-auto">
                       <button className={ghostBtn} onClick={() => setEditing(p)}>Edit</button>
                       <button className={ghostBtn} disabled={!branches.length} onClick={() => setReceiving(p.id)}>+ Stock</button>
+                      <label className={ghostBtn}>Photo<input aria-label={`Photo for ${p.name}`} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e=>{const file=e.target.files?.[0];if(file)void run(()=>EntryService.photo(pid,p.id,file),'Photo saved');}}/></label>
                     </div>}
                   </div>
                 </div>);
