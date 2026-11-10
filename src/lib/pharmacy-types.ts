@@ -240,3 +240,61 @@ export interface SalesDataPoint {
   orders: number;
   revenue: number;
 }
+
+export type BusinessType = 'pharmacy' | 'supplier';
+
+export interface SubscriptionPayment {
+  id: string;
+  pharmacy_id: string;
+  plan_id: string | null;
+  amount_tzs: number;
+  method: string;
+  reference: string | null;
+  receipt_path: string | null;
+  status: 'pending' | 'confirmed' | 'rejected';
+  review_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface BusinessRegistration {
+  id: string;
+  name: string;
+  business_type: BusinessType;
+  owner_id: string | null;
+  owner_name: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  address: string | null;
+  registration_number: string | null;
+  tax_number: string | null;
+  plan_id: string | null;
+  plan_slug: string;
+  plan_name: string;
+  yearly_price: number;
+  billing_choice: 'trial' | 'annual';
+  status: string;
+  effective_status: import('./billing').AccountStatus;
+  trial_ends_at: string | null;
+  subscription_ends_at: string | null;
+  approved_at: string | null;
+  review_note: string | null;
+  created_at: string;
+  payments: SubscriptionPayment[];
+}
+
+export interface RegistrationInput {
+  business_type: BusinessType;
+  plan_slug: string;
+  billing_choice: 'trial' | 'annual';
+  business_name: string;
+  owner_name: string;
+  phone: string;
+  city: string;
+  address: string;
+  registration_number: string;
+  tax_number: string;
+  payment_method?: string;
+  payment_reference?: string;
+}
