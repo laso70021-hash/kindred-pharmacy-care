@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { daysLeft, effectiveStatus, resolveBillingChoice, TRIAL_DAYS, yearlyPrice } from "@/lib/billing";
 
-const starter = { slug: "starter", price_tzs_monthly: 19000, price_tzs_annual: 15200 };
-const growth = { slug: "growth", price_tzs_monthly: 39000, price_tzs_annual: 31200 };
+const starter = { slug: "starter", price_tzs_monthly: 15000, price_tzs_annual: 165000 };
+const growth = { slug: "growth", price_tzs_monthly: 29000, price_tzs_annual: 290000 };
 const now = new Date("2026-11-10T08:00:00Z");
 
 describe("billing rules", () => {
-  it("charges the yearly price as the annual monthly rate times 12", () => {
-    expect(yearlyPrice(starter)).toBe(182400);
-    expect(yearlyPrice(growth)).toBe(374400);
+  it("charges the exact yearly price set for the plan", () => {
+    expect(yearlyPrice(starter)).toBe(165000);
+    expect(yearlyPrice(growth)).toBe(290000);
   });
 
-  it("gives the free trial only on Starter; other plans are paid yearly", () => {
+  it("gives the free trial on every plan", () => {
     expect(resolveBillingChoice("starter", "trial")).toBe("trial");
-    expect(resolveBillingChoice("growth", "trial")).toBe("annual");
+    expect(resolveBillingChoice("growth", "trial")).toBe("trial");
   });
 
   it("uses a one-month (30 day) trial", () => {

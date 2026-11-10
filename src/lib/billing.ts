@@ -13,10 +13,9 @@ interface PricedPlan {
   price_tzs_annual: number;
 }
 
-/** Discounted monthly rate x 12 — what the customer pays for one year. 0 means custom pricing. */
+/** Exact yearly price set for the plan (a full-year total). 0 means custom pricing. */
 export function yearlyPrice(plan: PricedPlan): number {
-  const monthly = plan.price_tzs_annual || plan.price_tzs_monthly || 0;
-  return monthly * 12;
+  return plan.price_tzs_annual || (plan.price_tzs_monthly || 0) * 12;
 }
 
 /** What one year would cost at the normal monthly rate (used to show savings). */
@@ -28,9 +27,9 @@ export function isCustomPriced(plan: PricedPlan): boolean {
   return yearlyPrice(plan) === 0;
 }
 
-/** Only the Starter plan can begin with the free 30-day trial; every other plan is paid yearly. */
-export function offersTrial(planSlug: string): boolean {
-  return planSlug === TRIAL_PLAN_SLUG;
+/** Every plan can begin with the free 30-day trial. */
+export function offersTrial(_planSlug: string): boolean {
+  return true;
 }
 
 export function resolveBillingChoice(planSlug: string, requested: BillingChoice): BillingChoice {

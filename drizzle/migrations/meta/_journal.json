@@ -78,6 +78,13 @@
       "when": 1794324751354,
       "tag": "0010_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794325847046,
+      "tag": "0011_exact_yearly_prices_trial_all_plans",
+      "breakpoints": true
     }
   ]
 }
