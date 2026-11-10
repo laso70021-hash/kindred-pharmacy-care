@@ -1,0 +1,104 @@
+// Rules for the pharmacy workspace (owner + staff). The database enforces the same
+// rules (can_write_pharmacy, plan-limit triggers); these mirror them for the UI.
+import type { AccountStatus } from './billing';
+
+export type StaffRole = 'manager' | 'pharmacist' | 'cashier' | 'accountant' | 'inventory_manager' | 'delivery_rider';
+export type WorkspaceRole = 'owner' | 'admin' | StaffRole;
+
+export const STAFF_ROLES: { value: StaffRole; label: string; description: string }[] = [
+  { value: 'manager', label: 'Branch Manager', description: 'Runs branches, stock, sales and expenses' },
+  { value: 'pharmacist', label: 'Pharmacist / Dispenser', description: 'Medicines, prescriptions and sales' },
+  { value: 'cashier', label: 'Cashier', description: 'Sells at the till' },
+  { value: 'inventory_manager', label: 'Inventory Manager', description: 'Receives and manages stock' },
+  { value: 'accountant', label: 'Accountant', description: 'Expenses and reports' },
+  { value: 'delivery_rider', label: 'Delivery Rider', description: 'Delivers customer orders' },
+];
+
+export function roleLabel(role: string): string {
+  if (role === 'owner') return 'Owner';
+  if (role === 'admin') return 'Platform Admin';
+  return STAFF_ROLES.find((r) => r.value === role)?.label ?? role.replace(/_/g, ' ');
+}
+
+export type Ability = 'manageBranches' | 'manageStaff' | 'manageStock' | 'sell' | 'manageExpenses' | 'viewFinance';
+
+const ABILITIES: Record<Ability, WorkspaceRole[]> = {
+  manageBranches: ['owner', 'admin', 'manager'],
+  manageStaff: ['owner', 'admin'],
+  manageStock: ['owner', 'admin', 'manager', 'inventory_manager', 'pharmacist'],
+  sell: ['owner', 'admin', 'manager', 'pharmacist', 'cashier'],
+  manageExpenses: ['owner', 'admin', 'manager', 'accountant'],
+  viewFinance: ['owner', 'admin', 'manager', 'accountant'],
+};
+
+/** Accounts that are not on a running trial or paid year are read-only (admins excepted). */
+export function isReadOnly(status: AccountStatus, role: WorkspaceRole): boolean {
+  if (role === 'admin') return false;
+  return status !== 'trial' && status !== 'active';
+}
+
+export function can(role: WorkspaceRole, ability: Ability, status: AccountStatus): boolean {
+  if (!ABILITIES[ability].includes(role)) return false;
+  if (ability === 'viewFinance') return true;
+  return !isReadOnly(status, role);
+}
+
+export interface PlanLimits {
+  max_branches: number;
+  max_employees: number;
+}
+
+/** True when another branch/staff seat would exceed the plan (999 = unlimited). */
+export function limitReached(used: number, max: number): boolean {
+  if (max >= 999) return false;
+  return used >= max;
+}
+
+export function limitLabel(used: number, max: number): string {
+  return max >= 999 ? `${used} / Unlimited` : `${used} / ${max}`;
+}
+
+export interface SaleForProfit {
+  total: number;
+  created_at: string;
+  items: { quantity: number; unit_cost: number }[];
+}
+
+export interface ProfitSummary {
+  revenue: number;
+  costOfGoods: number;
+  grossProfit: number;
+  expenses: number;
+  netProfit: number;
+  marginPct: number;
+}
+
+/** Revenue − cost of the items sold = gross profit; minus expenses = net profit. */
+export function profitSummary(sales: SaleForProfit[], expenseAmounts: number[]): ProfitSummary {
+  const revenue = sales.reduce((a, s) => a + (s.total || 0), 0);
+  const costOfGoods = sales.reduce(
+    (a, s) => a + s.items.reduce((b, i) => b + (i.quantity || 0) * (i.unit_cost || 0), 0),
+    0
+  );
+  const expenses = expenseAmounts.reduce((a, e) => a + (e || 0), 0);
+  const grossProfit = revenue - costOfGoods;
+  const netProfit = grossProfit - expenses;
+  return {
+    revenue,
+    costOfGoods,
+    grossProfit,
+    expenses,
+    netProfit,
+    marginPct: revenue > 0 ? Math.round((netProfit / revenue) * 1000) / 10 : 0,
+  };
+}
+
+export const EXPIRY_WARNING_DAYS = 90;
+
+export type StockState = 'out' | 'low' | 'ok';
+
+export function stockState(quantity: number, minLevel: number): StockState {
+  if (quantity <= 0) return 'out';
+  if (quantity <= minLevel) return 'low';
+  return 'ok';
+}
