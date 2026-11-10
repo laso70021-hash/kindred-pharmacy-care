@@ -1,0 +1,45 @@
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import Papa from 'papaparse';
+import { Download, FileSpreadsheet, Upload, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { EntryService } from '@/lib/pharmacy-service';
+import { ENTRY_MODELS, blankEntry, validateEntries, type EntryModule, type EntryRow } from '@/lib/entry-model';
+import type { Workspace } from '@/lib/pharmacy-types';
+import { can } from '@/lib/workspace';
+import { Modal, SectionHeader, inputCls } from './ws-ui';
+
+function download(name:string,text:string){const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
+export function ImportsTab({ws}:{ws:Workspace}) {
+ const [module,setModule]=useState<EntryModule>('products'); const [headers,setHeaders]=useState<string[]>([]); const [source,setSource]=useState<string[][]>([]);const [mapping,setMapping]=useState<Record<string,string>>({});const [rows,setRows]=useState<EntryRow[]>([]);
+ const [file,setFile]=useState<File|null>(null);const [sheets,setSheets]=useState<string[]>([]);const [sheet,setSheet]=useState(''); const [busy,setBusy]=useState(false);const [notice,setNotice]=useState('');const [confirm,setConfirm]=useState(false);
+ const qc=useQueryClient();const model=ENTRY_MODELS[module];
+ const {data:refs={}}=useQuery({queryKey:['entry-refs',ws.id],queryFn:()=>EntryService.references(ws.id)});
+ const {data:existing=[]}=useQuery({queryKey:['entry',ws.id,module],queryFn:()=>EntryService.list(ws.id,module)});
+ const {data:history=[]}=useQuery({queryKey:['import-history',ws.id],queryFn:()=>EntryService.history(ws.id)});
+ const errors=validateEntries(module,rows,existing,refs);
+ const editable=can(ws.role,module==='staff'?'manageStaff':module==='branches'?'manageBranches':'manageStock',ws.status);
+ const load=async(f:File,worksheet?:string)=>{setBusy(true);setNotice('');setRows([]);try{let data:string[][];
+  if(f.size>10*1024*1024)throw new Error('Upload a file smaller than 10 MB');
+  if(f.name.toLowerCase().endsWith('.csv')){const parsed=Papa.parse<string[]>(await f.text(),{skipEmptyLines:'greedy'});if(parsed.errors.length)throw new Error(parsed.errors[0]?.message??'Invalid CSV');data=parsed.data;setSheets([]);}
+  else if(f.name.toLowerCase().endsWith('.xlsx')){const {default:read,readSheetNames}=await import('read-excel-file/browser');const names=await readSheetNames(f);setSheets(names);const selected=worksheet??names[0];setSheet(selected??'');const values=await read(f,{sheet:selected});data=values.map(r=>r.map(v=>v instanceof Date?v.toISOString().slice(0,10):String(v??'')));}
+  else throw new Error('Choose a CSV or .xlsx file');
+  const h=(data[0]??[]).map(x=>x.trim());if(!h.length||new Set(h).size!==h.length)throw new Error('Column headers must be present and unique');
+  if(data.length>5001)throw new Error('Import no more than 5000 rows at a time');setHeaders(h);setSource(data.slice(1).filter(r=>r.some(v=>v.trim())));setMapping(Object.fromEntries(model.fields.map(f=>[f.key,h.find(x=>x.toLowerCase()===f.key)??''])));
+ }catch(e){setNotice(e instanceof Error?e.message:'Upload failed');setHeaders([]);}finally{setBusy(false);}};
+ const template=async(excel:boolean)=>{const keys=model.fields.map(f=>f.key);if(!excel){download(`${module}-template.csv`,Papa.unparse([keys,keys.map(k=>blankEntry(module)[k]??'')]));return;}const {default:write}=await import('write-excel-file/browser');await write([keys.map(value=>({value,type:String})),keys.map(k=>({value:blankEntry(module)[k]??'',type:String}))],{fileName:`${module}-template.xlsx`});};
+ return <div className="space-y-5"><SectionHeader title="Bulk imports"/>
+  <div className="flex flex-wrap items-end gap-3"><label className="text-sm">Module<select aria-label="Import module" className={inputCls} value={module} onChange={e=>{setModule(e.target.value as EntryModule);setRows([]);setHeaders([]);setFile(null);setNotice('');}}>{Object.entries(ENTRY_MODELS).filter(([key])=>key!=='settings').map(([key,m])=><option key={key} value={key}>{m.label}</option>)}</select></label><Button variant="outline" onClick={()=>void template(false)}><Download/>CSV template</Button><Button variant="outline" onClick={()=>void template(true)}><FileSpreadsheet/>Excel template</Button></div>
+  {editable&&<label className="flex items-center gap-3 border border-dashed border-border rounded-lg p-4 text-sm"><Upload/><input aria-label="Upload import file" type="file" accept=".csv,.xlsx" disabled={busy} onChange={e=>{const f=e.target.files?.[0];if(f){setFile(f);void load(f);}}}/></label>}
+  {sheets.length>1&&<label>Worksheet<select aria-label="Worksheet" className={inputCls} value={sheet} onChange={e=>{setSheet(e.target.value);if(file)void load(file,e.target.value);}}>{sheets.map(s=><option key={s}>{s}</option>)}</select></label>}
+  {headers.length>0&&<><h3 className="font-bold">Column mapping · {source.length} rows</h3><div className="grid sm:grid-cols-3 gap-3">{model.fields.map(f=><label className="text-xs" key={f.key}>{f.key}{f.required?' *':''}<select aria-label={`Map ${f.key}`} className={inputCls} value={mapping[f.key]??''} onChange={e=>{setMapping(m=>({...m,[f.key]:e.target.value}));setRows([]);}}><option value="">Default / empty</option>{headers.map(h=><option key={h}>{h}</option>)}</select></label>)}</div><Button disabled={busy||!source.length} onClick={()=>setRows(source.map(values=>Object.fromEntries(model.fields.map(f=>[f.key,mapping[f.key]?values[headers.indexOf(mapping[f.key]??'')]??'':f.default??'']))))}>Preview and validate</Button></>}
+  {rows.length>0&&<><div className="flex flex-wrap justify-between gap-2"><h3 className="font-bold">Preview · {rows.length} records · {errors.length} errors</h3>{errors.length>0&&<Button variant="outline" onClick={()=>download(`${module}-errors.csv`,Papa.unparse(errors.map(e=>({...rows[e.row-2],row:e.row,column:e.column,reason:e.reason}))))}><Download/>Error report</Button>}</div>
+   {errors.length>0&&<ul role="alert" className="text-sm text-destructive max-h-40 overflow-auto">{errors.map((e,i)=><li key={i}>Row {e.row}, {e.column}: {e.reason}</li>)}</ul>}
+   <div className="overflow-auto max-h-96 border border-border rounded-lg"><table className="text-xs text-left"><thead><tr><th className="p-2">Row</th>{model.fields.map(f=><th className="p-2" key={f.key}>{f.key}</th>)}</tr></thead><tbody>{rows.slice(0,100).map((r,i)=><tr key={i}><td className="p-2">{i+2}</td>{model.fields.map(f=><td className="p-1" key={f.key}><input aria-label={`Row ${i+2} ${f.key}`} className="border border-input rounded p-1 w-32 bg-background text-foreground" value={r[f.key]??''} onChange={e=>setRows(all=>all.map((x,n)=>n===i?{...x,[f.key]:e.target.value}:x))}/></td>)}</tr>)}</tbody></table></div>{rows.length>100&&<p className="text-sm text-muted-foreground">First 100 rows shown; all {rows.length} rows validated. Correct later rows in your file and upload again.</p>}
+   <Button disabled={!editable||busy||errors.length>0} onClick={()=>setConfirm(true)}><Check/>Import {rows.length} records</Button>
+  </>}
+  {notice&&<p role="status" className="text-sm font-semibold">{notice}</p>}
+  {confirm&&<Modal title="Confirm import" onClose={()=>!busy&&setConfirm(false)}><p className="text-sm">Save {rows.length} {model.label.toLowerCase()} to {ws.name}? All records will be saved together, or none.</p><Button disabled={busy} onClick={async()=>{setBusy(true);try{const result=await EntryService.import(ws.id,module,rows,file?.name??'spreadsheet');setNotice(result.status==='completed'?`${result.successful_count} records imported. No failed records.`:`No records saved. ${result.error}`);if(result.status==='completed'){setRows([]);setHeaders([]);}await qc.invalidateQueries({queryKey:['import-history',ws.id]});await qc.invalidateQueries({queryKey:['entry',ws.id]});await qc.invalidateQueries({queryKey:['entry-refs',ws.id]});await qc.invalidateQueries({queryKey:['ws',ws.id]});}catch(e){setNotice(e instanceof Error?e.message:'Import failed');}finally{setBusy(false);setConfirm(false);}}}>{busy?'Importing…':'Confirm import'}</Button></Modal>}
+  <h3 className="font-bold">Import history</h3><div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr className="border-b border-border"><th className="p-2">Date</th><th>File</th><th>Module</th><th>Saved</th><th>Failed</th><th>Result</th></tr></thead><tbody>{history.map(h=><tr key={h.id} className="border-b border-border"><td className="p-2">{new Date(h.created_at).toLocaleDateString()}</td><td>{h.file_name}</td><td>{h.module}</td><td>{h.successful_count}</td><td>{h.failed_count}</td><td>{h.status}{h.error_message&&` · ${h.error_message}`}</td></tr>)}</tbody></table></div>
+ </div>;
+}
