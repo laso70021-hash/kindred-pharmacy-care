@@ -1,0 +1,1 @@
+- AI import category suggestions use authenticated server functions, tenant-scoped existing categories, validated model output, and explicit user approval; suggestions never persist or bypass import validation.

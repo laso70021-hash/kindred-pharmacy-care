@@ -3,6 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ImportsTab } from '@/components/workspace/ImportsTab';
 import type { Workspace } from '@/lib/pharmacy-types';
+const suggest=vi.hoisted(()=>vi.fn(async()=>({category:{id:'category-1',name:'Analgesics'},reason:'Matches pain relief products.',error:null})));
+vi.mock('@tanstack/react-start',()=>({useServerFn:(fn:unknown)=>fn}));
+vi.mock('@/lib/import-suggestions.functions',()=>({suggestImportCategory:suggest}));
 
 const service=vi.hoisted(()=>({
  references:vi.fn(async()=>({category_name:[{value:'Analgesics',label:'Analgesics'}],supplier_name:[]})),
@@ -13,6 +16,25 @@ vi.mock('@/lib/pharmacy-service',()=>({EntryService:service}));
 const ws:Workspace={id:'test-pharmacy',name:'Test pharmacy',business_type:'pharmacy',city:null,role:'admin',status:'active',plan_name:'Essential',plan_slug:'essential',limits:{max_branches:1,max_employees:3},trial_ends_at:null,subscription_ends_at:null};
 afterEach(()=>{cleanup();vi.clearAllMocks();});
 describe('import category resolution',()=>{
+ it('only applies AI category matches after explicit approval',async()=>{
+  const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+  render(<QueryClientProvider client={client}><ImportsTab ws={ws}/></QueryClientProvider>);
+  const file=new File([''],'products.csv',{type:'text/csv'});
+  Object.defineProperty(file,'text',{value:async()=> 'name,sku,unit_of_measurement,selling_price,category_name\nParacetamol,PCM500,tablet,100,Pain Relief'});
+  fireEvent.change(screen.getByLabelText('Upload import file'),{target:{files:[file]}});
+  fireEvent.click(await screen.findByRole('button',{name:'Preview and validate'}));
+  fireEvent.click(await screen.findByRole('button',{name:'Suggest category'}));
+  fireEvent.change(screen.getByLabelText('Unmatched row details'),{target:{value:'Paracetamol tablets for pain relief'}});
+  fireEvent.click(screen.getByRole('button',{name:'Find matching category'}));
+  await screen.findByText('Matches pain relief products.');
+  expect(suggest).toHaveBeenCalledWith({data:{pharmacyId:ws.id,unmatchedCategory:'Pain Relief',details:'Paracetamol tablets for pain relief'}});
+  expect(screen.getByLabelText('Row 2 category_name')).toHaveValue('Pain Relief');
+  expect(screen.getByRole('button',{name:'Import 1 records'})).toBeDisabled();
+  fireEvent.click(screen.getByRole('button',{name:'Apply to 1 matching rows'}));
+  expect(screen.getByLabelText('Row 2 category_name')).toHaveValue('Analgesics');
+  expect(screen.getByRole('button',{name:'Import 1 records'})).toBeEnabled();
+  expect(service.import).not.toHaveBeenCalled();
+ });
  it('unblocks validation and submits all corrected rows through the import service',async()=>{
   const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
   render(<QueryClientProvider client={client}><ImportsTab ws={ws}/></QueryClientProvider>);

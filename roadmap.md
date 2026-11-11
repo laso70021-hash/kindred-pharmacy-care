@@ -1,5 +1,7 @@
 # Swahivo roadmap (unified master plan)
 
+- [x] 16. AI category suggestions for unmatched import rows, with tenant-scoped categories and explicit user approval; live authenticated checks unavailable on external Supabase.
+
 - [x] 1. Registration with plan selection (owner / supplier), 30-day Starter trial, yearly payment proof, admin approval
 - [x] 2. Working date-range filter on dashboards
 - [x] 3. Pharmacy Owner dashboard (branches, staff invites & roles, inventory/profit) — also block data access for expired accounts
