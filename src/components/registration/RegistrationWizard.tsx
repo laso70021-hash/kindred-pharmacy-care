@@ -45,6 +45,7 @@ export function RegistrationWizard({ mode, initialPlan, defaultName, busy, onSub
   const [step, setStep] = useState(0);
   const [businessType, setBusinessType] = useState<BusinessType>("pharmacy");
   const [planSlug, setPlanSlug] = useState(initialPlan || "starter");
+  const [pickPlan, setPickPlan] = useState(!initialPlan);
   const [billing, setBilling] = useState<BillingChoice>("trial");
   const [businessName, setBusinessName] = useState("");
   const [ownerName, setOwnerName] = useState(defaultName || "");
@@ -149,6 +150,17 @@ export function RegistrationWizard({ mode, initialPlan, defaultName, busy, onSub
           <p className="text-sm text-slate-600">Choose your plan. Every plan begins with a free {TRIAL_DAYS}-day trial, then is paid yearly.</p>
           {plansLoading ? (
             <div className="text-xs text-slate-500 p-6 text-center">Loading plans…</div>
+          ) : !pickPlan && plan ? (
+            <div className="p-4 rounded-2xl border-2 border-blue-600 bg-blue-50/60 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Selected plan</div>
+                <div className="font-extrabold text-slate-900">{plan.name}</div>
+                <div className="text-xs text-slate-500">
+                  {isCustomPriced(plan) ? "Custom pricing" : `TZS ${formatNumber(plan.price_tzs_monthly)}/month · TZS ${formatNumber(amount)}/year`}
+                </div>
+              </div>
+              <button type="button" onClick={() => setPickPlan(true)} className="text-xs font-bold text-blue-600 hover:underline shrink-0">Change plan</button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {plans.map((p) => {
