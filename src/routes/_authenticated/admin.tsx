@@ -1,7 +1,6 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
-import { ViewSwitcher } from "@/components/ViewSwitcher";
 import { PharmacyService } from "@/lib/pharmacy-service";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -44,7 +43,6 @@ function AdminPage() {
 
   return (
     <div className="relative">
-      <ViewSwitcher current="admin" />
       <AdminDashboard onBackToLanding={() => navigate({ to: "/" })} plans={plans} />
     </div>
   );

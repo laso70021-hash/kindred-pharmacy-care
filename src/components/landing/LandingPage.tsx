@@ -151,18 +151,6 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-blue-500 selection:text-white">
-      {/* Top Notification Bar */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white text-xs font-medium py-2 px-4 text-center flex items-center justify-center gap-2">
-        <span className="bg-white/20 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">East Africa SaaS</span>
-        <span>Run your pharmacy online & offline with real-time AI inventory & expiry prediction.</span>
-        <button
-          onClick={onOpenDashboard}
-          className="ml-3 underline font-semibold hover:text-blue-100 flex items-center gap-1"
-        >
-          Open Admin Dashboard <ArrowRight className="w-3 h-3" />
-        </button>
-      </div>
-
       {/* Navigation Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -210,11 +198,21 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
       </header>
 
       {/* Hero Section */}
-      <section id="home" className="relative pt-12 pb-20 overflow-hidden bg-gradient-to-b from-blue-50/60 via-white to-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section id="home" className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50/40">
+        {/* Full-bleed pharmacist photo on the right */}
+        <div className="absolute inset-y-0 right-0 w-full lg:w-[58%] hidden md:block">
+          <img
+            src={herosectionphotoImg.url}
+            alt="Swahivo Pharmacist"
+            className="absolute inset-0 w-full h-full object-cover object-[center_top]"
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
+        </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-28 lg:min-h-[560px]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Content */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-6 space-y-6 pt-4">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-semibold tracking-wide border border-blue-200">
                 <Sparkles className="w-3.5 h-3.5 text-blue-600" />
@@ -222,9 +220,9 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
               </div>
 
               {/* Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12]">
+              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-blue-950 tracking-tight leading-[1.12]">
                 Run Your Pharmacy <br />
-                Smarter with <span className="text-blue-600 underline decoration-blue-300 decoration-wavy">AI</span>
+                Smarter with <span className="text-blue-600">AI</span>
               </h1>
 
               {/* Subtitle */}
@@ -243,7 +241,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
                 </button>
                 <button
                   onClick={() => setShowDemoModal(true)}
-                  className="bg-white hover:bg-slate-50 text-slate-700 font-bold text-base px-6 py-3.5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition-all flex items-center gap-2"
+                  className="bg-white hover:bg-blue-50 text-blue-950 font-bold text-base px-6 py-3.5 rounded-xl border-2 border-blue-700 shadow-sm hover:shadow transition-all flex items-center gap-2"
                 >
                   <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
                     <Play className="w-3 h-3 fill-current ml-0.5" />
@@ -253,7 +251,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
               </div>
 
               {/* Highlights */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-200/80 text-xs font-semibold text-slate-700">
+              <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 text-xs font-semibold text-slate-700">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>Multi-Branch</span>
@@ -273,22 +271,12 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
               </div>
             </div>
 
-            {/* Right Hero Image Composition */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative mx-auto max-w-md lg:max-w-none">
-                {/* Main Pharmacist Portrait */}
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-blue-100 aspect-[4/5]">
-                  <img
-                    src={herosectionphotoImg.url}
-                    alt="Swahivo Pharmacist"
-                    className="absolute inset-0 w-full h-full object-cover object-top"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent" />
-                </div>
-
+            {/* Right: photo is the section background; AI card floats top-right */}
+            <div className="lg:col-span-6 relative min-h-[320px] md:min-h-0">
+              <img src={herosectionphotoImg.url} alt="Swahivo Pharmacist" className="md:hidden w-full rounded-3xl object-cover aspect-[4/3]" referrerPolicy="no-referrer" />
+              <div>
                 {/* Floating AI Assistant Card */}
-                <div className="absolute -top-4 -right-4 sm:-right-6 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-slate-100 max-w-[240px] z-10 animate-fade-in">
+                <div className="absolute top-4 right-0 bg-white/90 backdrop-blur-md p-5 rounded-3xl shadow-xl border border-white max-w-[270px] z-10 animate-fade-in">
                   <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
                     <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center">
                       <Sparkles className="w-3.5 h-3.5" />
@@ -321,9 +309,9 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
       </section>
 
       {/* Statistics Section */}
-      <section className="py-8 bg-white border-y border-slate-200">
+      <section className="relative z-10 -mt-20 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-slate-100 p-3 md:divide-x divide-slate-200">
             <div className="flex flex-col items-center justify-center p-4 rounded-xl hover:bg-slate-50 transition-colors">
               <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2">
                 <Building2 className="w-6 h-6" />

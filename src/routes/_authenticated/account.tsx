@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Clock, CheckCircle2, AlertTriangle, XCircle, LogOut, ShieldCheck, Building2, Truck, FileText } from "lucide-react";
 import { RegistrationWizard } from "@/components/registration/RegistrationWizard";
 import { PaymentProofForm } from "@/components/registration/PaymentProofForm";
-import { ViewSwitcher } from "@/components/ViewSwitcher";
 import { PharmacyService, WorkspaceService } from "@/lib/pharmacy-service";
 import { roleLabel } from "@/lib/workspace";
 import { useAuth } from "@/hooks/useAuth";
@@ -72,7 +71,6 @@ function AccountPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50/60 via-white to-slate-50 font-sans">
-      <ViewSwitcher current="account" />
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center">

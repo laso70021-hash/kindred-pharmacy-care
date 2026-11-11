@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { WorkspaceService } from "@/lib/pharmacy-service";
 import { PharmacyWorkspace } from "@/components/workspace/PharmacyWorkspace";
-import { ViewSwitcher } from "@/components/ViewSwitcher";
 import { AdminBusinessForm } from '@/components/workspace/AdminBusinessForm';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -48,7 +47,6 @@ function PharmacyPage() {
     );
   return (
     <div className="relative">
-      <ViewSwitcher current="pharmacy" />
       {isSuperAdmin&&<div className="absolute bottom-16 left-3 z-20"><Button size="sm" onClick={()=>setRegistering(true)}>Register pharmacy</Button></div>}
       {registering&&<AdminBusinessForm onClose={()=>setRegistering(false)} onCreated={()=>{setRegistering(false);void navigate({to:'/admin'});}}/>}
       <PharmacyWorkspace key={ws.id} ws={ws} all={pharmacies} userId={userId} onSwitch={(nid) => navigate({ to: "/pharmacy", search: { id: nid } })} onSignOut={() => void signOut()} />
