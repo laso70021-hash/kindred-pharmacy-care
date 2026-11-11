@@ -31,8 +31,8 @@ export const submitContact = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => schema.parse(input))
   .handler(async ({ data }) => {
     const { createClient } = await import("@supabase/supabase-js");
-    const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-    const anon = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const url = process.env['SUPABASE_URL'] ?? process.env['VITE_SUPABASE_URL'];
+    const anon = process.env['SUPABASE_PUBLISHABLE_KEY'] ?? process.env['VITE_SUPABASE_PUBLISHABLE_KEY'];
     if (!url || !anon) throw new Error("Server configuration error");
     const sb = createClient(url, anon, { auth: { persistSession: false } });
     const { error } = await sb.from("contact_submissions").insert({
@@ -41,7 +41,7 @@ export const submitContact = createServerFn({ method: "POST" })
     });
     if (error) throw new Error("Could not save message");
 
-    const key = process.env.RESEND_API_KEY;
+    const key = process.env['RESEND_API_KEY'];
     if (!key) throw new Error("RESEND_API_KEY is not configured");
     const n = esc(data.full_name);
     const rows = [
