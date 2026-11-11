@@ -7,6 +7,8 @@ import { PosService, WorkspaceService } from '@/lib/pharmacy-service';
 import { changeDue, drawerSummary, isReadOnly } from '@/lib/workspace';
 import { recordDayKey } from '@/lib/date-range';
 import { formatNumber } from '@/lib/utils';
+import { ReceiptModal, type ReceiptData } from './ReceiptModal';
+import { useAuth } from '@/hooks/useAuth';
 import { Empty, Field, inputCls, primaryBtn, ghostBtn, cardCls, errorText } from './ws-ui';
 
 const METHODS = [
@@ -31,6 +33,8 @@ export function PosTab({ ws }: { ws: Workspace }) {
   const [reference, setReference] = useState('');
   const [busy, setBusy] = useState(false);
   const [drawer, setDrawer] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const auth = useAuth();
   const readOnly = isReadOnly(ws.status, ws.role);
 
   const stockHere = (p: (typeof products)[number]) => p.stock_by_branch[branch] || 0;
@@ -57,8 +61,11 @@ export function PosTab({ ws }: { ws: Workspace }) {
     if (method === 'cash' && tendered && change === null) { toast.error('Cash given is less than the total'); return; }
     setBusy(true);
     try {
-      await PosService.createSale({ pharmacyId: pid, branchId: branch, items: cart.map((l) => ({ product_id: l.id, quantity: l.qty })), method, discount: disc, reference });
+      const saleId = await PosService.createSale({ pharmacyId: pid, branchId: branch, items: cart.map((l) => ({ product_id: l.id, quantity: l.qty })), method, discount: disc, reference });
       toast.success(change ? `Sale saved. Change: TZS ${formatNumber(change)}` : 'Sale saved');
+      setReceipt({ invoice: `INV-${saleId.slice(0, 8).toUpperCase()}`, business: ws.name, branch: open.find((b) => b.id === branch)?.name || '', cashier: auth.user?.email || 'Cashier', date: new Date(),
+        items: cart.map((l) => { const p = byId.get(l.id); return { name: p?.name || '', strength: p?.strength, qty: l.qty, price: p?.selling_price || 0 }; }),
+        subtotal, discount: disc, total, method, tendered: Number(tendered) || undefined, change, reference });
       setCart([]); setDiscount(''); setTendered(''); setReference('');
       void qc.invalidateQueries({ queryKey: ['ws', pid] });
     } catch (err) { toast.error(errorText(err)); } finally { setBusy(false); }
@@ -66,6 +73,7 @@ export function PosTab({ ws }: { ws: Workspace }) {
 
   return (
     <div className="space-y-4">
+      {receipt && <ReceiptModal data={receipt} onClose={() => setReceipt(null)} />}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1"><Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
           <input autoFocus className={`${inputCls} pl-9`} placeholder="Search name or scan barcode" value={q} onChange={(e) => setQ(e.target.value)} /></div>

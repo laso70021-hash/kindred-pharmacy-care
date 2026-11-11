@@ -718,7 +718,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
                     ))}
                   </div>
                   <button
-                    onClick={() => onChoosePlan(plan.slug)}
+                    onClick={() => (isCustom ? (window.location.href = `mailto:${BRAND.enterpriseEmail}?subject=Enterprise%20Elite%20enquiry`) : onChoosePlan(plan.slug))}
                     className="mt-6 w-full py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all"
                   >
                     {isCustom ? 'Request Enterprise Trial' : 'Start Free Trial'}
