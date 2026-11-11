@@ -16,6 +16,9 @@ export const ENTRY_MODELS: Record<EntryModule, { label: string; fields: EntryFie
 export interface EntryReferences { [field: string]: { value: string; label: string }[] }
 export interface EntryError { row: number; column: string; reason: string }
 export function blankEntry(module: EntryModule): EntryRow { return Object.fromEntries(ENTRY_MODELS[module].fields.map(f=>[f.key,f.default ?? ''])); }
+export function replaceEntryReference(rows: EntryRow[], column: string, source: string, replacement: string): EntryRow[] {
+ return rows.map(row => (row[column] ?? '').trim().toLowerCase() === source.trim().toLowerCase() ? {...row, [column]: replacement} : row);
+}
 export function validateEntries(module: EntryModule, rows: EntryRow[], existing: EntryRow[] = [], references: EntryReferences = {}): EntryError[] {
  const errors: EntryError[]=[]; const model=ENTRY_MODELS[module]; const seen=new Set<string>();
  const identity=(r:EntryRow)=>model.unique.map(k=>(r[k]??'').trim().toLowerCase()).join('|');

@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { blankEntry,validateEntries } from '@/lib/entry-model';
+import { blankEntry,replaceEntryReference,validateEntries } from '@/lib/entry-model';
 const product={...blankEntry('products'),name:'Paracetamol',sku:'PCM500',unit_of_measurement:'tablet',selling_price:'100'};
 describe('real-world entry validation',()=>{
+ it('resolves all matching category errors without changing other categories',()=>{
+  const rows=[{...product,category_name:'Pain Relief'},{...product,sku:'PCM501',category_name:' pain relief '},{...product,sku:'PCM502',category_name:'Antibiotics'}];
+  const refs={category_name:[{value:'Analgesics',label:'Analgesics'},{value:'Antibiotics',label:'Antibiotics'}]};
+  expect(validateEntries('products',rows,[],refs)).toHaveLength(2);
+  const resolved=replaceEntryReference(rows,'category_name','Pain Relief','Analgesics');
+  expect(resolved.map(row=>row['category_name'])).toEqual(['Analgesics','Analgesics','Antibiotics']);
+  expect(validateEntries('products',resolved,[],refs)).toEqual([]);
+ });
+ it('allows explicitly removing an optional missing category while preserving product data',()=>{
+  const rows=[{...product,category_name:'Pain Relief'}];
+  const resolved=replaceEntryReference(rows,'category_name','Pain Relief','');
+  expect(resolved).toEqual([{...product,category_name:''}]);
+  expect(validateEntries('products',resolved,[],{category_name:[]})).toEqual([]);
+ });
  it('requires a product name and SKU',()=>{expect(validateEntries('products',[{...product,name:'',sku:''}]).map(e=>e.column)).toEqual(['name','sku']);});
  it('rejects negative prices',()=>{expect(validateEntries('products',[{...product,selling_price:'-1'}])).toEqual(expect.arrayContaining([expect.objectContaining({column:'selling_price'})]));});
  it('rejects fractional opening quantities',()=>{expect(validateEntries('batches',[{product_sku:'PCM500',branch_code:'MAIN',batch_number:'B1',quantity:'1.5',cost_per_unit:'50',expiry_date:'2028-01-01'}])).toEqual(expect.arrayContaining([expect.objectContaining({column:'quantity'})]));});
