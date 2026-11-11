@@ -36,7 +36,7 @@ import {
   Layers,
   Search,
   ExternalLink
-, Phone } from 'lucide-react';
+} from 'lucide-react';
 import { SubscriptionPlan } from '@/lib/pharmacy-types';
 import { formatNumber } from '@/lib/utils';
 import { BRAND, telHref } from '@/lib/brand';
@@ -239,15 +239,15 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
                 >
                   Start Free Trial <ArrowRight className="w-4 h-4" />
                 </button>
-                <a
-                  href="#contact"
+                <button
+                  onClick={() => setShowDemoModal(true)}
                   className="bg-white hover:bg-blue-50 text-blue-950 font-bold text-base px-6 py-3.5 rounded-xl border-2 border-blue-700 shadow-sm hover:shadow transition-all flex items-center gap-2"
                 >
                   <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <Phone className="w-3 h-3" />
+                    <Play className="w-3 h-3 fill-current ml-0.5" />
                   </div>
-                  Contact Sales
-                </a>
+                  Watch Demo
+                </button>
               </div>
 
               {/* Highlights */}
