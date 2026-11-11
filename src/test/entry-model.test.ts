@@ -7,7 +7,7 @@ describe('real-world entry validation',()=>{
   const refs={category_name:[{value:'Analgesics',label:'Analgesics'},{value:'Antibiotics',label:'Antibiotics'}]};
   expect(validateEntries('products',rows,[],refs)).toHaveLength(2);
   const resolved=replaceEntryReference(rows,'category_name','Pain Relief','Analgesics');
-  expect(resolved.map(row=>row.category_name)).toEqual(['Analgesics','Analgesics','Antibiotics']);
+  expect(resolved.map(row=>row['category_name'])).toEqual(['Analgesics','Analgesics','Antibiotics']);
   expect(validateEntries('products',resolved,[],refs)).toEqual([]);
  });
  it('allows explicitly removing an optional missing category while preserving product data',()=>{
