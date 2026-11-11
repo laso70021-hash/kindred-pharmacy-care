@@ -381,7 +381,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
             <div className="lg:col-span-6 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
                 <Building2 className="w-3.5 h-3.5" />
-                <span>About Swahivo Pharmacy AI</span>
+                <span>About Swahivo</span>
               </div>
 
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug">
@@ -728,7 +728,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
                 Ready to Transform Your Pharmacy?
               </h2>
               <p className="text-blue-100 text-sm max-w-xl">
-                Join hundreds of pharmacies using Swahivo Pharmacy AI to save time, reduce loss and
+                Join hundreds of pharmacies using Swahivo to save time, reduce loss and
                 grow their business.
               </p>
             </div>
@@ -759,7 +759,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
             <div className="col-span-2">
-              <img src={BRAND.logoUrl} alt="Swahivo Pharmacy AI" className="h-10 w-auto mb-3 bg-white rounded-full px-1" />
+              <img src={BRAND.logoUrl} alt="Swahivo" className="h-10 w-auto mb-3 bg-white rounded-full px-1" />
               <p className="text-slate-400 text-xs max-w-sm mb-4">
                 The premier digital pharmacy operating system in East Africa and across the globe.
                 Multi-branch POS, AI inventory forecasting, and real-time supply chain integration.
@@ -821,7 +821,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
           </div>
 
           <div className="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
-            <div>© 2026 Swahivo Pharmacy AI. All rights reserved.</div>
+            <div>© 2026 Swahivo. All rights reserved.</div>
             <div className="flex items-center gap-6">
               <a href="#privacy" className="hover:text-white">Privacy Policy</a>
               <a href="#terms" className="hover:text-white">Terms of Service</a>

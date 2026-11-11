@@ -17,9 +17,9 @@ import type { BusinessRegistration } from "@/lib/pharmacy-types";
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
     meta: [
-      { title: "My Account | Swahivo Pharmacy AI" },
+      { title: "My Account | Swahivo" },
       { name: "description", content: "Your Swahivo registration, plan, approval status and yearly payments." },
-      { property: "og:title", content: "My Account | Swahivo Pharmacy AI" },
+      { property: "og:title", content: "My Account | Swahivo" },
       { property: "og:description", content: "Your Swahivo registration, plan, approval status and yearly payments." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

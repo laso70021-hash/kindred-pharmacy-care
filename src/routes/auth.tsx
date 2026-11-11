@@ -10,10 +10,10 @@ import { BRAND } from "@/lib/brand";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign In | Swahivo Pharmacy AI" },
-      { name: "description", content: "Sign in or create your Swahivo Pharmacy AI account." },
-      { property: "og:title", content: "Sign In | Swahivo Pharmacy AI" },
-      { property: "og:description", content: "Sign in or create your Swahivo Pharmacy AI account." },
+      { title: "Sign In | Swahivo" },
+      { name: "description", content: "Sign in or create your Swahivo account." },
+      { property: "og:title", content: "Sign In | Swahivo" },
+      { property: "og:description", content: "Sign in or create your Swahivo account." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

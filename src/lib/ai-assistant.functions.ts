@@ -49,7 +49,7 @@ export const askPharmacyAssistant = createServerFn({ method: "POST" })
 
     const { generateChatCompletion, GatewayError } = await import("@lovable.dev/ai-gateway");
 
-    const systemInstruction = `You are Swahivo Pharmacy AI System Administrator Assistant.
+    const systemInstruction = `You are Swahivo System Administrator Assistant.
 You have real-time access to the platform telemetry and database state:
 ${JSON.stringify(data.context, null, 2)}
 
