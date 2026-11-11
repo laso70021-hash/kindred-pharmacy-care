@@ -57,7 +57,7 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, isSignedIn, plans, stats }: LandingPageProps) {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const goContact = () => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
 
   const roles = [
