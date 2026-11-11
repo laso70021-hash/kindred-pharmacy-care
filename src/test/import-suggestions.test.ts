@@ -14,3 +14,13 @@ describe('AI import category boundaries',()=>{
   expect(categorySuggestionInput.safeParse({pharmacyId:'25abb0d6-3fa5-48dd-85f0-4ebbaea48a27',unmatchedCategory:'Pain Relief',details:' '}).success).toBe(false);
  });
 });
+import { checkedReferenceResolution } from '@/lib/import-suggestions';
+describe('AI reference resolution', () => {
+ it('reuses existing names and drops unasked items', () => {
+  const out = checkedReferenceResolution({ results: [
+   { column: 'category_name', value: 'antibiotc', name: 'antibiotics', isNew: true, reason: 'x' },
+   { column: 'supplier_name', value: 'other', name: 'Other', isNew: true, reason: 'x' },
+  ] }, [{ column: 'category_name', value: 'Antibiotc' }], { category_name: ['Antibiotics'] });
+  expect(out).toEqual([{ column: 'category_name', value: 'antibiotc', name: 'Antibiotics', isNew: false, reason: 'x' }]);
+ });
+});
