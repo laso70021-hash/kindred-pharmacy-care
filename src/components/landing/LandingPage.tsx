@@ -12,7 +12,6 @@ import aboutsectionImg from '@/assets/swahivo/about_section.webp.asset.json';
 import laptopdashboardImg from '@/assets/swahivo/laptop_dashboard.webp.asset.json';
 import {
   Sparkles,
-  Play,
   CheckCircle2,
   Building2,
   Users,
