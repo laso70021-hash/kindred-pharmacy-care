@@ -5,8 +5,8 @@ import { formatNumber } from '@/lib/utils';
 
 export type ReceiptData = {
   invoice: string; business: string; branch: string; cashier: string; date: Date;
-  items: { name: string; strength?: string; qty: number; price: number }[];
-  subtotal: number; discount: number; total: number; method: string; tendered?: number; change?: number | null; reference?: string;
+  items: { name: string; strength?: string | undefined; qty: number; price: number }[];
+  subtotal: number; discount: number; total: number; method: string; tendered?: number | undefined; change?: number | null; reference?: string;
 };
 
 const PRINT_CSS = (size: '80mm' | 'A4') => `@page{size:${size === '80mm' ? '80mm auto' : 'A4'};margin:${size === '80mm' ? '0' : '14mm'}}
