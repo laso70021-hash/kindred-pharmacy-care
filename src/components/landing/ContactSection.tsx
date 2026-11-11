@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { z } from 'zod';
 import { Mail, Phone, Send, CheckCircle2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { submitContact } from '@/lib/contact.functions';
 import { BRAND, telHref } from '@/lib/brand';
 
 const schema = z.object({
@@ -27,12 +27,11 @@ export default function ContactSection() {
     if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? 'Check the form'); return; }
     setError(null); setSending(true);
     const v = parsed.data;
-    const { error: err } = await supabase.from('contact_submissions').insert({
-      full_name: v.full_name, email: v.email, message: v.message,
-      phone: v.phone || null, business_name: v.business_name || null,
-    });
+    let failed = false;
+    try { await submitContact({ data: { ...v, phone: v.phone || null, business_name: v.business_name || null } }); }
+    catch { failed = true; }
     setSending(false);
-    if (err) { setError('Could not send your message. Please call or email us.'); return; }
+    if (failed) { setError('Could not send your message. Please call or email us.'); return; }
     form.reset(); setSent(true);
   };
 
