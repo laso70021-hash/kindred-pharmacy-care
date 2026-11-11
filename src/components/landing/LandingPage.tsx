@@ -36,7 +36,7 @@ import {
   Layers,
   Search,
   ExternalLink
-} from 'lucide-react';
+, Phone } from 'lucide-react';
 import { SubscriptionPlan } from '@/lib/pharmacy-types';
 import { formatNumber } from '@/lib/utils';
 import { BRAND, telHref } from '@/lib/brand';
