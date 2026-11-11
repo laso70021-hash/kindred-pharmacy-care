@@ -12,3 +12,4 @@
 - [x] 10. CSV/Excel templates, mapping, editable preview, validation, transaction-safe imports and import history
 - [x] 11. Create one demo pharmacy through normal workflows: main + two branches, two suppliers, products, batches and staff invitations
 - [~] 12. Database alignment complete (35 tables with RLS); admin entry/import/report browser checks, atomic rollback and 40 tests passed. Confirmed-staff branch access checks await controlled confirmed staff accounts; synthetic invitations remain unaccepted.
+- [ ] 13. Prepare external database migration package (ordered SQL, environment template, account/storage transfer and deployment checklist); destination import and cutover require external access.
