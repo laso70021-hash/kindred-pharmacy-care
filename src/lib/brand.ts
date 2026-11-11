@@ -3,7 +3,7 @@ import mark from '@/assets/brand/swahivo_mark.png.asset.json';
 
 /** Swahivo brand + public contact details — one source for the site, emails and receipts. */
 export const BRAND = {
-  name: 'Swahivo Pharmacy AI',
+  name: 'Swahivo',
   logoUrl: logo.url,
   markUrl: mark.url,
   email: 'info@swahivo.com',

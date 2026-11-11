@@ -6,10 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Set a New Password | Swahivo Pharmacy AI" },
-      { name: "description", content: "Choose a new password for your Swahivo Pharmacy AI account." },
-      { property: "og:title", content: "Set a New Password | Swahivo Pharmacy AI" },
-      { property: "og:description", content: "Choose a new password for your Swahivo Pharmacy AI account." },
+      { title: "Set a New Password | Swahivo" },
+      { name: "description", content: "Choose a new password for your Swahivo account." },
+      { property: "og:title", content: "Set a New Password | Swahivo" },
+      { property: "og:description", content: "Choose a new password for your Swahivo account." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

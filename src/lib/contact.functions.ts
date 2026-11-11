@@ -10,7 +10,7 @@ const schema = z.object({
 });
 
 const OWNER = "hello@swahivo.com";
-const FROM = "Swahivo Pharmacy AI <info@swahivo.com>";
+const FROM = "Swahivo <info@swahivo.com>";
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 async function sendResend(key: string, body: Record<string, unknown>) {
@@ -55,7 +55,7 @@ export const submitContact = createServerFn({ method: "POST" })
     });
     await sendResend(key, {
       from: FROM, to: [data.email], reply_to: OWNER,
-      subject: "We received your message — Swahivo Pharmacy AI",
+      subject: "We received your message — Swahivo",
       html: `<div style="font-family:Arial,sans-serif"><h2 style="color:#1d4ed8">Thank you, ${n}</h2><p>We received your message and our team will contact you soon.</p><p>Call us: 0771 888 881 · 0674 766 586<br/>Email: ${OWNER}</p></div>`,
     });
     return { ok: true };
