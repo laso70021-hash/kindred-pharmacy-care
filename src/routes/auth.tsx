@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { RegistrationWizard, type AccountFields } from "@/components/registration/RegistrationWizard";
 import type { RegistrationInput } from "@/lib/pharmacy-types";
@@ -50,7 +49,7 @@ function GoogleLogo() {
   );
 }
 
-function AuthPage() {
+export function AuthPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const { user, isLoading, isSuperAdmin } = useAuth();
@@ -74,7 +73,7 @@ function AuthPage() {
         email: account.email,
         password: account.password,
         options: {
-          emailRedirectTo: window.location.origin + "/account",
+          emailRedirectTo: window.location.origin + "/auth",
           data: { full_name: account.fullName, registration },
         },
       });
@@ -100,7 +99,7 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + "/account", data: { full_name: fullName } },
+          options: { emailRedirectTo: window.location.origin + "/auth", data: { full_name: fullName } },
         });
         if (error) throw error;
         if (!data.session) {
@@ -126,7 +125,10 @@ function AuthPage() {
   };
 
   const handleOAuth = async (provider: "google") => {
-    const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin + "/auth" });
+    const result = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin + "/auth" },
+    });
     if (result.error) {
       toast.error(result.error.message || "Sign-in failed");
       return;

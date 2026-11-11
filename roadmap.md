@@ -13,4 +13,5 @@
 - [x] 11. Create one demo pharmacy through normal workflows: main + two branches, two suppliers, products, batches and staff invitations
 - [~] 12. Database alignment complete (35 tables with RLS); admin entry/import/report browser checks, atomic rollback and 40 tests passed. Confirmed-staff branch access checks await controlled confirmed staff accounts; synthetic invitations remain unaccepted.
 - [x] 13. Prepare external database migration package: 21 ordered SQL files, environment template, account/storage transfer and deployment checklist; SQL syntax and grants inspected.
-- [ ] 14. Import and verify external database, files, authentication and hosting, then cut over — blocked on destination administrative access and private database/file export supplied by the user.
+- [~] 14. External Supabase connected and environment refreshed; 35 tables have RLS. Existing pharmacy records and uploaded files have not been transferred; their exports are still needed.
+- [~] 15. Environment, requested admin role/profile, private buckets, five approved plans and table grants verified; 44 tests pass. Public sign-in and signed-out admin guard checked. Authenticated pharmacy flows require a signed-in external account and pharmacy data; recoverable browser hydration warnings remain unverified.

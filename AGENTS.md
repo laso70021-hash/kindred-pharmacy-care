@@ -54,4 +54,5 @@ use the editor.
 - In-app notifications are rows in `notifications` written only by SECURITY DEFINER triggers on business tables (users can just read/mark their own); expiry reminders are computed in the bell from end dates, not stored.
 - Forms/templates share `entry-model.ts` via `EntryService`; imports and stock changes are transactional RPCs to prevent partial saves. Import fingerprints prevent repeat files.
 - Membership `branch_ids` restrict selected branches (empty uses legacy branch_id or all); enforce tenant and branch scope in SQL, not just dropdowns.
-- External database handoffs use ordered, byte-preserved migration copies and a separate current-configuration seed; keep the managed preview connection intact because external cutover requires independently verified accounts, storage and hosting.
+- External database handoffs use ordered, byte-preserved migration copies and a separate current-configuration seed; verify destination accounts, private buckets and data independently after reconnecting.
+- External Supabase sign-in uses Supabase Auth directly with a public `/auth` callback; role-based navigation follows session hydration because the Lovable OAuth broker does not serve external projects.
