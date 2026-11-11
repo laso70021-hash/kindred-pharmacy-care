@@ -6,7 +6,8 @@ export const BRAND = {
   name: 'Swahivo Pharmacy AI',
   logoUrl: logo.url,
   markUrl: mark.url,
-  email: 'hello@swahivo.com',
+  email: 'info@swahivo.com',
+  enterpriseEmail: 'hello@swahivo.com',
   phones: ['0771 888 881', '0674 766 586'],
 } as const;
 
