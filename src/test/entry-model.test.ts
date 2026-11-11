@@ -32,7 +32,7 @@ import { swahivoBarcode, fillBarcodes } from '@/lib/entry-model';
 describe('Swahivo barcodes', () => {
  it('generates a valid 13-digit EAN starting with 29', () => {
   const code = swahivoBarcode(() => 0);
-  expect(code).toBe('2900000000008');
+  expect(code).toBe('2900000000001');
  });
  it('fills only empty barcodes', () => {
   const rows = fillBarcodes([{ barcode: '123' }, { barcode: '' }]);
