@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import LandingPage from "@/components/landing/LandingPage";
-import { ViewSwitcher } from "@/components/ViewSwitcher";
 import { PharmacyService } from "@/lib/pharmacy-service";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -42,7 +41,6 @@ function Home() {
 
   return (
     <div className="relative">
-      <ViewSwitcher current="landing" />
       <LandingPage
         onOpenDashboard={openDashboard}
         onChoosePlan={(slug) => {
