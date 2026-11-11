@@ -16,7 +16,7 @@ vi.mock('@/hooks/useAuth', () => ({ useAuth: () => mocks.state }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth: { signInWithOAuth: mocks.oauth } } }));
 vi.mock('@/components/registration/RegistrationWizard', () => ({ RegistrationWizard: () => null }));
 
-import { Route } from '@/routes/auth';
+import { AuthPage } from '@/routes/auth';
 
 afterEach(() => {
   cleanup();
@@ -27,25 +27,25 @@ afterEach(() => {
 describe('Supabase account sign-in', () => {
   it('sends the requested administrator to /admin after roles load', async () => {
     mocks.state = { user: { id: '25abb0d6-3fa5-48dd-85f0-4ebbaea48a27' }, isLoading: false, isSuperAdmin: true };
-    render(<Route.component />);
+    render(<AuthPage />);
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: '/admin', replace: true }));
   });
 
   it('does not give a non-admin account the admin destination', async () => {
     mocks.state = { user: { id: 'ordinary-user' }, isLoading: false, isSuperAdmin: false };
-    render(<Route.component />);
+    render(<AuthPage />);
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: '/account', replace: true }));
     expect(mocks.navigate).not.toHaveBeenCalledWith({ to: '/admin', replace: true });
   });
 
   it('waits for verified role loading before choosing a destination', () => {
     mocks.state = { user: { id: '25abb0d6-3fa5-48dd-85f0-4ebbaea48a27' }, isLoading: true, isSuperAdmin: false };
-    render(<Route.component />);
+    render(<AuthPage />);
     expect(mocks.navigate).not.toHaveBeenCalled();
   });
 
   it('uses external Supabase OAuth with a public same-origin callback', async () => {
-    const page = render(<Route.component />);
+    const page = render(<AuthPage />);
     fireEvent.click(page.getByRole('button', { name: 'Continue with Google' }));
     await waitFor(() => expect(mocks.oauth).toHaveBeenCalledWith({ provider: 'google', options: { redirectTo: window.location.origin + '/auth' } }));
   });

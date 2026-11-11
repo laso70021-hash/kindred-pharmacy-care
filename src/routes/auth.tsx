@@ -49,7 +49,7 @@ function GoogleLogo() {
   );
 }
 
-function AuthPage() {
+export function AuthPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const { user, isLoading, isSuperAdmin } = useAuth();
