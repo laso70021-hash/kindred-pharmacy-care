@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import ContactSection from './ContactSection';
-import phamacyownerImg from '@/assets/swahivo/phamacy_owner.webp.asset.json';
-import pharmacistImg from '@/assets/swahivo/pharmacist.webp.asset.json';
-import cashierImg from '@/assets/swahivo/cashier.webp.asset.json';
-import managerImg from '@/assets/swahivo/manager.webp.asset.json';
-import accountantImg from '@/assets/swahivo/accountant.webp.asset.json';
-import supplierImg from '@/assets/swahivo/supplier.webp.asset.json';
-import deliveryriderImg from '@/assets/swahivo/delivery_rider.webp.asset.json';
-import herosectionphotoImg from '@/assets/swahivo/hero_section_photo.webp.asset.json';
-import aboutsectionImg from '@/assets/swahivo/about_section.webp.asset.json';
-import laptopdashboardImg from '@/assets/swahivo/laptop_dashboard.webp.asset.json';
+import phamacyownerImg from '@/assets/swahivo/phamacy_owner.webp';
+import pharmacistImg from '@/assets/swahivo/pharmacist.webp';
+import cashierImg from '@/assets/swahivo/cashier.webp';
+import managerImg from '@/assets/swahivo/manager.webp';
+import accountantImg from '@/assets/swahivo/accountant.webp';
+import supplierImg from '@/assets/swahivo/supplier.webp';
+import deliveryriderImg from '@/assets/swahivo/delivery_rider.webp';
+import herosectionphotoImg from '@/assets/swahivo/hero_section_photo.webp';
+import aboutsectionImg from '@/assets/swahivo/about_section.webp';
+import laptopdashboardImg from '@/assets/swahivo/laptop_dashboard.webp';
 import {
   Sparkles,
   CheckCircle2,
@@ -64,37 +64,37 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
     {
       title: 'Pharmacy Owner',
       desc: 'Manage branches, team, performance and growth.',
-      img: phamacyownerImg.url
+      img: phamacyownerImg
     },
     {
       title: 'Pharmacist',
       desc: 'Dispense safely, manage prescriptions and ensure compliance.',
-      img: pharmacistImg.url
+      img: pharmacistImg
     },
     {
       title: 'Cashier',
       desc: 'Process sales, handle payments and shifts accurately.',
-      img: cashierImg.url
+      img: cashierImg
     },
     {
       title: 'Manager',
       desc: 'Oversee operations, stock, staff and reports.',
-      img: managerImg.url
+      img: managerImg
     },
     {
       title: 'Accountant',
       desc: 'Track finances, payments and financial reports.',
-      img: accountantImg.url
+      img: accountantImg
     },
     {
       title: 'Supplier',
       desc: 'Receive orders, confirm supply and manage deliveries.',
-      img: supplierImg.url
+      img: supplierImg
     },
     {
       title: 'Delivery Rider',
       desc: 'View assigned orders, update delivery status and collect proof.',
-      img: deliveryriderImg.url
+      img: deliveryriderImg
     }
   ];
 
@@ -202,7 +202,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
         {/* Full-bleed pharmacist photo on the right */}
         <div className="absolute inset-y-0 right-0 w-full lg:w-[58%] hidden md:block">
           <img
-            src={herosectionphotoImg.url}
+            src={herosectionphotoImg}
             alt="Swahivo Pharmacist"
             className="absolute inset-0 w-full h-full object-cover object-[center_top]"
             referrerPolicy="no-referrer"
@@ -271,7 +271,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
 
             {/* Right: photo is the section background; AI card floats top-right */}
             <div className="lg:col-span-6 relative min-h-[320px] md:min-h-0">
-              <img src={herosectionphotoImg.url} alt="Swahivo Pharmacist" className="md:hidden w-full rounded-3xl object-cover aspect-[4/3]" referrerPolicy="no-referrer" />
+              <img src={herosectionphotoImg} alt="Swahivo Pharmacist" className="md:hidden w-full rounded-3xl object-cover aspect-[4/3]" referrerPolicy="no-referrer" />
               <div>
                 {/* Floating AI Assistant Card */}
                 <div className="absolute top-4 right-0 bg-white/90 backdrop-blur-md p-5 rounded-3xl shadow-xl border border-white max-w-[270px] z-10 animate-fade-in">
@@ -369,7 +369,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
             <div className="lg:col-span-6">
               <div className="relative rounded-3xl overflow-hidden shadow-xl border-4 border-white aspect-[4/3]">
                 <img
-                  src={aboutsectionImg.url}
+                  src={aboutsectionImg}
                   alt="Modern Swahivo Pharmacy"
                   className="absolute inset-0 w-full h-full object-cover"
                   referrerPolicy="no-referrer"
@@ -540,7 +540,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
             <div className="lg:col-span-7">
               <div className="relative mx-auto rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-700/60 bg-slate-800">
                 <img
-                  src={laptopdashboardImg.url}
+                  src={laptopdashboardImg}
                   alt="Swahivo Dashboard in Laptop"
                   width={900}
                   height={560}
