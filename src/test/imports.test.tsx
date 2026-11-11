@@ -5,7 +5,7 @@ import { ImportsTab } from '@/components/workspace/ImportsTab';
 import type { Workspace } from '@/lib/pharmacy-types';
 const suggest=vi.hoisted(()=>vi.fn(async()=>({category:{id:'category-1',name:'Analgesics'},reason:'Matches pain relief products.',error:null})));
 vi.mock('@tanstack/react-start',()=>({useServerFn:(fn:unknown)=>fn}));
-vi.mock('@/lib/import-suggestions.functions',()=>({suggestImportCategory:suggest}));
+vi.mock('@/lib/import-suggestions.functions',()=>({suggestImportCategory:suggest,resolveImportReferences:vi.fn()}));
 
 const service=vi.hoisted(()=>({
  references:vi.fn(async()=>({category_name:[{value:'Analgesics',label:'Analgesics'}],supplier_name:[]})),

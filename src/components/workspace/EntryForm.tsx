@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ENTRY_MODELS, blankEntry, validateEntries, type EntryModule, type EntryRow, type EntryReferences } from '@/lib/entry-model';
+import { ENTRY_MODELS, blankEntry, swahivoBarcode, validateEntries, type EntryModule, type EntryRow, type EntryReferences } from '@/lib/entry-model';
 import { Field, Modal, inputCls } from './ws-ui';
 
 export function EntryForm({ module, initial, references, existing = [], onClose, onSave }: { module: EntryModule; initial?: EntryRow | undefined; references: EntryReferences; existing?: EntryRow[]; onClose: () => void; onSave: (row: EntryRow) => Promise<void> }) {
- const [row,setRow]=useState<EntryRow>({...blankEntry(module),...initial});
+ const [row,setRow]=useState<EntryRow>(()=>{const r={...blankEntry(module),...initial};if(module==='products'&&!r['barcode'])r['barcode']=swahivoBarcode();return r;});
  const [busy,setBusy]=useState(false); const [error,setError]=useState('');
  const set=(key:string,value:string)=>setRow(r=>({...r,[key]:value}));
  return <Modal title={`${initial?.['id'] ? 'Edit' : 'Add'} ${ENTRY_MODELS[module].label}`} onClose={onClose} wide>
