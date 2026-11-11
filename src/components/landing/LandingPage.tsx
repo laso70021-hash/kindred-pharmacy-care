@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ContactSection from './ContactSection';
 import phamacyownerImg from '@/assets/swahivo/phamacy_owner.webp.asset.json';
 import pharmacistImg from '@/assets/swahivo/pharmacist.webp.asset.json';
 import cashierImg from '@/assets/swahivo/cashier.webp.asset.json';
@@ -11,7 +12,6 @@ import aboutsectionImg from '@/assets/swahivo/about_section.webp.asset.json';
 import laptopdashboardImg from '@/assets/swahivo/laptop_dashboard.webp.asset.json';
 import {
   Sparkles,
-  Play,
   CheckCircle2,
   Building2,
   Users,
@@ -58,7 +58,7 @@ interface LandingPageProps {
 
 export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, isSignedIn, plans, stats }: LandingPageProps) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
-  const [showDemoModal, setShowDemoModal] = useState(false);
+  const goContact = () => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
 
   const roles = [
     {
@@ -240,13 +240,11 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
                   Start Free Trial <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setShowDemoModal(true)}
+                  onClick={goContact}
                   className="bg-white hover:bg-blue-50 text-blue-950 font-bold text-base px-6 py-3.5 rounded-xl border-2 border-blue-700 shadow-sm hover:shadow transition-all flex items-center gap-2"
                 >
-                  <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <Play className="w-3 h-3 fill-current ml-0.5" />
-                  </div>
-                  Watch Demo
+                  <PhoneCall className="w-4 h-4 text-blue-600" />
+                  Contact Sales
                 </button>
               </div>
 
@@ -743,7 +741,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
                 Get Started Free <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setShowDemoModal(true)}
+                onClick={goContact}
                 className="bg-blue-800/60 hover:bg-blue-800 text-white font-bold text-sm px-6 py-3 rounded-xl border border-white/20 transition-all flex items-center gap-2"
               >
                 <PhoneCall className="w-4 h-4" />
@@ -753,6 +751,8 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
           </div>
         </div>
       </section>
+
+      <ContactSection />
 
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-400 text-xs py-12 border-t border-slate-800">
@@ -767,7 +767,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
               <div className="text-[11px] text-slate-500">
                 Connected to a secure cloud database & AI assistant.
               </div>
-              <div id="contact" className="mt-4 space-y-1 text-slate-300">
+              <div className="mt-4 space-y-1 text-slate-300">
                 <div className="text-white font-bold uppercase tracking-wider text-[11px]">Contact us</div>
                 <a href={`mailto:${BRAND.email}`} className="block hover:text-white">{BRAND.email}</a>
                 {BRAND.phones.map((p) => (
@@ -830,56 +830,6 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
           </div>
         </div>
       </footer>
-
-      {/* Demo Modal */}
-      {showDemoModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Play className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold text-slate-900 text-lg">Watch Swahivo Demo</h3>
-              </div>
-              <button
-                onClick={() => setShowDemoModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-sm text-slate-600">
-              Experience the fast AI prescription scanning, automated 12/6/3-month expiry warnings,
-              and multi-branch POS in action.
-            </p>
-            <div className="aspect-video bg-slate-900 rounded-xl flex flex-col items-center justify-center text-white p-6 text-center space-y-3">
-              <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-lg">
-                <Play className="w-8 h-8 fill-current ml-1" />
-              </div>
-              <p className="text-xs text-slate-300">
-                Interactive platform tour is ready. You can test live features in the Platform
-                Administration Dashboard right now!
-              </p>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={() => setShowDemoModal(false)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  setShowDemoModal(false);
-                  onOpenDashboard();
-                }}
-                className="px-5 py-2 rounded-lg text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Launch Admin Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
