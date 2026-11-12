@@ -1,3 +1,4 @@
+import { MobileNavigation } from '@/components/common/MobileNavigation';
 import { RecordsTab } from './RecordsTab';
 import { ImportsTab } from './ImportsTab';
 import { BRAND } from '@/lib/brand';
@@ -60,9 +61,8 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     { id: 'expenses', label: 'Expenses', Icon: DollarSign, show: can(ws.role, 'viewFinance', ws.status) },
   ].filter((n) => n.show);
 
-  return (
-    <div className="min-h-screen bg-[#F4F6FA] text-slate-900 flex font-sans antialiased">
-      <aside className="hidden md:flex w-60 bg-[#0F172A] text-slate-300 flex-col shrink-0">
+  const navigation = (
+      <aside className="flex w-full bg-[#0F172A] text-slate-300 flex-col shrink-0">
         <div className="p-4 border-b border-slate-800 flex items-center gap-3">
           <label title={ws.role === 'owner' ? 'Upload logo' : ws.name} className={`w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xl overflow-hidden shrink-0 ${ws.role === 'owner' ? 'cursor-pointer' : ''}`}>
             {logo ? <img src={logo} alt={`${ws.name} logo`} className="w-full h-full object-cover" /> : <img src={BRAND.markUrl} alt="Swahivo" className="w-full h-full object-cover" />}
@@ -78,9 +78,15 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
         </nav>
         <div className="p-3 border-t border-slate-800"><button onClick={onSignOut} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-800"><LogOut className="w-3.5 h-3.5" /> Sign out</button></div>
       </aside>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#F4F6FA] text-slate-900 flex font-sans antialiased">
+      <div className="hidden xl:flex w-60 shrink-0">{navigation}</div>
 
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="bg-white border-b border-slate-200 px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          <MobileNavigation>{navigation}</MobileNavigation>
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0 flex-1">
             {all.length > 1 ? (
               <select aria-label="Pharmacy" className="font-black text-slate-900 bg-transparent text-sm w-full sm:w-auto max-w-[220px] min-w-0" value={ws.id} onChange={(e) => onSwitch(e.target.value)}>
@@ -91,9 +97,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           </div>
           <div className="flex items-center gap-2 shrink-0"><NotificationBell extra={extra} /><span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">{roleLabel(ws.role)}</span></div>
         </header>
-        <div className="md:hidden flex overflow-x-auto gap-1 bg-white border-b border-slate-200 px-2 py-2">
-          {nav.map((n) => <button key={n.id} onClick={() => setTab(n.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${tab === n.id ? 'bg-blue-600 text-white' : 'text-slate-600'}`}>{n.label}</button>)}
-        </div>
+
 
         <main className="p-4 sm:p-6 space-y-6 max-w-[1500px] w-full mx-auto">
           {readOnly && (
