@@ -13,9 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SetPasswordRouteImport } from './routes/set-password'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPharmacyRouteImport } from './routes/_authenticated/pharmacy'
+import { Route as ApiPublicAiReportsRouteImport } from './routes/api/public/ai-reports'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -36,6 +38,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetPasswordRoute = SetPasswordRouteImport.update({
+  id: '/set-password',
+  path: '/set-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -51,22 +58,31 @@ const AuthenticatedPharmacyRoute = AuthenticatedPharmacyRouteImport.update({
   path: '/pharmacy',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicAiReportsRoute = ApiPublicAiReportsRouteImport.update({
+  id: '/api/public/ai-reports',
+  path: '/api/public/ai-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/set-password': typeof SetPasswordRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/pharmacy': typeof AuthenticatedPharmacyRoute
+  '/api/public/ai-reports': typeof ApiPublicAiReportsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/set-password': typeof SetPasswordRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/pharmacy': typeof AuthenticatedPharmacyRoute
+  '/api/public/ai-reports': typeof ApiPublicAiReportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -74,25 +90,44 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/set-password': typeof SetPasswordRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/pharmacy': typeof AuthenticatedPharmacyRoute
+  '/api/public/ai-reports': typeof ApiPublicAiReportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/reset-password' | '/account' | '/admin' | '/pharmacy'
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/set-password'
+    | '/account'
+    | '/admin'
+    | '/pharmacy'
+    | '/api/public/ai-reports'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/reset-password' | '/account' | '/admin' | '/pharmacy'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/set-password'
+    | '/account'
+    | '/admin'
+    | '/pharmacy'
+    | '/api/public/ai-reports'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/set-password'
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/pharmacy'
+    | '/api/public/ai-reports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,6 +135,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SetPasswordRoute: typeof SetPasswordRoute
+  ApiPublicAiReportsRoute: typeof ApiPublicAiReportsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +169,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/set-password': {
+      id: '/set-password'
+      path: '/set-password'
+      fullPath: '/set-password'
+      preLoaderRoute: typeof SetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/account': {
       id: '/_authenticated/account'
       path: '/account'
@@ -152,6 +196,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pharmacy'
       preLoaderRoute: typeof AuthenticatedPharmacyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/ai-reports': {
+      id: '/api/public/ai-reports'
+      path: '/api/public/ai-reports'
+      fullPath: '/api/public/ai-reports'
+      preLoaderRoute: typeof ApiPublicAiReportsRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -176,6 +227,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SetPasswordRoute: SetPasswordRoute,
+  ApiPublicAiReportsRoute: ApiPublicAiReportsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,6 @@
 import { MobileNavigation } from '@/components/common/MobileNavigation';
 import { RecordsTab } from './RecordsTab';
+import { AIReportsTab } from './AIReportsTab';
 import { ImportsTab } from './ImportsTab';
 import { BRAND } from '@/lib/brand';
 import { useEffect, useState, useSyncExternalStore } from 'react';
@@ -47,6 +48,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
 
   const nav = [
     { id: 'overview', label: 'Overview', Icon: LayoutDashboard, show: true },
+    { id: 'ai-reports', label: 'AI email reports', Icon: ClipboardList, show: ws.role==='owner'||ws.role==='admin' },
     { id: 'pos', label: 'Cashier (POS)', Icon: Store, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { id: 'imports', label: 'Bulk imports', Icon: ClipboardList, show: can(ws.role, 'manageStock', 'active') || can(ws.role, 'manageStaff', 'active') },
@@ -110,6 +112,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           {(tab === 'overview' || tab === 'expenses') && (
             <div className="flex justify-end gap-2">{can(ws.role, 'viewFinance', 'active') && <ReportButton ws={ws} range={range} />}<DateRangeFilter value={range} onChange={setRange} /></div>)}
           {tab === 'overview' && <OverviewTab ws={ws} range={range} isMounted={isMounted} />}
+          {tab === 'ai-reports' && <AIReportsTab ws={ws} />}
           {tab === 'imports' && <ImportsTab ws={ws} />}
           {(['suppliers','categories','settings'] as const).map(module => tab === module && <RecordsTab key={module} ws={ws} module={module} />)}
           {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} />}
