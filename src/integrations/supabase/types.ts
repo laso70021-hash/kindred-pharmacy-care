@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_onboarding: {
+        Row: {
+          created_at: string
+          password_required: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          password_required?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          password_required?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_onboarding_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_email_allowlist: {
         Row: {
           created_at: string
@@ -115,6 +144,124 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_report_lock: {
+        Row: {
+          created_at: string
+          id: number
+          lease_until: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: number
+          lease_until?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          lease_until?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_report_preferences: {
+        Row: {
+          created_at: string
+          delivery_hour: number
+          enabled: boolean
+          frequency: string
+          id: string
+          language: string
+          pause_reason: string | null
+          pharmacy_id: string
+          recipient_ids: string[]
+          topics: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_hour?: number
+          enabled?: boolean
+          frequency: string
+          id?: string
+          language?: string
+          pause_reason?: string | null
+          pharmacy_id: string
+          recipient_ids?: string[]
+          topics?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_hour?: number
+          enabled?: boolean
+          frequency?: string
+          id?: string
+          language?: string
+          pause_reason?: string | null
+          pharmacy_id?: string
+          recipient_ids?: string[]
+          topics?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_report_preferences_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_report_runs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          lease_until: string
+          period_key: string
+          preference_id: string
+          recipient_id: string
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          lease_until?: string
+          period_key: string
+          preference_id: string
+          recipient_id: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          lease_until?: string
+          period_key?: string
+          preference_id?: string
+          recipient_id?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_report_runs_preference_id_fkey"
+            columns: ["preference_id"]
+            isOneToOne: false
+            referencedRelation: "ai_report_preferences"
             referencedColumns: ["id"]
           },
         ]
@@ -1932,6 +2079,7 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _invite_id: string }; Returns: string }
+      acquire_ai_report_lock: { Args: never; Returns: boolean }
       admin_register_business: { Args: { _payload: Json }; Returns: string }
       admin_set_user_role: {
         Args: {
