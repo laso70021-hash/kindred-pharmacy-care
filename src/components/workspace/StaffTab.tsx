@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useServerFn } from '@tanstack/react-start';
+import { sendRecordEmail } from '@/lib/management.functions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { UserPlus, Copy, X, Mail } from 'lucide-react';
@@ -17,6 +19,7 @@ export function inviteLink(email: string): string {
 }
 
 export function StaffTab({ ws }: { ws: Workspace }) {
+  const sendEmail=useServerFn(sendRecordEmail);
   const pid = ws.id;
   const qc = useQueryClient();
   const editable = can(ws.role, 'manageStaff', ws.status);
@@ -171,6 +174,7 @@ export function StaffTab({ ws }: { ws: Workspace }) {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {editable&&<Button variant="outline" size="sm" disabled={busy} onClick={()=>void run(async()=>{await sendEmail({data:{kind:'pharmacy_invites',id:i.id,invite:true}});},'Invitation email sent')}><Mail className="size-3"/>Send email</Button>}
                   <button className={ghostBtn} onClick={() => copy(i.email)}>
                     <Copy className="w-3 h-3" /> Copy link
                   </button>
@@ -186,7 +190,7 @@ export function StaffTab({ ws }: { ws: Workspace }) {
         )}
       </div>
 
-      {inviting && <EntryForm module="staff" references={refs} onClose={()=>setInviting(false)} onSave={async row=>{await EntryService.save(pid,'staff',row);refresh();toast.success('Invitation created');}} />}
+      {inviting && <EntryForm module="staff" references={refs} onClose={()=>setInviting(false)} onSave={async row=>{const id=await EntryService.save(pid,'staff',row);refresh();await sendEmail({data:{kind:'pharmacy_invites',id,invite:true}});toast.success('Invitation email sent');}} />}
       {editing&&<EntryForm module="staff" initial={editing} references={refs} onClose={()=>setEditing(null)} onSave={async row=>{const id=editing['id'];if(!id)return;await EntryService.updateStaff(pid,id,row);refresh();toast.success('Staff updated');}}/>}
 
     </div>

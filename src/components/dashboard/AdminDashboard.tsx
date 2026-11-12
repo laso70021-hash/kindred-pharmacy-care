@@ -1,4 +1,5 @@
 import { MobileNavigation } from '@/components/common/MobileNavigation';
+import { RecordActions } from '@/components/common/RecordActions';
 import { toast } from 'sonner';
 import { BRAND } from '@/lib/brand';
 import { NotificationBell } from '@/components/common/NotificationBell';
@@ -1352,6 +1353,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                           </td>
                           <td className="py-3 text-slate-500">{ph.registered_at}</td>
                           <td className="py-3 text-right whitespace-nowrap">
+                            <RecordActions kind="pharmacies" record={{...ph,email:ph.owner_email}} onChanged={()=>void PharmacyService.getPharmacies().then(setPharmacies)} />
                             <Link
                               to="/pharmacy"
                               search={{ id: ph.id }}
@@ -1450,6 +1452,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                           )}
                         </td>
                         <td className="py-3 text-slate-500">{u.created_at}</td>
+                        <td><RecordActions kind="profiles" record={{...u}} onChanged={()=>void PharmacyService.getUsers().then(setUsers)} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -1834,6 +1837,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                           <td className="py-3 text-slate-400">{c.created_at}</td>
                           <td className="py-3 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              <RecordActions kind="customers" record={{...c}} onChanged={()=>void PharmacyService.getCustomers().then(setCustomers)} />
                               <button
                                 onClick={() => setSelectedCustomer(c)}
                                 className="p-1.5 hover:bg-slate-200 rounded text-slate-600"
@@ -1907,6 +1911,7 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                         <td className="py-3 text-slate-600">{sup.phone}</td>
                         <td className="py-3 text-slate-500">{sup.email}</td>
                         <td className="py-3 font-mono text-[11px] text-slate-400">{sup.tax_id}</td>
+                        <td><RecordActions kind="suppliers" record={{...sup}} onChanged={()=>void PharmacyService.getSuppliers().then(setSuppliers)} /></td>
                         <td className="py-3">
                           <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
                             Active

@@ -62,7 +62,12 @@ export function AuthPage() {
 
   // Once signed in (and roles are loaded), send admins to the admin dashboard and everyone else to their account.
   useEffect(() => {
-    if (!isLoading && user) navigate({ to: isSuperAdmin ? "/admin" : "/account", replace: true });
+    if (!isLoading && user) {
+      void supabase.from('account_onboarding').select('password_required').eq('user_id',user.id).maybeSingle().then(({data,error})=>{
+        if(error){toast.error('Could not check account setup. Please try again.');return;}
+        void navigate({to:data?.password_required?'/set-password':isSuperAdmin?'/admin':'/account',replace:true});
+      });
+    }
   }, [isLoading, user, isSuperAdmin, navigate]);
 
   const handleRegister = async ({ registration, account }: { registration: RegistrationInput; account: AccountFields }) => {
