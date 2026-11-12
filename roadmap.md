@@ -1,6 +1,6 @@
 # Swahivo roadmap (unified master plan)
 
-- [ ] 17. Collapsible phone/tablet navigation; uncropped hero photo, centered AI banner and single-row action buttons.
+- [x] 17. Collapsible phone/tablet navigation; uncropped hero photo, centered AI banner and single-row action buttons. Public flow verified at 320, 394, 768, 1024 and 1280px; authenticated dashboard checks unavailable on external Supabase.
 
 - [x] 16. AI category suggestions for unmatched import rows, with tenant-scoped categories and explicit user approval; live authenticated checks unavailable on external Supabase.
 

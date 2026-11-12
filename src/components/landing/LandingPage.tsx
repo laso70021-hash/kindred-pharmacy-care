@@ -281,7 +281,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
               <img src={herosectionphotoImg} alt="Swahivo Pharmacist" className="xl:hidden w-full rounded-3xl object-cover object-top aspect-[4/5]" referrerPolicy="no-referrer" />
               <div>
                 {/* Floating AI Assistant Card */}
-                <div className="absolute bottom-4 xl:bottom-auto xl:top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md p-5 rounded-3xl shadow-xl border border-white w-[270px] max-w-[calc(100%-2rem)] z-10 animate-fade-in">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md p-5 rounded-3xl shadow-xl border border-white w-[270px] max-w-[calc(100%-2rem)] z-10 animate-fade-in">
                   <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
                     <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center">
                       <Sparkles className="w-3.5 h-3.5" />
