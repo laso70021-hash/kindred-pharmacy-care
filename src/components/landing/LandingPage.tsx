@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import ContactSection from './ContactSection';
+import { MobileNavigation } from '@/components/common/MobileNavigation';
+import { Button } from '@/components/ui/button';
 import phamacyownerImg from '@/assets/swahivo/phamacy_owner.webp';
 import pharmacistImg from '@/assets/swahivo/pharmacist.webp';
 import cashierImg from '@/assets/swahivo/cashier.webp';
@@ -153,12 +155,12 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-blue-500 selection:text-white">
       {/* Navigation Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 grid grid-cols-[minmax(0,1fr)_auto] xl:flex items-center justify-between gap-3">
           {/* Logo */}
-          <a href="/" className="flex items-center"><img src={BRAND.logoUrl} alt="Swahivo" className="h-11 w-auto" /></a>
+          <a href="/" className="flex items-center min-w-0"><img src={BRAND.logoUrl} alt="Swahivo" className="h-auto max-h-11 w-auto max-w-[180px]" /></a>
 
           {/* Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+          <nav className="hidden xl:flex items-center gap-8 text-sm font-semibold text-slate-600">
             <a href="#home" className="text-blue-600 hover:text-blue-700 transition-colors">
               Home
             </a>
@@ -180,7 +182,18 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
           </nav>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
+            <MobileNavigation title="Swahivo navigation">
+              <nav className="flex flex-col gap-1 p-5 text-sm font-semibold">
+                <img src={BRAND.logoUrl} alt="Swahivo" className="w-44 h-auto mb-5" />
+                {[['home', 'Home'], ['features', 'Features'], ['about', 'Solutions'], ['pricing', 'Pricing'], ['ecosystem', 'Resources'], ['contact', 'Contact']].map(([id, label]) => (
+                  <a key={id} href={`#${id}`} className="px-3 py-3 rounded-md hover:bg-accent">{label}</a>
+                ))}
+                <Button variant="outline" onClick={isSignedIn ? onOpenDashboard : onSignIn}>{isSignedIn ? 'My Dashboard' : 'Sign In'}</Button>
+                <Button onClick={onOpenDashboard}>Get Started Free <ArrowRight /></Button>
+              </nav>
+            </MobileNavigation>
+            <div className="hidden xl:flex items-center gap-3">
             <button
               onClick={isSignedIn ? onOpenDashboard : onSignIn}
               className="text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-2 transition-colors"
@@ -193,6 +206,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
             >
               Get Started Free
             </button>
+            </div>
           </div>
         </div>
       </header>
@@ -200,19 +214,19 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
       {/* Hero Section */}
       <section id="home" className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50/40">
         {/* Full-bleed pharmacist photo on the right */}
-        <div className="absolute inset-y-0 right-0 w-full lg:w-[58%] hidden md:block">
+        <div className="absolute inset-y-0 right-0 w-[58%] hidden xl:block">
           <img
             src={herosectionphotoImg}
             alt="Swahivo Pharmacist"
-            className="absolute inset-0 w-full h-full object-cover object-[center_top]"
+            className="absolute inset-0 w-full h-full object-cover object-top"
             referrerPolicy="no-referrer"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-28 lg:min-h-[560px]">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
             {/* Left Content */}
-            <div className="lg:col-span-6 space-y-6 pt-4">
+            <div className="md:col-span-6 min-w-0 space-y-6 pt-4">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-semibold tracking-wide border border-blue-200">
                 <Sparkles className="w-3.5 h-3.5 text-blue-600" />
@@ -220,7 +234,7 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
               </div>
 
               {/* Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-blue-950 tracking-tight leading-[1.12]">
+              <h1 className="text-4xl sm:text-5xl md:text-4xl xl:text-[56px] font-extrabold text-blue-950 tracking-tight leading-[1.12]">
                 Run Your Pharmacy <br />
                 Smarter with <span className="text-blue-600">AI</span>
               </h1>
@@ -232,20 +246,13 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
               </p>
 
               {/* CTAs */}
-              <div className="flex flex-wrap items-center gap-4 pt-2">
-                <button
-                  onClick={onOpenDashboard}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-7 py-3.5 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all flex items-center gap-2"
-                >
-                  Start Free Trial <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={goContact}
-                  className="bg-white hover:bg-blue-50 text-blue-950 font-bold text-base px-6 py-3.5 rounded-xl border-2 border-blue-700 shadow-sm hover:shadow transition-all flex items-center gap-2"
-                >
-                  <PhoneCall className="w-4 h-4 text-blue-600" />
-                  Contact Sales
-                </button>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
+                <Button onClick={onOpenDashboard} className="hero-primary-action h-12 min-w-0 px-2 xl:px-5 text-xs sm:text-sm font-bold">
+                  Start Free Trial <ArrowRight />
+                </Button>
+                <Button variant="outline" onClick={goContact} className="hero-secondary-action h-12 min-w-0 px-2 xl:px-5 text-xs sm:text-sm font-bold">
+                  <PhoneCall /> Contact Sales
+                </Button>
               </div>
 
               {/* Highlights */}
@@ -270,11 +277,11 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
             </div>
 
             {/* Right: photo is the section background; AI card floats top-right */}
-            <div className="lg:col-span-6 relative min-h-[320px] md:min-h-0">
-              <img src={herosectionphotoImg} alt="Swahivo Pharmacist" className="md:hidden w-full rounded-3xl object-cover aspect-[4/3]" referrerPolicy="no-referrer" />
+            <div className="md:col-span-6 relative min-w-0 xl:min-h-[420px]">
+              <img src={herosectionphotoImg} alt="Swahivo Pharmacist" className="xl:hidden w-full rounded-3xl object-cover object-top aspect-[4/5]" referrerPolicy="no-referrer" />
               <div>
                 {/* Floating AI Assistant Card */}
-                <div className="absolute top-4 right-0 bg-white/90 backdrop-blur-md p-5 rounded-3xl shadow-xl border border-white max-w-[270px] z-10 animate-fade-in">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md p-5 rounded-3xl shadow-xl border border-white w-[270px] max-w-[calc(100%-2rem)] z-10 animate-fade-in">
                   <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
                     <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center">
                       <Sparkles className="w-3.5 h-3.5" />
@@ -733,20 +740,13 @@ export default function LandingPage({ onOpenDashboard, onChoosePlan, onSignIn, i
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <button
-                onClick={onOpenDashboard}
-                className="bg-white hover:bg-blue-50 text-blue-700 font-bold text-sm px-6 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2"
-              >
-                Get Started Free <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={goContact}
-                className="bg-blue-800/60 hover:bg-blue-800 text-white font-bold text-sm px-6 py-3 rounded-xl border border-white/20 transition-all flex items-center gap-2"
-              >
-                <PhoneCall className="w-4 h-4" />
-                Talk to Sales
-              </button>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full md:w-auto shrink-0">
+              <Button onClick={onOpenDashboard} variant="secondary" className="h-12 min-w-0 px-2 sm:px-4 text-xs sm:text-sm font-bold">
+                Get Started Free <ArrowRight />
+              </Button>
+              <Button onClick={goContact} variant="outline" className="hero-secondary-action h-12 min-w-0 px-2 sm:px-4 text-xs sm:text-sm font-bold">
+                <PhoneCall /> Talk to Sales
+              </Button>
             </div>
           </div>
         </div>
