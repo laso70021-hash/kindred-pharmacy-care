@@ -153,3 +153,15 @@
     color: var(--color-foreground);
   }
 }
+
+:root {
+  --hero-action: oklch(0.546 0.245 262.881);
+  --hero-action-hover: oklch(0.488 0.243 264.376);
+  --hero-action-foreground: oklch(1 0 0);
+}
+.hero-primary-action {
+  background: var(--hero-action);
+  color: var(--hero-action-foreground);
+}
+.hero-primary-action:hover { background: var(--hero-action-hover); }
+.hero-secondary-action { color: var(--hero-action); border-color: var(--hero-action); }
