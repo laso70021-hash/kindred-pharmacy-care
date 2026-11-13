@@ -30,6 +30,8 @@ import { ShiftsTab } from './ShiftsTab';
 import { DocumentsTab } from './DocumentsTab';
 import { StockAlertsTab } from './StockAlertsTab';
 import { RoleHome } from './RoleHome';
+import { SupplierDashboard, InventoryAvailability, SupplierPayments, SupplierReports, SupplierNotifications, SupplierMessages } from './SupplierPortal';
+import { Bell, MessageCircle, Wallet, Layers, Upload, Settings as SettingsIcon } from 'lucide-react';
 import { homeFor } from '@/lib/role-home';
 
 const sub = () => () => {};
@@ -54,7 +56,24 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     title: rem.level === 'expired' ? 'Your account has expired' : `Your ${ws.status === 'trial' ? 'free trial' : 'yearly plan'} ends in ${rem.days} day${rem.days === 1 ? '' : 's'}`,
     body: 'Pay the yearly plan to keep using every feature.' }] : [];
 
-  const nav = [
+  const supplierNav = [
+    { s: 'Supplier Portal', id: 'overview', label: 'Dashboard', Icon: LayoutDashboard, show: true },
+    { s: 'Supplier Portal', id: 'orders', label: 'Purchase Orders', Icon: ShoppingCart, show: true },
+    { s: 'Supplier Portal', id: 'inventory', label: 'Product Catalogue', Icon: Boxes, show: true },
+    { s: 'Supplier Portal', id: 'imports', label: 'Bulk Import', Icon: Upload, show: can(ws.role, 'manageStock', 'active') },
+    { s: 'Supplier Portal', id: 'availability', label: 'Inventory Availability', Icon: Layers, show: true },
+    { s: 'Supplier Portal', id: 'invoices', label: 'Invoices', Icon: FileText, show: true },
+    { s: 'Supplier Portal', id: 'payments', label: 'Payments', Icon: Wallet, show: can(ws.role, 'viewFinance', ws.status) },
+    { s: 'Supplier Portal', id: 'notifications', label: 'Notifications', Icon: Bell, show: true },
+    { s: 'Supplier Portal', id: 'reports', label: 'Reports', Icon: BarChart3, show: can(ws.role, 'viewFinance', ws.status) },
+    { s: 'Supplier Portal', id: 'messages', label: 'Messages', Icon: MessageCircle, show: true },
+    { s: 'Team', id: 'staff', label: 'Staff & Roles', Icon: Users2, show: can(ws.role, 'manageBranches', 'active') },
+    { s: 'Team', id: 'branches', label: 'Warehouses', Icon: GitBranch, show: true },
+    { s: 'Team', id: 'shifts', label: 'Shifts', Icon: Clock, show: true },
+    { s: 'Team', id: 'settings', label: 'Settings', Icon: SettingsIcon, show: ws.role === 'owner' || ws.role === 'admin' },
+  ].filter((n) => n.show);
+
+  const pharmacyNav = [
     { s: 'Main', id: 'overview', label: homeFor(ws.role) === 'business' ? 'Overview' : 'My Dashboard', Icon: LayoutDashboard, show: true },
     { s: 'Main', id: 'pos', label: 'Cashier (POS)', Icon: Store, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { s: 'Main', id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
@@ -74,6 +93,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     { s: 'Insights & Reports', id: 'ai-reports', label: 'AI Email Reports', Icon: ClipboardList, show: ws.role==='owner'||ws.role==='admin' },
     { s: 'System', id: 'settings', label: 'Settings', Icon: GitBranch, show: ws.role === 'owner' || ws.role === 'admin' },
   ].filter((n) => n.show);
+  const nav = ws.business_type === 'supplier' ? supplierNav : pharmacyNav;
 
   const navigation = (
       <aside className="flex w-full bg-[#0F172A] text-slate-300 flex-col shrink-0">
@@ -124,8 +144,15 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
             </div>)}
           {tab === 'expenses' && (
             <div className="flex justify-end gap-2">{can(ws.role, 'viewFinance', 'active') && <ReportButton ws={ws} range={range} />}<DateRangeFilter value={range} onChange={setRange} /></div>)}
+          {tab === 'overview' && ws.business_type === 'supplier' && <SupplierDashboard ws={ws} onNavigate={setTab} />}
+          {tab === 'availability' && <InventoryAvailability ws={ws} />}
+          {tab === 'payments' && <SupplierPayments ws={ws} />}
+          {tab === 'reports' && <SupplierReports ws={ws} />}
+          {tab === 'notifications' && <SupplierNotifications ws={ws} />}
+          {tab === 'messages' && <SupplierMessages ws={ws} />}
+          {tab === 'invoices' && <DocumentsTab ws={ws} />}
           {tab === 'overview' && homeFor(ws.role) !== 'business' && ws.business_type === 'pharmacy' && <RoleHome ws={ws} userId={userId} kind={homeFor(ws.role) as Exclude<ReturnType<typeof homeFor>, 'business'>} onNavigate={setTab} />}
-          {tab === 'overview' && (homeFor(ws.role) === 'business' || ws.business_type !== 'pharmacy') && <OverviewTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} onNavigate={setTab} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
+          {tab === 'overview' && homeFor(ws.role) === 'business' && ws.business_type === 'pharmacy' && <OverviewTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} onNavigate={setTab} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
           {tab === 'sales-reports' && <SalesReportsTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
           {tab === 'ai-reports' && <AIReportsTab ws={ws} />}
           {tab === 'imports' && <ImportsTab ws={ws} />}
