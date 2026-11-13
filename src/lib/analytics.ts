@@ -8,7 +8,7 @@ export interface SaleFilter { branchId?: string | null; productIds?: Set<string>
 export function bucketKey(dayKey: string, g: Granularity): string {
   if (g === 'day') return dayKey;
   if (g === 'month') return dayKey.slice(0, 7);
-  const [y, m, d] = dayKey.split('-').map(Number);
+  const [y = 0, m = 1, d = 1] = dayKey.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
   dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
@@ -76,7 +76,7 @@ export function expiryAnalysis(batches: Pick<WsBatch, 'quantity' | 'days_to_expi
 
 export function toCsv(rows: Record<string, string | number>[]): string {
   if (!rows.length) return '';
-  const cols = Object.keys(rows[0]);
+  const cols = Object.keys(rows[0] ?? {});
   const esc = (v: string | number) => { const t = String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
   return [cols.join(','), ...rows.map((r) => cols.map((c) => esc(r[c] ?? '')).join(','))].join('\n');
 }
