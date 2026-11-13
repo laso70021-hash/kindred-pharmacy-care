@@ -1645,8 +1645,8 @@ export class RoleHomeService {
     if (kind === 'cashier' || kind === 'pharmacist') {
       const { data, error } = await supabase.from('sales').select('total,payment_method').eq('pharmacy_id', pid).eq('cashier_id', userId).gte('created_at', today.toISOString());
       fail(error);
-      out.mySalesCount = data?.length ?? 0;
-      out.mySalesTotal = (data ?? []).reduce((a, s) => a + Number(s.total || 0), 0);
+      out["mySalesCount"] = data?.length ?? 0;
+      out["mySalesTotal"] = (data ?? []).reduce((a, s) => a + Number(s.total || 0), 0);
       for (const s of data ?? []) byMethod[s.payment_method || 'cash'] = (byMethod[s.payment_method || 'cash'] ?? 0) + Number(s.total || 0);
     }
     if (kind === 'pharmacist') {
@@ -1654,7 +1654,7 @@ export class RoleHomeService {
         supabase.from('prescriptions').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pid).eq('status', 'pending'),
         supabase.from('prescriptions').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pid).eq('status', 'dispensed').gte('dispensed_at', today.toISOString()),
       ]);
-      fail(e1); fail(e2); out.rxPending = pending ?? 0; out.rxDispensed = done ?? 0;
+      fail(e1); fail(e2); out["rxPending"] = pending ?? 0; out["rxDispensed"] = done ?? 0;
     }
     if (kind === 'pharmacist' || kind === 'inventory') {
       const [{ data: batches, error: e1 }, { data: products, error: e2 }] = await Promise.all([
@@ -1665,15 +1665,15 @@ export class RoleHomeService {
       const stock: Record<string, number> = {};
       for (const b of batches ?? []) stock[b.product_id] = (stock[b.product_id] ?? 0) + (b.quantity || 0);
       const active = (products ?? []).filter((p) => p.is_active !== false);
-      out.outOfStock = active.filter((p) => (stock[p.id] ?? 0) <= 0).length;
-      out.lowStock = active.filter((p) => (stock[p.id] ?? 0) > 0 && (stock[p.id] ?? 0) <= (p.min_stock_level ?? 0)).length;
+      out["outOfStock"] = active.filter((p) => (stock[p.id] ?? 0) <= 0).length;
+      out["lowStock"] = active.filter((p) => (stock[p.id] ?? 0) > 0 && (stock[p.id] ?? 0) <= (p.min_stock_level ?? 0)).length;
       const expiring = (batches ?? []).filter((b) => b.quantity > 0 && b.expiry_date <= soon).sort((a, b) => a.expiry_date.localeCompare(b.expiry_date));
-      out.expiring = expiring.length;
+      out["expiring"] = expiring.length;
       rows = expiring.slice(0, 6).map((b) => ({ label: (b.products as { name?: string } | null)?.name ?? 'Product', sub: `Batch ${b.batch_number} · ${b.quantity} units`, badge: b.expiry_date }));
     }
     if (kind === 'inventory') {
       const { count, error } = await supabase.from('wholesale_orders').select('id', { count: 'exact', head: true }).eq('buyer_pharmacy_id', pid).eq('status', 'pending');
-      fail(error); out.ordersPending = count ?? 0;
+      fail(error); out["ordersPending"] = count ?? 0;
     }
     if (kind === 'accountant') {
       const [{ data: s, error: e1 }, { data: x, error: e2 }] = await Promise.all([
@@ -1681,16 +1681,16 @@ export class RoleHomeService {
         supabase.from('expenses').select('amount').eq('pharmacy_id', pid).gte('expense_date', monthStart.toISOString().slice(0, 10)),
       ]);
       fail(e1); fail(e2);
-      out.monthSales = (s ?? []).reduce((a, r) => a + Number(r.total || 0), 0);
-      out.monthSalesCount = s?.length ?? 0;
-      out.monthExpenses = (x ?? []).reduce((a, r) => a + Number(r.amount || 0), 0);
-      out.monthNet = out.monthSales - out.monthExpenses;
+      out["monthSales"] = (s ?? []).reduce((a, r) => a + Number(r.total || 0), 0);
+      out["monthSalesCount"] = s?.length ?? 0;
+      out["monthExpenses"] = (x ?? []).reduce((a, r) => a + Number(r.amount || 0), 0);
+      out["monthNet"] = out["monthSales"] - out["monthExpenses"];
     }
     if (kind === 'rider') {
       const { data, error } = await supabase.from('deliveries').select('destination_address,status,created_at').eq('pharmacy_id', pid).eq('rider_id', userId).order('created_at', { ascending: false }).limit(50);
       fail(error);
-      out.assigned = (data ?? []).filter((d) => d.status !== 'delivered' && d.status !== 'cancelled').length;
-      out.delivered = (data ?? []).filter((d) => d.status === 'delivered').length;
+      out["assigned"] = (data ?? []).filter((d) => d.status !== 'delivered' && d.status !== 'cancelled').length;
+      out["delivered"] = (data ?? []).filter((d) => d.status === 'delivered').length;
       rows = (data ?? []).slice(0, 8).map((d) => ({ label: d.destination_address, sub: new Date(d.created_at).toLocaleString(), badge: d.status ?? 'pending' }));
     }
     return { stats: out, byMethod, rows };

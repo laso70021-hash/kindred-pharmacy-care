@@ -16,14 +16,14 @@ export function RoleHome({ ws, userId, kind, onNavigate }: { ws: Workspace; user
   const kpis: Kpi[] = {
     cashier: [
       { label: 'My sales today', value: n('mySalesCount'), Icon: ShoppingCart, tone: 'bg-blue-50 text-blue-600', tab: 'pos' },
-      { label: 'My takings today', value: tzs(s.mySalesTotal ?? 0), Icon: Wallet, tone: 'bg-emerald-50 text-emerald-600' },
-      { label: 'Cash today', value: tzs(data?.byMethod.cash ?? 0), Icon: Receipt, tone: 'bg-amber-50 text-amber-600' },
+      { label: 'My takings today', value: tzs(s["mySalesTotal"] ?? 0), Icon: Wallet, tone: 'bg-emerald-50 text-emerald-600' },
+      { label: 'Cash today', value: tzs(data?.byMethod["cash"] ?? 0), Icon: Receipt, tone: 'bg-amber-50 text-amber-600' },
     ],
     pharmacist: [
       { label: 'Prescriptions waiting', value: n('rxPending'), Icon: Pill, tone: 'bg-blue-50 text-blue-600', tab: 'rx' },
       { label: 'Dispensed today', value: n('rxDispensed'), Icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-600', tab: 'rx' },
       { label: 'Expiring ≤ 90 days', value: n('expiring'), Icon: CalendarClock, tone: 'bg-amber-50 text-amber-600', tab: 'stock-alerts:expiry' },
-      { label: 'My sales today', value: tzs(s.mySalesTotal ?? 0), Icon: Wallet, tone: 'bg-violet-50 text-violet-600', tab: 'pos' },
+      { label: 'My sales today', value: tzs(s["mySalesTotal"] ?? 0), Icon: Wallet, tone: 'bg-violet-50 text-violet-600', tab: 'pos' },
     ],
     inventory: [
       { label: 'Out of stock', value: n('outOfStock'), Icon: PackageX, tone: 'bg-rose-50 text-rose-600', tab: 'stock-alerts' },
@@ -32,10 +32,10 @@ export function RoleHome({ ws, userId, kind, onNavigate }: { ws: Workspace; user
       { label: 'Supplier orders pending', value: n('ordersPending'), Icon: ClipboardList, tone: 'bg-blue-50 text-blue-600', tab: 'orders' },
     ],
     accountant: [
-      { label: 'Sales this month', value: tzs(s.monthSales ?? 0), Icon: TrendingUp, tone: 'bg-blue-50 text-blue-600', tab: 'sales-reports' },
+      { label: 'Sales this month', value: tzs(s["monthSales"] ?? 0), Icon: TrendingUp, tone: 'bg-blue-50 text-blue-600', tab: 'sales-reports' },
       { label: 'Number of sales', value: n('monthSalesCount'), Icon: ShoppingCart, tone: 'bg-violet-50 text-violet-600', tab: 'sales-reports' },
-      { label: 'Expenses this month', value: tzs(s.monthExpenses ?? 0), Icon: Receipt, tone: 'bg-rose-50 text-rose-600', tab: 'expenses' },
-      { label: 'Sales minus expenses', value: tzs(s.monthNet ?? 0), Icon: Wallet, tone: 'bg-emerald-50 text-emerald-600' },
+      { label: 'Expenses this month', value: tzs(s["monthExpenses"] ?? 0), Icon: Receipt, tone: 'bg-rose-50 text-rose-600', tab: 'expenses' },
+      { label: 'Sales minus expenses', value: tzs(s["monthNet"] ?? 0), Icon: Wallet, tone: 'bg-emerald-50 text-emerald-600' },
     ],
     rider: [
       { label: 'Open deliveries', value: n('assigned'), Icon: Truck, tone: 'bg-blue-50 text-blue-600' },
