@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, PackagePlus, Pill, Search } from 'lucide-react';
 import { EntryForm } from './EntryForm';
+import { ProductsCanvas } from './ProductsCanvas';
 import { EntryService, WorkspaceService } from '@/lib/pharmacy-service';
 import type { Workspace, WsProduct } from '@/lib/pharmacy-types';
 import { can, stockState, EXPIRY_WARNING_DAYS } from '@/lib/workspace';
@@ -18,7 +19,7 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
   const { data: branches = [] } = useQuery({ queryKey: ['ws', pid, 'branches'], queryFn: () => WorkspaceService.getBranches(pid) });
   const { data: entryProducts = [] } = useQuery({ queryKey: ['entry', pid, 'products'], queryFn: () => EntryService.list(pid, 'products') });
   const { data: refs = {} } = useQuery({ queryKey: ['entry-refs', pid], queryFn: () => EntryService.references(pid) });
-  const [view, setView] = useState<'grid' | 'batches'>('grid');
+  const [view, setView] = useState<'table' | 'grid' | 'batches'>('table');
   const [q, setQ] = useState('');
   const [branch, setBranch] = useState('');
   const [editing, setEditing] = useState<Partial<WsProduct> | null>(null);
@@ -51,11 +52,13 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
           <option value="">All branches</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
         <div className="flex bg-slate-100 rounded-lg p-0.5 text-xs font-bold">
-          {(['grid', 'batches'] as const).map((v) => <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-md ${view === v ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>{v === 'grid' ? 'Products' : 'Batches'}</button>)}
+          {(['table', 'grid', 'batches'] as const).map((v) => <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-md ${view === v ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>{v === 'table' ? 'Pharmacy Products' : v === 'grid' ? 'Photo grid' : 'Batches'}</button>)}
         </div>
       </div>
 
-      {isLoading ? <Empty>Loading…</Empty> : view === 'grid' ? (
+      {isLoading ? <Empty>Loading…</Empty> : view === 'table' ? (
+        <ProductsCanvas products={products.filter((p) => !branch || (p.stock_by_branch[branch] || 0) > 0 || p.stock <= 0)} batches={batches.filter((b) => !branch || b.branch_id === branch)} editable={editable} onAdd={() => setEditing({})} onEdit={(p) => setEditing(p)} />
+      ) : view === 'grid' ? (
         shown.length === 0 ? <Empty>No products yet.</Empty> : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
             {shown.map((p) => {
