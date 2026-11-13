@@ -4,7 +4,7 @@ const ok = <T,>(r: { data: T; error: { message: string } | null }) => { if (r.er
 
 export type DocType = 'invoice' | 'proforma' | 'delivery_note' | 'label';
 export const DOC_LABEL: Record<DocType, string> = { invoice: 'Invoice', proforma: 'Proforma Invoice', delivery_note: 'Delivery Note', label: 'Product Labels' };
-export interface DocLine { name: string; description?: string; quantity: number; unit_price: number; total?: number; barcode?: string; batch?: string; expiry?: string }
+export interface DocLine { name: string; description?: string | undefined; quantity: number; unit_price: number; total?: number | undefined; barcode?: string | undefined; batch?: string | undefined; expiry?: string | undefined }
 export interface BizDoc {
   id: string; doc_type: DocType; doc_number: string; status: string; customer: { name?: string; phone?: string; email?: string; address?: string; tin?: string };
   items: DocLine[]; subtotal: number; discount: number; tax_rate: number; tax: number; total: number;

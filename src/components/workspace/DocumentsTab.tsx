@@ -115,7 +115,7 @@ function DocForm({ ws, type, onClose, onDone }: { ws: Workspace; type: DocType; 
     </Modal>);
 }
 
-function Barcode({ code }: { code?: string }) {
+function Barcode({ code }: { code?: string | undefined }) {
   const bits = code ? ean13Bits(code) : null;
   if (!bits) return code ? <div className="text-[9px]">{code}</div> : null;
   return <div><svg viewBox="0 0 95 30" className="w-full h-8" preserveAspectRatio="none">{bits.split('').map((b, i) => (b === '1' ? <rect key={i} x={i} width={1} height={30} fill="currentColor" /> : null))}</svg><div className="text-[9px] text-center tracking-widest">{code}</div></div>;
