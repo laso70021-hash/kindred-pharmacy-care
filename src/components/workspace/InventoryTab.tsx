@@ -8,9 +8,9 @@ import { EntryService, WorkspaceService } from '@/lib/pharmacy-service';
 import type { Workspace, WsProduct } from '@/lib/pharmacy-types';
 import { can, stockState, EXPIRY_WARNING_DAYS } from '@/lib/workspace';
 import { formatNumber, formatDateDeterministic } from '@/lib/utils';
-import { cardCls, Empty, Field, Modal, SectionHeader, errorText, ghostBtn, inputCls, primaryBtn } from './ws-ui';
+import { cardCls, Empty, Field, Modal, errorText, ghostBtn, inputCls, primaryBtn } from './ws-ui';
 
-export function InventoryTab({ ws, userId, onImport }: { ws: Workspace; userId: string; onImport?: () => void }) {
+export function InventoryTab({ ws, userId, onImport }: { ws: Workspace; userId: string; onImport?: (() => void) | undefined }) {
   const pid = ws.id;
   const qc = useQueryClient();
   const editable = can(ws.role, 'manageStock', ws.status);

@@ -136,7 +136,7 @@ export function ProductsCanvas({ products, batches, branches, onEdit, onStock, e
             <div className="flex items-center gap-1.5">
               <button className="h-9 px-3 rounded-lg border border-slate-200 font-semibold text-blue-600 disabled:text-slate-300 disabled:bg-slate-50" disabled={cur <= 1} onClick={() => setPage(cur - 1)}>Previous</button>
               {nums.map((n) => <button key={n} onClick={() => setPage(n)} className={`h-9 min-w-9 px-2 rounded-lg border font-semibold ${n === cur ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-200 text-slate-700'}`}>{n}</button>)}
-              {pages > 5 && nums[nums.length - 1] < pages && <><span className="px-1">…</span><button onClick={() => setPage(pages)} className="h-9 min-w-9 px-2 rounded-lg border border-slate-200 font-semibold">{pages}</button></>}
+              {pages > 5 && (nums[nums.length - 1] ?? pages) < pages && <><span className="px-1">…</span><button onClick={() => setPage(pages)} className="h-9 min-w-9 px-2 rounded-lg border border-slate-200 font-semibold">{pages}</button></>}
               <button className="h-9 px-3 rounded-lg border border-slate-200 font-semibold text-blue-600 disabled:text-slate-300 disabled:bg-slate-50" disabled={cur >= pages} onClick={() => setPage(cur + 1)}>Next</button>
             </div>
           </div>
