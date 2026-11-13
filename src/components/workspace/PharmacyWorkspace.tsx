@@ -29,6 +29,8 @@ import { DispenserTab } from './DispenserTab';
 import { ShiftsTab } from './ShiftsTab';
 import { DocumentsTab } from './DocumentsTab';
 import { StockAlertsTab } from './StockAlertsTab';
+import { RoleHome } from './RoleHome';
+import { homeFor } from '@/lib/role-home';
 
 const sub = () => () => {};
 
@@ -53,7 +55,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     body: 'Pay the yearly plan to keep using every feature.' }] : [];
 
   const nav = [
-    { s: 'Main', id: 'overview', label: 'Overview', Icon: LayoutDashboard, show: true },
+    { s: 'Main', id: 'overview', label: homeFor(ws.role) === 'business' ? 'Overview' : 'My Dashboard', Icon: LayoutDashboard, show: true },
     { s: 'Main', id: 'pos', label: 'Cashier (POS)', Icon: Store, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { s: 'Main', id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { s: 'Main', id: 'documents', label: 'Documents', Icon: FileText, show: true },
@@ -122,7 +124,8 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
             </div>)}
           {tab === 'expenses' && (
             <div className="flex justify-end gap-2">{can(ws.role, 'viewFinance', 'active') && <ReportButton ws={ws} range={range} />}<DateRangeFilter value={range} onChange={setRange} /></div>)}
-          {tab === 'overview' && <OverviewTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} onNavigate={setTab} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
+          {tab === 'overview' && homeFor(ws.role) !== 'business' && ws.business_type === 'pharmacy' && <RoleHome ws={ws} userId={userId} kind={homeFor(ws.role) as Exclude<ReturnType<typeof homeFor>, 'business'>} onNavigate={setTab} />}
+          {tab === 'overview' && (homeFor(ws.role) === 'business' || ws.business_type !== 'pharmacy') && <OverviewTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} onNavigate={setTab} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
           {tab === 'sales-reports' && <SalesReportsTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
           {tab === 'ai-reports' && <AIReportsTab ws={ws} />}
           {tab === 'imports' && <ImportsTab ws={ws} />}
