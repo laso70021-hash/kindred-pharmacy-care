@@ -8,4 +8,4 @@ Reference: 19 uploaded designs + "COMPLETE SUPPLIER MARKETPLACE" brief. Keep the
 - [x] 4. Purchase-list import (CSV/XLSX) with automatic supplier matching, multi-supplier orders
 - [x] 5. Full order lifecycle: request → quotation → confirmed → preparing → dispatched → in transit → delivered → stock received (stock added only on receipt)
 - [x] 6. Order-linked chat, documents, notifications; invoices & verified payments
-- [ ] 7. Tests: lifecycle, matching, tenant isolation, regression
+- [x] 7. Tests: lifecycle, matching, tenant isolation, regression
