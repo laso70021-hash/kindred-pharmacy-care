@@ -1439,7 +1439,7 @@ export interface CatalogItem {
 }
 export interface WholesaleOrder {
   id: string; order_number: string; buyer_pharmacy_id: string; buyer_name: string; supplier_id: string; supplier_name: string;
-  branch_id: string | null; branch_name: string; status: 'payment_submitted' | 'confirmed' | 'preparing' | 'dispatched' | 'in_transit' | 'delivered' | 'completed' | 'rejected';
+  branch_id: string | null; branch_name: string; status: 'quote_requested' | 'quoted' | 'cancelled' | 'payment_submitted' | 'confirmed' | 'preparing' | 'dispatched' | 'in_transit' | 'delivered' | 'completed' | 'rejected';
   total_amount: number; payment_method: string; payment_reference: string | null; receipt_path: string | null;
   supplier_note: string | null; created_at: string; reviewed_at: string | null;
   contact_name: string | null; contact_phone: string | null; delivery_address: string | null; delivery_note: string | null;
@@ -1523,6 +1523,31 @@ export class WholesaleService {
 
   static async review(orderId: string, decision: 'accept' | 'reject', note: string): Promise<void> {
     const { error } = await supabase.rpc('review_wholesale_order', { _order: orderId, _decision: decision, _note: note });
+    fail(error);
+  }
+
+  static async uploadReceipt(userId: string, file: File): Promise<string> {
+    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60);
+    const path = `${userId}/wholesale-${Date.now()}-${safe}`;
+    const { error } = await supabase.storage.from('payment-receipts').upload(path, file, { contentType: file.type || 'application/octet-stream' });
+    if (error) throw new Error(`Receipt upload failed: ${error.message}`);
+    return path;
+  }
+
+  static async requestQuote(a: { buyerId: string; supplierId: string; branchId: string; items: { product_id: string; quantity: number }[]; note: string }): Promise<string> {
+    const { data, error } = await (supabase.rpc as any)('request_wholesale_quote', { _buyer: a.buyerId, _supplier: a.supplierId, _branch: a.branchId, _items: a.items, _note: a.note });
+    fail(error);
+    return data as string;
+  }
+
+  static async sendQuote(orderId: string, prices: { item_id: string; unit_price: number }[], note: string, decline = false): Promise<void> {
+    const { error } = await (supabase.rpc as any)('send_wholesale_quote', { _order: orderId, _prices: prices, _note: note, _decline: decline });
+    fail(error);
+  }
+
+  static async respondQuote(orderId: string, accept: boolean, pay?: { userId: string; method: string; reference: string; file?: File | null }): Promise<void> {
+    const receipt = pay?.file ? await WholesaleService.uploadReceipt(pay.userId, pay.file) : null;
+    const { error } = await (supabase.rpc as any)('respond_wholesale_quote', { _order: orderId, _accept: accept, _method: pay?.method ?? 'pending', _reference: pay?.reference ?? '', _receipt_path: receipt });
     fail(error);
   }
 
