@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { FileText, Check, X } from 'lucide-react';
+import { FileText, Check, X, MessageCircle, Phone, MapPin } from 'lucide-react';
+import { WholesaleChat } from './WholesaleChat';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { WholesaleService, type WholesaleOrder } from '@/lib/pharmacy-service';
 import { isReadOnly } from '@/lib/workspace';
@@ -21,6 +22,7 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const readOnly = isReadOnly(ws.status, ws.role);
+  const [chat, setChat] = useState<WholesaleOrder | null>(null);
 
   const openReceipt = async (path: string) => {
     try { window.open(await WholesaleService.receiptUrl(path), '_blank', 'noopener'); } catch (err) { toast.error(errorText(err)); }
@@ -55,6 +57,14 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
             <div><span className="text-slate-500">{o.payment_method.toUpperCase()} reference</span><div className="font-bold font-mono">{o.payment_reference || '—'}</div></div>
             <div><span className="text-slate-500">Receipt</span><div>{o.receipt_path ? <button className="text-blue-600 font-bold inline-flex items-center gap-1" onClick={() => openReceipt(o.receipt_path!)}><FileText className="w-3.5 h-3.5" />View</button> : '—'}</div></div>
           </div>
+          {(o.contact_phone || o.delivery_address) && (
+            <div className="text-xs bg-blue-50/60 rounded-xl p-3 space-y-0.5">
+              <div className="font-bold text-slate-700">{side === 'supplier' ? o.buyer_name : 'Delivery'}{o.contact_name ? ` · ${o.contact_name}` : ''}</div>
+              {o.contact_phone && <a href={`tel:${o.contact_phone}`} className="inline-flex items-center gap-1 text-blue-700 font-semibold mr-3"><Phone className="w-3 h-3" />{o.contact_phone}</a>}
+              {o.delivery_address && <span className="inline-flex items-center gap-1 text-slate-600"><MapPin className="w-3 h-3" />{o.delivery_address}</span>}
+              {o.delivery_note && <div className="text-slate-500">Note: {o.delivery_note}</div>}
+            </div>)}
+          <button className={ghostBtn} onClick={() => setChat(o)}><MessageCircle className="w-3.5 h-3.5" /> Chat with {side === 'supplier' ? o.buyer_name : o.supplier_name}</button>
           {o.supplier_note && <p className="text-xs text-slate-600">Supplier note: {o.supplier_note}</p>}
           {side === 'supplier' && o.status === 'payment_submitted' && (
             <div className="flex flex-col sm:flex-row gap-2">
@@ -63,6 +73,8 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
               <button className={ghostBtn} disabled={busy === o.id || readOnly} onClick={() => review(o, 'reject')}><X className="w-3.5 h-3.5" /> Reject</button>
             </div>)}
         </div>))}
+      {chat && <WholesaleChat buyerId={chat.buyer_pharmacy_id} supplierId={chat.supplier_id} side={side} myName={ws.name}
+        partnerName={side === 'supplier' ? chat.buyer_name : chat.supplier_name} onClose={() => setChat(null)} />}
     </div>
   );
 }
