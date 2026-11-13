@@ -175,7 +175,7 @@ function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDo
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const { user } = useAuth();
-  const [contact, setContact] = useState({ name: (user?.user_metadata?.full_name as string) || ws.name, phone: '', address: '', note: '' });
+  const [contact, setContact] = useState({ name: (user?.user_metadata?.['full_name'] as string) || ws.name, phone: '', address: '', note: '' });
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
