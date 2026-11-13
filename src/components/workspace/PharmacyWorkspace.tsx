@@ -1,11 +1,12 @@
 import { MobileNavigation } from '@/components/common/MobileNavigation';
 import { RecordsTab } from './RecordsTab';
 import { AIReportsTab } from './AIReportsTab';
+import { SalesReportsTab } from './SalesReportsTab';
 import { ImportsTab } from './ImportsTab';
 import { BRAND } from '@/lib/brand';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
-import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList, Store, Pill, Clock, FileText } from 'lucide-react';
+import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList, Store, Pill, Clock, FileText, BarChart3 } from 'lucide-react';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { can, canOrderStock, isReadOnly, roleLabel } from '@/lib/workspace';
 import { STATUS_LABELS, expiryReminder } from '@/lib/billing';
@@ -63,6 +64,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     { s: 'Operations', id: 'staff', label: 'Staff & Roles', Icon: Users2, show: can(ws.role, 'manageBranches', 'active') },
     { s: 'Operations', id: 'shifts', label: 'Shifts', Icon: Clock, show: true },
     { s: 'Operations', id: 'expenses', label: 'Expenses', Icon: DollarSign, show: can(ws.role, 'viewFinance', ws.status) },
+    { s: 'Insights & Reports', id: 'sales-reports', label: 'Sales Reports', Icon: BarChart3, show: true },
     { s: 'Insights & Reports', id: 'ai-reports', label: 'AI Email Reports', Icon: ClipboardList, show: ws.role==='owner'||ws.role==='admin' },
     { s: 'System', id: 'settings', label: 'Settings', Icon: GitBranch, show: ws.role === 'owner' || ws.role === 'admin' },
   ].filter((n) => n.show);
@@ -117,6 +119,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           {tab === 'expenses' && (
             <div className="flex justify-end gap-2">{can(ws.role, 'viewFinance', 'active') && <ReportButton ws={ws} range={range} />}<DateRangeFilter value={range} onChange={setRange} /></div>)}
           {tab === 'overview' && <OverviewTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} onNavigate={setTab} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
+          {tab === 'sales-reports' && <SalesReportsTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
           {tab === 'ai-reports' && <AIReportsTab ws={ws} />}
           {tab === 'imports' && <ImportsTab ws={ws} />}
           {(['suppliers','categories','settings'] as const).map(module => tab === module && <RecordsTab key={module} ws={ws} module={module} />)}

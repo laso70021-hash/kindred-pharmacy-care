@@ -9,7 +9,6 @@ import { filterSales, trend, sumBy, saleFigures, type Granularity } from '@/lib/
 import { can, stockState, EXPIRY_WARNING_DAYS } from '@/lib/workspace';
 import { formatNumber, formatDateDeterministic } from '@/lib/utils';
 import { DateRangeFilter } from '@/components/dashboard/DateRangeFilter';
-import { OverviewAnalytics } from './OverviewAnalytics';
 
 const card = 'bg-white rounded-2xl border border-slate-200/70 shadow-sm';
 const COLORS = ['#2563EB', '#14B8A6', '#22C55E', '#F59E0B', '#8B5CF6', '#0EA5E9', '#EF4444', '#64748B'];
@@ -81,7 +80,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
   const [g, setG] = useState<Granularity>('day');
   const [branchId, setBranchId] = useState('');
   const [category, setCategory] = useState('');
-  const [full, setFull] = useState(false);
+  const openReports = () => onNavigate('sales-reports');
 
   const categories = useMemo(() => [...new Set(products.map((p) => p.category || 'Uncategorised'))].sort(), [products]);
   const productIds = useMemo(() => category ? new Set(products.filter((p) => (p.category || 'Uncategorised') === category).map((p) => p.id)) : null, [category, products]);
@@ -124,13 +123,13 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
       </div>{actions}</div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <Kpi label="Sales" value={tzs(cur.revenue)} Icon={ShoppingCart} tone="bg-emerald-50 text-emerald-600" change={delta(cur.revenue, prev?.revenue ?? null)} onClick={() => setFull(true)} />
+        <Kpi label="Sales" value={tzs(cur.revenue)} Icon={ShoppingCart} tone="bg-emerald-50 text-emerald-600" change={delta(cur.revenue, prev?.revenue ?? null)} onClick={openReports} />
         {showFinance ? (<>
-          <Kpi label="Gross Profit" value={tzs(cur.gross)} Icon={Coins} tone="bg-violet-50 text-violet-600" change={delta(cur.gross, prev?.gross ?? null)} onClick={() => setFull(true)} />
+          <Kpi label="Gross Profit" value={tzs(cur.gross)} Icon={Coins} tone="bg-violet-50 text-violet-600" change={delta(cur.gross, prev?.gross ?? null)} onClick={openReports} />
           <Kpi label="Expenses" value={tzs(cur.expenses)} Icon={Receipt} tone="bg-rose-50 text-rose-600" change={delta(cur.expenses, prev?.expenses ?? null)} sub={branchId || category ? 'Not split by branch/category' : undefined} onClick={() => onNavigate('expenses')} />
-          <Kpi label="Net Profit" value={tzs(cur.net)} Icon={TrendingUp} tone="bg-blue-50 text-blue-600" change={delta(cur.net, prev?.net ?? null)} onClick={() => setFull(true)} />
+          <Kpi label="Net Profit" value={tzs(cur.net)} Icon={TrendingUp} tone="bg-blue-50 text-blue-600" change={delta(cur.net, prev?.net ?? null)} onClick={openReports} />
         </>) : (
-          <Kpi label="Transactions" value={String(cur.sales.length)} Icon={Receipt} tone="bg-blue-50 text-blue-600" sub="Sales in this period" onClick={() => setFull(true)} />
+          <Kpi label="Transactions" value={String(cur.sales.length)} Icon={Receipt} tone="bg-blue-50 text-blue-600" sub="Sales in this period" onClick={openReports} />
         )}
         <Kpi label="Low / Out of Stock" value={String(lowStock.length)} Icon={AlertTriangle} tone="bg-amber-50 text-amber-600" sub="Products at or below minimum" onClick={() => onNavigate('inventory')} />
         <Kpi label="Expiring Soon" value={String(expiring.length)} Icon={CalendarClock} tone="bg-orange-50 text-orange-600" sub={`Batches within ${EXPIRY_WARNING_DAYS} days`} onClick={() => onNavigate('inventory')} />
@@ -153,10 +152,10 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3">
-        <Panel title="Sales Trend" sub={`${g === 'day' ? 'Daily' : g === 'week' ? 'Weekly' : 'Monthly'} sales over the selected period`} Icon={TrendingUp} action={full ? 'Hide Full Dashboard' : 'View Full Dashboard'} onAction={() => setFull((v) => !v)}>
+        <Panel title="Sales Trend" sub={`${g === 'day' ? 'Daily' : g === 'week' ? 'Weekly' : 'Monthly'} sales over the selected period`} Icon={TrendingUp} action="View Full Dashboard" onAction={openReports}>
           <div className="h-44">{isMounted && points.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={points} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} onClick={() => setFull(true)}>
+              <AreaChart data={points} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} onClick={openReports}>
                 <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563EB" stopOpacity={0.25} /><stop offset="100%" stopColor="#2563EB" stopOpacity={0.02} /></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis dataKey="label" tick={{ fill: '#64748B', fontSize: 11 }} tickLine={false} axisLine={{ stroke: '#CBD5E1' }} />
@@ -168,7 +167,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
           </div>
         </Panel>
 
-        <Panel title="Branch Performance" sub="Sales by branch" Icon={Building2} action="View Report" onAction={() => setFull(true)}>
+        <Panel title="Branch Performance" sub="Sales by branch" Icon={Building2} action="View Report" onAction={openReports}>
           <div className="h-44">{isMounted && branchPerf.some((b) => b.sales > 0) ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart layout="vertical" data={branchPerf} margin={{ top: 4, right: 110, left: 8, bottom: 0 }}>
@@ -185,7 +184,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
           </div>
         </Panel>
 
-        <Panel title="Payment Methods" sub="Sales by payment method" Icon={CreditCard} action="View All" onAction={() => setFull(true)}>
+        <Panel title="Payment Methods" sub="Sales by payment method" Icon={CreditCard} action="View All" onAction={openReports}>
           {payTotal > 0 && isMounted ? (
             <div className="flex flex-col sm:flex-row items-center gap-4 h-full">
               <div className="relative w-32 h-32 shrink-0">
@@ -211,7 +210,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
             </div>) : <NoData>No payments in this period.</NoData>}
         </Panel>
 
-        <Panel title="Inventory by Category" sub="Inventory value (cost) by category" Icon={Layers} action="View Report" onAction={() => onNavigate('inventory')}>
+        <Panel title="Inventory by Category" sub="Inventory value (cost) by category" Icon={Layers} action="View Report" onAction={openReports}>
           <div className="h-44">{isMounted && invByCat.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={invByCat} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -227,7 +226,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
           </div>
         </Panel>
 
-        <Panel title="Restock Needed" sub="Products at or below minimum stock level" Icon={Package} action="View All" onAction={() => onNavigate('inventory')}>
+        <Panel title="Restock Needed" sub="Products at or below minimum stock level" Icon={Package} action="View All" onAction={openReports}>
           {lowStock.length === 0 ? <NoData>All products are above their minimum stock.</NoData> : (
             <div className="overflow-x-auto"><table className="w-full text-xs">
               <thead><tr className="bg-slate-50 text-slate-600 text-xs"><th className="text-left font-semibold px-2.5 py-1.5">Product</th><th className="text-center font-semibold px-2.5 py-1.5">Current Stock</th><th className="text-center font-semibold px-2.5 py-1.5">Min. Stock</th><th className="text-left font-semibold px-2.5 py-1.5">Status</th></tr></thead>
@@ -241,7 +240,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
             </table></div>)}
         </Panel>
 
-        <Panel title="Expiring Soon" sub={`Batches nearing expiry (within ${EXPIRY_WARNING_DAYS} days)`} Icon={CalendarClock} action="View All" onAction={() => onNavigate('inventory')}>
+        <Panel title="Expiring Soon" sub={`Batches nearing expiry (within ${EXPIRY_WARNING_DAYS} days)`} Icon={CalendarClock} action="View All" onAction={openReports}>
           {expiring.length === 0 ? <NoData>No batches expire in the next {EXPIRY_WARNING_DAYS} days.</NoData> : (
             <div className="overflow-x-auto"><table className="w-full text-xs">
               <thead><tr className="bg-slate-50 text-slate-600 text-xs"><th className="text-left font-semibold px-2.5 py-1.5">Product</th><th className="text-left font-semibold px-2.5 py-1.5">Batch No.</th><th className="text-left font-semibold px-2.5 py-1.5">Expiry Date</th><th className="text-left font-semibold px-2.5 py-1.5">Days Left</th></tr></thead>
@@ -256,11 +255,6 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
         </Panel>
       </div>
 
-      {full && (
-        <div id="full-dashboard" className="space-y-3">
-          <h2 className="text-lg font-black text-slate-900">Full sales dashboard</h2>
-          <OverviewAnalytics ws={ws} range={range} isMounted={isMounted} allSales={allSales} allExpenses={allExpenses} products={products} batches={batches} branches={branches} staff={staff} showFinance={showFinance} canSeeStaff={canSeeStaff} />
-        </div>)}
     </div>
   );
 }
