@@ -1,4 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { sendRecordEmail } from './management.functions';
+import { toast } from 'sonner';
 import { supabase as typedSupabase } from '@/integrations/supabase/client';
 import {
   Pharmacy,
@@ -241,6 +243,7 @@ export class PharmacyService {
       if (error) {
         return { data: null, error: error.message };
       }
+      if(data.email)try{await sendRecordEmail({data:{kind:'customers',id:data.id,invite:false}});}catch(e){toast.error(e instanceof Error?e.message:'Customer saved; confirmation email failed.');}
 
       return {
         data: {
@@ -569,6 +572,7 @@ export class PharmacyService {
       if (error) {
         return { data: null, error: error.message };
       }
+      if(data.email)try{await sendRecordEmail({data:{kind:'suppliers',id:data.id,invite:false}});}catch(e){toast.error(e instanceof Error?e.message:'Supplier saved; confirmation email failed.');}
       return {
         data: {
           id: data.id,
@@ -1027,7 +1031,7 @@ export class PharmacyService {
 
 export class EntryService {
   static async registerBusiness(row: Record<string,string>) {
-    const {data,error}=await supabase.rpc('admin_register_business',{_payload:row});fail(error);return String(data);
+    const {data,error}=await supabase.rpc('admin_register_business',{_payload:row});fail(error);if(row['email'])try{await sendRecordEmail({data:{kind:'pharmacies',id:String(data),invite:false}});}catch(e){toast.error(e instanceof Error?e.message:'Business saved; confirmation email failed.');}return String(data);
   }
   static async staffDetails(pid:string) {
     const {data,error}=await supabase.from('pharmacy_memberships').select('*').eq('pharmacy_id',pid);fail(error);return data ?? [];
@@ -1076,7 +1080,9 @@ export class EntryService {
     };
   }
   static async save(pid: string,module: EntryModule,row: EntryRow,id?: string): Promise<string> {
-    const { data,error } = await supabase.rpc('save_business_entry',{_pharmacy:pid,_module:module,_row:row,_id:id ?? null}); fail(error); return String(data);
+    const { data,error } = await supabase.rpc('save_business_entry',{_pharmacy:pid,_module:module,_row:row,_id:id ?? null}); fail(error);
+    if(!id&&row['email']&&(module==='staff'||module==='suppliers'))try{await sendRecordEmail({data:{kind:module==='staff'?'pharmacy_invites':'suppliers',id:String(data),invite:module==='staff'}});}catch(e){toast.error(e instanceof Error?e.message:'Record saved; email failed. Use Send email to retry.');}
+    return String(data);
   }
   static async photo(pid:string,id:string,file:File) {
     if(file.size>5*1024*1024 || !['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Choose a JPG, PNG or WebP under 5 MB');
