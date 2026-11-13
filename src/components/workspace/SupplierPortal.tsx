@@ -22,7 +22,7 @@ function Kpi({ label, value, Icon, tone, onClick }: { label: string; value: stri
     <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tone}`}><Icon className="w-5 h-5" /></span>
     <span className="min-w-0"><span className="block text-[11px] font-bold text-slate-500">{label}</span><span className="block text-lg font-black text-slate-900 truncate">{value}</span></span></button>;
 }
-const pill: Record<string, string> = { New: 'bg-blue-50 text-blue-700', Confirmed: 'bg-indigo-50 text-indigo-700', Preparing: 'bg-amber-50 text-amber-700', Dispatched: 'bg-sky-50 text-sky-700', 'In transit': 'bg-sky-50 text-sky-700', Delivered: 'bg-teal-50 text-teal-700', Received: 'bg-emerald-50 text-emerald-700', Rejected: 'bg-rose-50 text-rose-700' };
+const pill: Record<string, string> = { 'Quote requested': 'bg-violet-50 text-violet-700', Quoted: 'bg-violet-50 text-violet-700', Cancelled: 'bg-slate-100 text-slate-500', New: 'bg-blue-50 text-blue-700', Confirmed: 'bg-indigo-50 text-indigo-700', Preparing: 'bg-amber-50 text-amber-700', Dispatched: 'bg-sky-50 text-sky-700', 'In transit': 'bg-sky-50 text-sky-700', Delivered: 'bg-teal-50 text-teal-700', Received: 'bg-emerald-50 text-emerald-700', Rejected: 'bg-rose-50 text-rose-700' };
 const StatusPill = ({ s }: { s: string }) => { const l = ORDER_STATUS_LABEL[s] ?? s; return <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${pill[l] ?? 'bg-slate-100 text-slate-600'}`}>{l}</span>; };
 const Empty = ({ text }: { text: string }) => <p className="text-sm text-slate-400 py-8 text-center">{text}</p>;
 
