@@ -25,9 +25,14 @@ export const manageRecord=createServerFn({method:'POST'}).middleware([requireSup
   if(data.action==='deactivate'&&data.kind!=='suppliers')throw new Error('This record cannot be deactivated here.');
   const result=data.action==='delete'?await context.supabase.from(data.kind).delete().eq('id',data.id).select('id'):
    data.kind==='suppliers'?await context.supabase.from('suppliers').update(data.action==='deactivate'?{is_active:false}:values).eq('id',data.id).select('id'):
-   data.kind==='customers'?await context.supabase.from('customers').update(z.object({full_name:z.string(),email:z.string().nullable(),phone:z.string().nullable(),address:z.string().nullable(),allergies:z.string().nullable(),chronic_conditions:z.string().nullable()}).partial().parse(values)).eq('id',data.id).select('id'):
-   data.kind==='profiles'?await context.supabase.from('profiles').update(z.object({full_name:z.string(),phone:z.string().nullable()}).partial().parse(values)).eq('id',data.id).select('id'):
-   await context.supabase.from('pharmacies').update(z.object({name:z.string(),owner_name:z.string().nullable(),email:z.string().nullable(),phone:z.string().nullable(),address:z.string().nullable(),city:z.string().nullable(),registration_number:z.string().nullable(),tax_number:z.string().nullable()}).partial().parse(values)).eq('id',data.id).select('id');
+   data.kind==='customers'?await context.supabase.from('customers').update({
+    ...('full_name' in values?{full_name:z.string().parse(values['full_name'])}:{}),
+    ...('email' in values?{email:values['email']??null}:{}),...('phone' in values?{phone:values['phone']??null}:{}),...('address' in values?{address:values['address']??null}:{}),...('allergies' in values?{allergies:values['allergies']??null}:{}),...('chronic_conditions' in values?{chronic_conditions:values['chronic_conditions']??null}:{})
+   }).eq('id',data.id).select('id'):
+   data.kind==='profiles'?await context.supabase.from('profiles').update({...('full_name' in values?{full_name:values['full_name']??null}:{}),...('phone' in values?{phone:values['phone']??null}:{})}).eq('id',data.id).select('id'):
+   await context.supabase.from('pharmacies').update({
+    ...('name' in values?{name:z.string().parse(values['name'])}:{}),...('owner_name' in values?{owner_name:values['owner_name']??null}:{}),...('email' in values?{email:values['email']??null}:{}),...('phone' in values?{phone:values['phone']??null}:{}),...('address' in values?{address:values['address']??null}:{}),...('city' in values?{city:values['city']??null}:{}),...('registration_number' in values?{registration_number:values['registration_number']??null}:{}),...('tax_number' in values?{tax_number:values['tax_number']??null}:{})
+   }).eq('id',data.id).select('id');
   if(result.error){if(result.error.code==='23503')throw new Error('Linked records prevent deletion. Keep the history and deactivate this record instead.');throw new Error(result.error.message);}
   if(!result.data?.length)throw new Error('Record not found or permission denied.');
  }

@@ -9,7 +9,7 @@ export async function processAIReports(now=new Date()){
  let processed=0;
  try{
   const local=new Date(now.getTime()+3*3600000);
-  const {data:preferences,error}=await sb.from('ai_report_preferences').select('*').eq('enabled',true).is('pause_reason',null).eq('delivery_hour',local.getUTCHours()).order('created_at').limit(100);if(error)throw error;
+  const {data:preferences,error}=await sb.from('ai_report_preferences').select('*').eq('enabled',true).is('pause_reason',null).lte('delivery_hour',local.getUTCHours()).order('delivery_hour').limit(100);if(error)throw error;
   for(const pref of preferences??[]){
    if(processed>=3)break;
    if(pref.frequency==='weekly'&&local.getUTCDay()!==1)continue;
