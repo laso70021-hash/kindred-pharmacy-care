@@ -46,3 +46,10 @@ describe('order documents', () => {
     expect(paymentStamp('confirmed')).toMatch(/VERIFIED/);
   });
 });
+
+describe('quotation documents', () => {
+  it('no documents while waiting for prices; quotation once quoted', () => {
+    expect(availableOrderDocs('quote_requested')).toEqual([]);
+    expect(availableOrderDocs('quoted')).toEqual(['quotation']);
+  });
+});

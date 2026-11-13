@@ -13,7 +13,7 @@ export function availableUnits(batches: { qty: number; expiry: string; min: numb
   return batches.filter((b) => batchStatus(b, today) !== 'expired').reduce((a, b) => a + Math.max(0, b.qty), 0);
 }
 export const ORDER_FLOW = ['payment_submitted', 'confirmed', 'preparing', 'dispatched', 'in_transit', 'delivered', 'completed'] as const;
-export const ORDER_STATUS_LABEL: Record<string, string> = { payment_submitted: 'New', confirmed: 'Confirmed', preparing: 'Preparing', dispatched: 'Dispatched', in_transit: 'In transit', delivered: 'Delivered', completed: 'Received', rejected: 'Rejected' };
+export const ORDER_STATUS_LABEL: Record<string, string> = { quote_requested: 'Quote requested', quoted: 'Quoted', cancelled: 'Cancelled', payment_submitted: 'New', confirmed: 'Confirmed', preparing: 'Preparing', dispatched: 'Dispatched', in_transit: 'In transit', delivered: 'Delivered', completed: 'Received', rejected: 'Rejected' };
 /** Supplier's next step for an order (null when it's not theirs to move). */
 export function supplierNextStep(status: string): string | null {
   return ({ confirmed: 'preparing', preparing: 'dispatched', dispatched: 'in_transit', in_transit: 'delivered' } as Record<string, string>)[status] ?? null;

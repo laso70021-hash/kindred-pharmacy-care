@@ -16,6 +16,7 @@ const METHODS = [
   { v: 'mpesa', l: 'M-Pesa' }, { v: 'tigopesa', l: 'Tigo Pesa' }, { v: 'airtel', l: 'Airtel Money' }, { v: 'bank', l: 'Bank transfer' },
 ];
 
+export { METHODS };
 export function MarketplaceTab({ ws, userId, onOrdered, prefill = null, onClearPrefill }: { ws: Workspace; userId: string; onOrdered: () => void; prefill?: RestockPrefill | null; onClearPrefill?: () => void }) {
   const qc = useQueryClient();
   const { data: catalog = [], isLoading } = useQuery({ queryKey: ['wholesale', 'catalog'], queryFn: () => WholesaleService.catalog() });
@@ -24,7 +25,7 @@ export function MarketplaceTab({ ws, userId, onOrdered, prefill = null, onClearP
   const [q, setQ] = useState('');
   const [supplier, setSupplier] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [checkout, setCheckout] = useState(false);
+  const [checkout, setCheckout] = useState<false | 'pay' | 'quote'>(false);
   const [chat, setChat] = useState(false);
   const [plan, setPlan] = useState<PurchasePlan | null>(null);
   const [ordered, setOrdered] = useState<Set<string>>(new Set());
@@ -182,7 +183,8 @@ export function MarketplaceTab({ ws, userId, onOrdered, prefill = null, onClearP
                       <button aria-label="Remove" onClick={() => add(c, -l.quantity)}><Trash2 className="w-3.5 h-3.5 text-slate-400" /></button>
                     </li>); })}</ul>
                   <div className="flex justify-between border-t pt-2 text-base font-black"><span>Total</span><span>TZS {formatNumber(cartTotal(cart))}</span></div>
-                  <button className={`${primaryBtn} w-full justify-center`} disabled={readOnly} onClick={() => setCheckout(true)}>Continue — delivery & payment</button>
+                  <button className={`${primaryBtn} w-full justify-center`} disabled={readOnly} onClick={() => setCheckout('pay')}>Continue — delivery & payment</button>
+                  <button className={`${ghostBtn} w-full justify-center`} disabled={readOnly} onClick={() => setCheckout('quote')}>Request a quote first (no payment yet)</button>
                   <button className={`${ghostBtn} w-full justify-center`} onClick={() => setCart([])}>Empty bucket</button>
                 </>)}
             </div>
@@ -192,14 +194,15 @@ export function MarketplaceTab({ ws, userId, onOrdered, prefill = null, onClearP
 
       {chat && current && <WholesaleChat buyerId={ws.id} supplierId={current.id} side="buyer" myName={ws.name} partnerName={current.name} onClose={() => setChat(false)} />}
       {checkout && cart.length > 0 && (
-        <CheckoutModal ws={ws} userId={userId} cart={cart} defaultBranch={prefill?.branchId} supplierName={byId.get(cart[0]!.product_id)?.supplier_name || ''}
+        <CheckoutModal mode={checkout} ws={ws} userId={userId} cart={cart} defaultBranch={prefill?.branchId} supplierName={byId.get(cart[0]!.product_id)?.supplier_name || ''}
           branches={branches.filter((b) => b.is_active)} onClose={() => setCheckout(false)}
           onDone={() => { if (plan && cart[0]) { const sid = cart[0].supplier_id; setOrdered((o) => new Set(o).add(sid)); setSupplier(''); } setCart([]); setCheckout(false); void qc.invalidateQueries({ queryKey: ['wholesale'] }); onOrdered(); }} />)}
     </div>
   );
 }
 
-function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDone, defaultBranch }: {
+function CheckoutModal({ mode, ws, userId, cart, supplierName, branches, onClose, onDone, defaultBranch }: {
+  mode: 'pay' | 'quote';
   defaultBranch?: string | undefined; ws: Workspace; userId: string; cart: CartLine[]; supplierName: string; branches: { id: string; name: string; is_main: boolean }[]; onClose: () => void; onDone: () => void;
 }) {
   const [branch, setBranch] = useState((defaultBranch && branches.some((b) => b.id === defaultBranch) ? defaultBranch : undefined) || branches.find((b) => b.is_main)?.id || branches[0]?.id || '');
@@ -214,9 +217,15 @@ function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDo
     e.preventDefault();
     if (!branch) { toast.error('Add a branch first to receive stock.'); return; }
     if (!contact.phone.trim() || !contact.address.trim()) { toast.error('Add a contact phone and delivery address.'); return; }
-    if (!reference.trim() && !file) { toast.error('Add the transaction reference or attach the receipt.'); return; }
+    if (mode === 'pay' && !reference.trim() && !file) { toast.error('Add the transaction reference or attach the receipt.'); return; }
     setBusy(true);
     try {
+      if (mode === 'quote') {
+        const id = await WholesaleService.requestQuote({ buyerId: ws.id, supplierId: cart[0]!.supplier_id, branchId: branch, items: cart.map((l) => ({ product_id: l.product_id, quantity: l.quantity })), note: contact.note });
+        await WholesaleService.setDelivery(id, contact);
+        toast.success('Quote requested. You will be notified when the supplier sends prices.');
+        onDone(); return;
+      }
       const orderId = await WholesaleService.placeOrder({ userId, buyerId: ws.id, supplierId: cart[0]!.supplier_id, branchId: branch,
         items: cart.map((l) => ({ product_id: l.product_id, quantity: l.quantity })), method, reference, file });
       await WholesaleService.setDelivery(orderId, contact);
@@ -226,9 +235,10 @@ function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDo
   };
 
   return (
-    <Modal title={`Pay ${supplierName}`} onClose={onClose}>
+    <Modal title={mode === 'quote' ? `Request a quote from ${supplierName}` : `Pay ${supplierName}`} onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
-        <div className="rounded-xl bg-blue-50 px-3 py-2 text-sm font-black text-blue-900">Amount: TZS {formatNumber(cartTotal(cart))}</div>
+        <div className="rounded-xl bg-blue-50 px-3 py-2 text-sm font-black text-blue-900">{mode === 'quote' ? 'Catalogue estimate' : 'Amount'}: TZS {formatNumber(cartTotal(cart))}</div>
+        {mode === 'quote' && <p className="text-xs text-slate-500">The supplier will reply with their final prices. You pay only after you accept the quote.</p>}
         <Field label="Deliver to branch">
           <select className={inputCls} value={branch} onChange={(e) => setBranch(e.target.value)} required>
             {branches.length === 0 && <option value="">No branches yet</option>}
@@ -244,6 +254,7 @@ function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDo
           <Field label="Delivery address"><input className={inputCls} value={contact.address} onChange={(e) => setContact({ ...contact, address: e.target.value })} placeholder="Street, area, city" required /></Field>
           <Field label="MedPoint / delivery note (optional)"><input className={inputCls} value={contact.note} onChange={(e) => setContact({ ...contact, note: e.target.value })} placeholder="e.g. MedPoint Kariakoo, call on arrival" /></Field>
         </div>
+        {mode === 'pay' && <>
         <Field label="Payment method">
           <div className="grid grid-cols-2 gap-2">{METHODS.map((m) => (
             <button type="button" key={m.v} onClick={() => setMethod(m.v)} className={`px-3 py-2 rounded-xl border text-xs font-bold ${method === m.v ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200'}`}>{m.l}</button>))}</div>
@@ -255,7 +266,8 @@ function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDo
             <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </label>
         </Field>
-        <button className={`${primaryBtn} w-full justify-center`} disabled={busy}>{busy ? 'Sending…' : 'Submit order & payment proof'}</button>
+        </>}
+        <button className={`${primaryBtn} w-full justify-center`} disabled={busy}>{busy ? 'Sending…' : mode === 'quote' ? 'Send quote request' : 'Submit order & payment proof'}</button>
       </form>
     </Modal>
   );

@@ -2621,6 +2621,26 @@ export type Database = {
         Args: { _note: string; _order: string }
         Returns: undefined
       }
+      request_wholesale_quote: {
+        Args: {
+          _branch: string
+          _buyer: string
+          _items: Json
+          _note: string
+          _supplier: string
+        }
+        Returns: string
+      }
+      respond_wholesale_quote: {
+        Args: {
+          _accept: boolean
+          _method: string
+          _order: string
+          _receipt_path: string
+          _reference: string
+        }
+        Returns: undefined
+      }
       review_prescription: {
         Args: { _decision: string; _id: string; _method: string; _note: string }
         Returns: string
@@ -2640,6 +2660,15 @@ export type Database = {
       save_business_entry: {
         Args: { _id?: string; _module: string; _pharmacy: string; _row: Json }
         Returns: string
+      }
+      send_wholesale_quote: {
+        Args: {
+          _decline?: boolean
+          _note: string
+          _order: string
+          _prices: Json
+        }
+        Returns: undefined
       }
       set_document_status: {
         Args: { _id: string; _note?: string; _status: string }

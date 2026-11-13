@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FileText, Check, X, MessageCircle, Phone, MapPin } from 'lucide-react';
 import { WholesaleChat } from './WholesaleChat';
+import { QuoteReply, PayQuote } from './QuoteActions';
 import { OrderDocument } from './OrderDocument';
 import { availableOrderDocs, ORDER_DOC_LABEL, type OrderDocType } from '@/lib/order-documents';
 import type { Workspace } from '@/lib/pharmacy-types';
@@ -13,6 +14,9 @@ import { formatNumber, formatDateDeterministic } from '@/lib/utils';
 import { Empty, SectionHeader, primaryBtn, ghostBtn, cardCls, errorText, inputCls } from './ws-ui';
 
 const STATUS: Record<WholesaleOrder['status'], { l: string; c: string }> = {
+  quote_requested: { l: 'Quote requested', c: 'bg-violet-50 text-violet-700' },
+  quoted: { l: 'Quote received', c: 'bg-violet-50 text-violet-700' },
+  cancelled: { l: 'Cancelled', c: 'bg-slate-100 text-slate-500' },
   payment_submitted: { l: 'Awaiting supplier', c: 'bg-amber-50 text-amber-700' },
   confirmed: { l: 'Payment confirmed', c: 'bg-indigo-50 text-indigo-700' },
   preparing: { l: 'Preparing', c: 'bg-amber-50 text-amber-700' },
@@ -66,7 +70,7 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
             </div>
             <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${STATUS[o.status].c}`}>{STATUS[o.status].l}</span>
           </div>
-          {o.status !== 'rejected' && (() => {
+          {ORDER_FLOW.includes(o.status as never) && (() => {
             const at = ORDER_FLOW.indexOf(o.status as never);
             const ev = events.filter((e) => e.order_id === o.id);
             return <div className="flex items-start overflow-x-auto pb-1">{ORDER_FLOW.map((st, i) => {
@@ -105,6 +109,8 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
               <button className={primaryBtn} disabled={busy === o.id || readOnly} onClick={() => review(o, 'accept')}><Check className="w-3.5 h-3.5" /> Accept & confirm</button>
               <button className={ghostBtn} disabled={busy === o.id || readOnly} onClick={() => review(o, 'reject')}><X className="w-3.5 h-3.5" /> Reject</button>
             </div>)}
+          {side === 'supplier' && (o.status === 'quote_requested' || o.status === 'quoted') && <QuoteReply order={o} disabled={readOnly} onDone={refresh} />}
+          {side === 'buyer' && (o.status === 'quote_requested' || o.status === 'quoted') && <PayQuote order={o} disabled={readOnly} onDone={refresh} />}
           {side === 'supplier' && supplierNextStep(o.status) && (
             <div className="flex flex-col sm:flex-row gap-2">
               <input className={inputCls} placeholder="Note e.g. rider name, tracking (optional)" value={notes[o.id] || ''} onChange={(e) => setNotes({ ...notes, [o.id]: e.target.value })} />
