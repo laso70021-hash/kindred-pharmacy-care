@@ -1845,13 +1845,6 @@ export default function AdminDashboard({ onBackToLanding, plans }: AdminDashboar
                               >
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                onClick={() => handleDeleteCustomer(c.id)}
-                                className="p-1.5 hover:bg-rose-100 rounded text-rose-600"
-                                title="Delete Customer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
                             </div>
                           </td>
                         </tr>

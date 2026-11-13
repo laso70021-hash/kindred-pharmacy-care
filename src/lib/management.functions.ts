@@ -21,13 +21,28 @@ export const manageRecord=createServerFn({method:'POST'}).middleware([requireSup
   for(const h of history){if(h.error)throw h.error;if(h.count)throw new Error('This account has business or audit history. Remove workspace access instead of deleting it.');}
   const {error:e}=await supabaseAdmin.auth.admin.deleteUser(data.id);if(e)throw new Error('Account could not be deleted. It may have linked records.');
  }else{
+  if(data.kind==='pharmacies'&&data.action==='delete'){
+   const linked=await Promise.all([
+    context.supabase.from('branches').select('id',{count:'exact',head:true}).eq('pharmacy_id',data.id),
+    context.supabase.from('sales').select('id',{count:'exact',head:true}).eq('pharmacy_id',data.id),
+    context.supabase.from('pharmacy_memberships').select('id',{count:'exact',head:true}).eq('pharmacy_id',data.id),
+    context.supabase.from('products').select('id',{count:'exact',head:true}).eq('pharmacy_id',data.id),
+    context.supabase.from('wholesale_orders').select('id',{count:'exact',head:true}).or(`buyer_pharmacy_id.eq.${data.id},supplier_id.eq.${data.id}`),
+   ]);
+   if(linked.some(r=>r.error||r.count))throw new Error('This business has linked records. Suspend it from the business list instead of deleting its history.');
+  }
   const values=safeRecordValues(data.kind,data.values);
   if(data.action==='deactivate'&&data.kind!=='suppliers')throw new Error('This record cannot be deactivated here.');
   const result=data.action==='delete'?await context.supabase.from(data.kind).delete().eq('id',data.id).select('id'):
    data.kind==='suppliers'?await context.supabase.from('suppliers').update(data.action==='deactivate'?{is_active:false}:values).eq('id',data.id).select('id'):
-   data.kind==='customers'?await context.supabase.from('customers').update(z.object({full_name:z.string(),email:z.string().nullable(),phone:z.string().nullable(),address:z.string().nullable(),allergies:z.string().nullable(),chronic_conditions:z.string().nullable()}).partial().parse(values)).eq('id',data.id).select('id'):
-   data.kind==='profiles'?await context.supabase.from('profiles').update(z.object({full_name:z.string(),phone:z.string().nullable()}).partial().parse(values)).eq('id',data.id).select('id'):
-   await context.supabase.from('pharmacies').update(z.object({name:z.string(),owner_name:z.string().nullable(),email:z.string().nullable(),phone:z.string().nullable(),address:z.string().nullable(),city:z.string().nullable(),registration_number:z.string().nullable(),tax_number:z.string().nullable()}).partial().parse(values)).eq('id',data.id).select('id');
+   data.kind==='customers'?await context.supabase.from('customers').update({
+    ...('full_name' in values?{full_name:z.string().parse(values['full_name'])}:{}),
+    ...('email' in values?{email:values['email']??null}:{}),...('phone' in values?{phone:values['phone']??null}:{}),...('address' in values?{address:values['address']??null}:{}),...('allergies' in values?{allergies:values['allergies']??null}:{}),...('chronic_conditions' in values?{chronic_conditions:values['chronic_conditions']??null}:{})
+   }).eq('id',data.id).select('id'):
+   data.kind==='profiles'?await context.supabase.from('profiles').update({...('full_name' in values?{full_name:values['full_name']??null}:{}),...('phone' in values?{phone:values['phone']??null}:{})}).eq('id',data.id).select('id'):
+   await context.supabase.from('pharmacies').update({
+    ...('name' in values?{name:z.string().parse(values['name'])}:{}),...('owner_name' in values?{owner_name:values['owner_name']??null}:{}),...('email' in values?{email:values['email']??null}:{}),...('phone' in values?{phone:values['phone']??null}:{}),...('address' in values?{address:values['address']??null}:{}),...('city' in values?{city:values['city']??null}:{}),...('registration_number' in values?{registration_number:values['registration_number']??null}:{}),...('tax_number' in values?{tax_number:values['tax_number']??null}:{})
+   }).eq('id',data.id).select('id');
   if(result.error){if(result.error.code==='23503')throw new Error('Linked records prevent deletion. Keep the history and deactivate this record instead.');throw new Error(result.error.message);}
   if(!result.data?.length)throw new Error('Record not found or permission denied.');
  }
@@ -40,13 +55,13 @@ export const sendRecordEmail=createServerFn({method:'POST'}).middleware([require
  const {data:admin}=await context.supabase.rpc('is_platform_admin');
  const pid='pharmacy_id' in record?record.pharmacy_id:data.kind==='pharmacies'?record.id:null;
  if(!admin){if(!pid)throw new Error('Permission denied.');const {data:allowed}=await context.supabase.rpc('can_write_pharmacy',{_pharmacy_id:pid,_roles:data.kind==='customers'?['manager','cashier','pharmacist']:['manager','inventory_manager']});if(!allowed)throw new Error('Permission denied.');if(data.kind==='pharmacy_invites'){const {data:owner}=await context.supabase.rpc('is_pharmacy_owner',{_pharmacy_id:pid});if(!owner)throw new Error('Only the business owner can send team invitations.');}}
- const email=z.string().email().parse(record.email);
+ const email=z.string().email().parse(record.email?.trim().toLowerCase());
  const {sendAppEmail}=await import('./resend.server');
  const origin=process.env['APP_ORIGIN']||'https://swahivo.com';
  if(!data.invite&&data.kind!=='pharmacy_invites')return sendAppEmail(email,'Your details were added — Swahivo','Your contact details have been added to Swahivo. If you did not expect this, contact info@swahivo.com.',`record-confirm:${data.kind}:${data.id}`);
  if(data.kind==='pharmacy_invites'&&'status' in record&&record.status!=='pending')throw new Error('This invitation is no longer pending.');
  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
- // generateLink creates a confirmed-link invitation without relying on external SMTP.
+ // generateLink prepares a verification link; only clicking the email confirms ownership.
  const generated=await supabaseAdmin.auth.admin.generateLink({type:'invite',email,options:{redirectTo:`${origin}/set-password`}});
  if(generated.error){
   if(!['email_exists','user_already_exists'].includes(generated.error.code??''))throw new Error('Could not generate the account invitation.');

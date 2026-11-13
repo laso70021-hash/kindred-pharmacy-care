@@ -127,7 +127,7 @@ export class PharmacyService {
           registration_number: d.registration_number || '',
           tax_number: d.tax_number || '',
           owner_name: d.owner_name || 'Owner',
-          owner_email: d.email || 'info@' + (d.name || 'pharmacy').toLowerCase().replace(/\s+/g, '') + '.com',
+          owner_email: d.email || '',
           plan: (d.subscription_plans?.name || d.plan_name || 'Standard') as any,
           plan_slug: d.subscription_plans?.slug || d.plan_slug || 'starter',
           registered_at: formatDateDeterministic(d.created_at),
@@ -160,6 +160,7 @@ export class PharmacyService {
       if (error) {
         return { data: null, error: error.message };
       }
+      if(data.email)try{await sendRecordEmail({data:{kind:'pharmacies',id:data.id,invite:false}});}catch(e){toast.error(e instanceof Error?e.message:'Business saved; confirmation email failed.');}
 
       return {
         data: {
@@ -1094,6 +1095,13 @@ export class EntryService {
     const digest = await crypto.subtle.digest('SHA-256',bytes);
     const fingerprint = Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
     const {data,error}=await supabase.rpc('import_business_rows',{_pharmacy:pid,_module:module,_rows:rows,_fingerprint:fingerprint,_file_name:fileName}); fail(error);
+    if((module==='staff'||module==='suppliers')&&(data as {status?:string})?.status==='completed'){
+      const saved=await this.list(pid,module);let failed=0;
+      for(const row of rows){const email=row['email']?.trim().toLowerCase();if(!email)continue;const match=saved.find(r=>r['email']?.trim().toLowerCase()===email);if(!match){failed++;continue;}
+        try{await sendRecordEmail({data:{kind:module==='staff'?'pharmacy_invites':'suppliers',id:match.id,invite:module==='staff'}});}catch{failed++;}
+      }
+      if(failed)toast.error(`${failed} imported contacts could not be emailed. Records are saved; use Send email in Staff or Suppliers to retry.`);
+    }
     return data as {status:string;successful_count:number;failed_count:number;error?:string};
   }
   static async history(pid: string) {

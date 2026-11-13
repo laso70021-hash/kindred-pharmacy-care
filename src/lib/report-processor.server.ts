@@ -9,7 +9,7 @@ export async function processAIReports(now=new Date()){
  let processed=0;
  try{
   const local=new Date(now.getTime()+3*3600000);
-  const {data:preferences,error}=await sb.from('ai_report_preferences').select('*').eq('enabled',true).is('pause_reason',null).eq('delivery_hour',local.getUTCHours()).order('created_at').limit(100);if(error)throw error;
+  const {data:preferences,error}=await sb.from('ai_report_preferences').select('*').eq('enabled',true).is('pause_reason',null).lte('delivery_hour',local.getUTCHours()).order('delivery_hour').limit(100);if(error)throw error;
   for(const pref of preferences??[]){
    if(processed>=3)break;
    if(pref.frequency==='weekly'&&local.getUTCDay()!==1)continue;
@@ -46,6 +46,10 @@ export async function processAIReports(now=new Date()){
     }catch(err){
      const reason=err instanceof GatewayError?`AI unavailable (${err.httpStatus??err.code}); owner review required.`:err instanceof Error?err.message:'Report failed; owner review required.';
      await sb.from('ai_report_runs').update({status:'failed',error:reason}).eq('id',run.id);
+     if(err instanceof GatewayError&&[402,403,429].includes(err.httpStatus??0)){
+      await sb.from('ai_report_preferences').update({pause_reason:reason}).eq('enabled',true);
+      return {processed};
+     }
      await sb.from('ai_report_preferences').update({pause_reason:reason}).eq('id',pref.id);
      // Persist pause before stopping. No probes or replay for unknown outcomes/refusals.
      break;
