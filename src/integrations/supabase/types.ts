@@ -598,6 +598,102 @@ export type Database = {
           },
         ]
       }
+      employee_shifts: {
+        Row: {
+          accepted_at: string | null
+          branch_id: string | null
+          break_seconds: number
+          break_started_at: string | null
+          created_at: string
+          ended_at: string | null
+          extended_minutes: number
+          handover_from_shift: string | null
+          handover_to: string | null
+          id: string
+          note: string | null
+          pharmacy_id: string
+          scheduled_minutes: number
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          branch_id?: string | null
+          break_seconds?: number
+          break_started_at?: string | null
+          created_at?: string
+          ended_at?: string | null
+          extended_minutes?: number
+          handover_from_shift?: string | null
+          handover_to?: string | null
+          id?: string
+          note?: string | null
+          pharmacy_id: string
+          scheduled_minutes?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          branch_id?: string | null
+          break_seconds?: number
+          break_started_at?: string | null
+          created_at?: string
+          ended_at?: string | null
+          extended_minutes?: number
+          handover_from_shift?: string | null
+          handover_to?: string | null
+          id?: string
+          note?: string | null
+          pharmacy_id?: string
+          scheduled_minutes?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_shifts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_shifts_handover_from_shift_fkey"
+            columns: ["handover_from_shift"]
+            isOneToOne: false
+            referencedRelation: "employee_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_shifts_handover_to_fkey"
+            columns: ["handover_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_shifts_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_shifts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -1542,6 +1638,57 @@ export type Database = {
           },
         ]
       }
+      shift_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          minutes: number | null
+          note: string | null
+          pharmacy_id: string
+          shift_id: string
+          target_user: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          minutes?: number | null
+          note?: string | null
+          pharmacy_id: string
+          shift_id: string
+          target_user?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          minutes?: number | null
+          note?: string | null
+          pharmacy_id?: string
+          shift_id?: string
+          target_user?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_events_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_events_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "employee_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_alerts: {
         Row: {
           alert_type: string
@@ -2224,6 +2371,17 @@ export type Database = {
       }
       save_business_entry: {
         Args: { _id?: string; _module: string; _pharmacy: string; _row: Json }
+        Returns: string
+      }
+      shift_action: {
+        Args: {
+          _action: string
+          _branch?: string
+          _minutes?: number
+          _note?: string
+          _pharmacy: string
+          _to_user?: string
+        }
         Returns: string
       }
       submit_registration: { Args: { _payload: Json }; Returns: string }
