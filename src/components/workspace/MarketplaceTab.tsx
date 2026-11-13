@@ -8,13 +8,14 @@ import type { Workspace } from '@/lib/pharmacy-types';
 import { WholesaleService, WorkspaceService, type CatalogItem } from '@/lib/pharmacy-service';
 import { addToCart, cartTotal, isReadOnly, type CartLine } from '@/lib/workspace';
 import { formatNumber } from '@/lib/utils';
+import { matchCatalog, type RestockPrefill } from '@/lib/supplier-match';
 import { Modal, Field, Empty, SectionHeader, inputCls, primaryBtn, ghostBtn, cardCls, errorText } from './ws-ui';
 
 const METHODS = [
   { v: 'mpesa', l: 'M-Pesa' }, { v: 'tigopesa', l: 'Tigo Pesa' }, { v: 'airtel', l: 'Airtel Money' }, { v: 'bank', l: 'Bank transfer' },
 ];
 
-export function MarketplaceTab({ ws, userId, onOrdered }: { ws: Workspace; userId: string; onOrdered: () => void }) {
+export function MarketplaceTab({ ws, userId, onOrdered, prefill = null, onClearPrefill }: { ws: Workspace; userId: string; onOrdered: () => void; prefill?: RestockPrefill | null; onClearPrefill?: () => void }) {
   const qc = useQueryClient();
   const { data: catalog = [], isLoading } = useQuery({ queryKey: ['wholesale', 'catalog'], queryFn: () => WholesaleService.catalog() });
   const { data: directory = [] } = useQuery({ queryKey: ['wholesale', 'suppliers'], queryFn: () => WholesaleService.suppliers() });
@@ -54,10 +55,34 @@ export function MarketplaceTab({ ws, userId, onOrdered }: { ws: Workspace; userI
     add(c, Math.max(0, Math.min(c.stock, Math.floor(v || 0))) - cur);
   };
   const pick = (id: string) => { setSupplier(id); setQ(''); };
+  const matches = prefill ? matchCatalog(prefill, catalog) : [];
+  const takeMatch = (c: CatalogItem) => {
+    const want = Math.max(1, Math.min(c.stock, prefill?.quantity ?? 1));
+    setSupplier(c.supplier_id); setQ('');
+    setCart((prev) => addToCart(prev.filter((l) => l.supplier_id === c.supplier_id), { product_id: c.product_id, supplier_id: c.supplier_id, unit_price: c.unit_price, stock: c.stock }, want - (prev.find((l) => l.product_id === c.product_id)?.quantity ?? 0)));
+    if (want < (prefill?.quantity ?? 0)) toast.info(`${c.supplier_name} has only ${c.stock} — added ${want}. Order the rest from another supplier.`);
+  };
 
   return (
     <div className="space-y-5">
       <SectionHeader title="Restock from suppliers" subtitle="Order wholesale, attach your payment proof — stock lands in your branch once the supplier confirms." />
+
+      {prefill && !current && (
+        <div className={`${cardCls} p-4 space-y-3 border-blue-300`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><div className="font-black text-sm">Suppliers that have {prefill.name}{prefill.strength ? ` ${prefill.strength}` : ''}</div>
+              <div className="text-xs text-slate-500">Suggested order: <b>{prefill.quantity}</b> units (refills to twice your minimum level){prefill.branchId ? ` · for ${branches.find((b) => b.id === prefill.branchId)?.name ?? 'your branch'}` : ''}</div></div>
+            {onClearPrefill && <button className={ghostBtn} onClick={onClearPrefill}>Browse all suppliers</button>}
+          </div>
+          {isLoading ? <Empty>Searching suppliers…</Empty> : matches.length === 0 ? <Empty>No supplier lists this medicine yet. Browse suppliers below or message one to ask.</Empty> : (
+            <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="text-[11px] text-slate-500 text-left"><tr><th className="py-1">Supplier</th><th>Product</th><th>Price</th><th>Available</th><th></th></tr></thead>
+              <tbody>{matches.map((c) => <tr key={c.product_id} className="border-t border-slate-100">
+                <td className="py-2 font-bold">{c.supplier_name}<div className="text-[11px] text-slate-500 font-normal">{c.supplier_city}</div></td>
+                <td>{c.name} {c.strength}<div className="text-[11px] text-slate-500">{c.dosage_form}{c.score < 1 ? ' · check this is the same medicine' : ''}</div></td>
+                <td className="font-bold">TZS {formatNumber(c.unit_price)}</td>
+                <td className={c.stock > 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>{c.stock > 0 ? c.stock : 'Out of stock'}</td>
+                <td className="text-right"><button disabled={c.stock <= 0 || readOnly} className={primaryBtn} onClick={() => takeMatch(c)}>Add {Math.min(c.stock, prefill.quantity)} to bucket</button></td></tr>)}</tbody></table></div>)}
+        </div>)}
 
       {!current ? (
         <div className="space-y-4">
@@ -159,17 +184,17 @@ export function MarketplaceTab({ ws, userId, onOrdered }: { ws: Workspace; userI
 
       {chat && current && <WholesaleChat buyerId={ws.id} supplierId={current.id} side="buyer" myName={ws.name} partnerName={current.name} onClose={() => setChat(false)} />}
       {checkout && cart.length > 0 && (
-        <CheckoutModal ws={ws} userId={userId} cart={cart} supplierName={byId.get(cart[0]!.product_id)?.supplier_name || ''}
+        <CheckoutModal ws={ws} userId={userId} cart={cart} defaultBranch={prefill?.branchId} supplierName={byId.get(cart[0]!.product_id)?.supplier_name || ''}
           branches={branches.filter((b) => b.is_active)} onClose={() => setCheckout(false)}
           onDone={() => { setCart([]); setCheckout(false); void qc.invalidateQueries({ queryKey: ['wholesale'] }); onOrdered(); }} />)}
     </div>
   );
 }
 
-function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDone }: {
-  ws: Workspace; userId: string; cart: CartLine[]; supplierName: string; branches: { id: string; name: string; is_main: boolean }[]; onClose: () => void; onDone: () => void;
+function CheckoutModal({ ws, userId, cart, supplierName, branches, onClose, onDone, defaultBranch }: {
+  defaultBranch?: string | undefined; ws: Workspace; userId: string; cart: CartLine[]; supplierName: string; branches: { id: string; name: string; is_main: boolean }[]; onClose: () => void; onDone: () => void;
 }) {
-  const [branch, setBranch] = useState(branches.find((b) => b.is_main)?.id || branches[0]?.id || '');
+  const [branch, setBranch] = useState((defaultBranch && branches.some((b) => b.id === defaultBranch) ? defaultBranch : undefined) || branches.find((b) => b.is_main)?.id || branches[0]?.id || '');
   const [method, setMethod] = useState('mpesa');
   const [reference, setReference] = useState('');
   const [file, setFile] = useState<File | null>(null);
