@@ -21,3 +21,7 @@
 - [x] 13. Prepare external database migration package: 21 ordered SQL files, environment template, account/storage transfer and deployment checklist; SQL syntax and grants inspected.
 - [~] 14. External Supabase connected and environment refreshed; 35 tables have RLS. Existing pharmacy records and uploaded files have not been transferred; their exports are still needed.
 - [~] 15. Environment, requested admin role/profile, private buckets, five approved plans and table grants verified; 44 tests pass. Public sign-in and signed-out admin guard checked. Authenticated pharmacy flows require a signed-in external account and pharmacy data; recoverable browser hydration warnings remain unverified.
+- [x] Ops 1: Pharmacy Products canvas
+- [x] Ops 2–3: Employee shifts + individual shift reports
+- [ ] Ops 4: Document generation (invoice, proforma, delivery note, labels)
+- [ ] Ops 5: Overview analytics charts
