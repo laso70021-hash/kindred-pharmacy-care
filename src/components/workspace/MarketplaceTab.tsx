@@ -9,6 +9,7 @@ import { WholesaleService, WorkspaceService, type CatalogItem } from '@/lib/phar
 import { addToCart, cartTotal, isReadOnly, type CartLine } from '@/lib/workspace';
 import { formatNumber } from '@/lib/utils';
 import { matchCatalog, type RestockPrefill } from '@/lib/supplier-match';
+import { PurchaseListPanel, type PurchasePlan } from './PurchaseListPanel';
 import { Modal, Field, Empty, SectionHeader, inputCls, primaryBtn, ghostBtn, cardCls, errorText } from './ws-ui';
 
 const METHODS = [
@@ -25,6 +26,12 @@ export function MarketplaceTab({ ws, userId, onOrdered, prefill = null, onClearP
   const [cart, setCart] = useState<CartLine[]>([]);
   const [checkout, setCheckout] = useState(false);
   const [chat, setChat] = useState(false);
+  const [plan, setPlan] = useState<PurchasePlan | null>(null);
+  const [ordered, setOrdered] = useState<Set<string>>(new Set());
+  const orderSupplier = (id: string, picks: { item: CatalogItem; quantity: number }[]) => {
+    setSupplier(id); setQ('');
+    setCart(picks.reduce<CartLine[]>((acc, p) => addToCart(acc, { product_id: p.item.product_id, supplier_id: p.item.supplier_id, unit_price: p.item.unit_price, stock: p.item.stock }, p.quantity), []));
+  };
   const readOnly = isReadOnly(ws.status, ws.role);
 
   const suppliers = useMemo(() => {
@@ -86,6 +93,7 @@ export function MarketplaceTab({ ws, userId, onOrdered, prefill = null, onClearP
 
       {!current ? (
         <div className="space-y-4">
+          {!prefill && <PurchaseListPanel catalog={catalog} plan={plan} setPlan={(p) => { setPlan(p); setOrdered(new Set()); }} ordered={ordered} onOrderSupplier={orderSupplier} readOnly={readOnly} />}
           <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
             <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center">1</span> Choose a supplier
             <span className="text-slate-300">→</span><span className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">2</span> Pick products
@@ -186,7 +194,7 @@ export function MarketplaceTab({ ws, userId, onOrdered, prefill = null, onClearP
       {checkout && cart.length > 0 && (
         <CheckoutModal ws={ws} userId={userId} cart={cart} defaultBranch={prefill?.branchId} supplierName={byId.get(cart[0]!.product_id)?.supplier_name || ''}
           branches={branches.filter((b) => b.is_active)} onClose={() => setCheckout(false)}
-          onDone={() => { setCart([]); setCheckout(false); void qc.invalidateQueries({ queryKey: ['wholesale'] }); onOrdered(); }} />)}
+          onDone={() => { if (plan && cart[0]) { const sid = cart[0].supplier_id; setOrdered((o) => new Set(o).add(sid)); setSupplier(''); } setCart([]); setCheckout(false); void qc.invalidateQueries({ queryKey: ['wholesale'] }); onOrdered(); }} />)}
     </div>
   );
 }
