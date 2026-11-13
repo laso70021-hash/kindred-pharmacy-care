@@ -28,12 +28,15 @@ import { PosTab } from './PosTab';
 import { DispenserTab } from './DispenserTab';
 import { ShiftsTab } from './ShiftsTab';
 import { DocumentsTab } from './DocumentsTab';
+import { StockAlertsTab } from './StockAlertsTab';
 
 const sub = () => () => {};
 
 export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws: Workspace; all: Workspace[]; userId: string; onSwitch: (id: string) => void; onSignOut: () => void }) {
   const isMounted = useSyncExternalStore(sub, () => true, () => false);
-  const [tab, setTab] = useState('overview');
+  const [tab, setTabRaw] = useState('overview');
+  const [alertView, setAlertView] = useState<'restock' | 'expiry'>('restock');
+  const setTab = (t: string) => { if (t.startsWith('stock-alerts')) { setAlertView(t.endsWith(':expiry') ? 'expiry' : 'restock'); setTabRaw('stock-alerts'); } else setTabRaw(t); };
   const [range, setRange] = useState<DateRange | null>(null);
   useEffect(() => setRange(presetRange('last30')), []);
   const readOnly = isReadOnly(ws.status, ws.role);
@@ -55,6 +58,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     { s: 'Main', id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { s: 'Main', id: 'documents', label: 'Documents', Icon: FileText, show: true },
     { s: 'Inventory & Procurement', id: 'inventory', label: ws.business_type === 'supplier' ? 'Wholesale catalog' : 'Inventory', Icon: Boxes, show: true },
+    { s: 'Inventory & Procurement', id: 'stock-alerts', label: 'Stock Alerts', Icon: AlertTriangle, show: true },
     { s: 'Inventory & Procurement', id: 'categories', label: 'Categories', Icon: Boxes, show: can(ws.role, 'manageStock', 'active') },
     { s: 'Inventory & Procurement', id: 'imports', label: 'Bulk Imports', Icon: ClipboardList, show: can(ws.role, 'manageStock', 'active') || can(ws.role, 'manageStaff', 'active') },
     { s: 'Inventory & Procurement', id: 'restock', label: 'Restock (Suppliers)', Icon: ShoppingCart, show: ws.business_type === 'pharmacy' && canOrderStock(ws.role) },
@@ -124,6 +128,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           {tab === 'imports' && <ImportsTab ws={ws} />}
           {(['suppliers','categories','settings'] as const).map(module => tab === module && <RecordsTab key={module} ws={ws} module={module} />)}
           {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} onImport={can(ws.role, 'manageStock', 'active') ? () => setTab('imports') : undefined} />}
+          {tab === 'stock-alerts' && <StockAlertsTab key={alertView} ws={ws} initialView={alertView} onOrder={ws.business_type === 'pharmacy' && canOrderStock(ws.role) ? () => setTab('restock') : undefined} />}
           {tab === 'pos' && <PosTab ws={ws} />}
           {tab === 'rx' && <DispenserTab ws={ws} userId={userId} />}
           {tab === 'restock' && <MarketplaceTab ws={ws} userId={userId} onOrdered={() => setTab('orders')} />}
