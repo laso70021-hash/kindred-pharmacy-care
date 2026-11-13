@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { RegistrationWizard, type AccountFields } from "@/components/registration/RegistrationWizard";
 import type { RegistrationInput } from "@/lib/pharmacy-types";
 import { BRAND } from "@/lib/brand";
+import { WorkspaceService } from "@/lib/pharmacy-service";
+import { landingWorkspace } from "@/lib/workspace";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -48,9 +50,6 @@ function GoogleLogo() {
     </svg>
   );
 }
-
-import { WorkspaceService } from '@/lib/pharmacy-service';
-import { landingWorkspace } from '@/lib/workspace';
 
 export function AuthPage() {
   const navigate = useNavigate();
