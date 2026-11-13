@@ -5,7 +5,7 @@ import { ImportsTab } from './ImportsTab';
 import { BRAND } from '@/lib/brand';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
-import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList, Store, Pill } from 'lucide-react';
+import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList, Store, Pill, Clock } from 'lucide-react';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { can, canOrderStock, isReadOnly, roleLabel } from '@/lib/workspace';
 import { STATUS_LABELS, expiryReminder } from '@/lib/billing';
@@ -25,6 +25,7 @@ import { MarketplaceTab } from './MarketplaceTab';
 import { OrdersTab } from './OrdersTab';
 import { PosTab } from './PosTab';
 import { DispenserTab } from './DispenserTab';
+import { ShiftsTab } from './ShiftsTab';
 
 const sub = () => () => {};
 
@@ -60,6 +61,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     { id: 'orders', label: ws.business_type === 'supplier' ? 'Wholesale orders' : 'Supplier orders', Icon: ClipboardList, show: canOrderStock(ws.role) },
     { id: 'branches', label: 'Branches', Icon: GitBranch, show: true },
     { id: 'staff', label: 'Staff & Roles', Icon: Users2, show: can(ws.role, 'manageBranches', 'active') },
+    { id: 'shifts', label: 'Shifts', Icon: Clock, show: true },
     { id: 'expenses', label: 'Expenses', Icon: DollarSign, show: can(ws.role, 'viewFinance', ws.status) },
   ].filter((n) => n.show);
 
@@ -122,6 +124,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           {tab === 'orders' && <OrdersTab ws={ws} />}
           {tab === 'branches' && <BranchesTab ws={ws} />}
           {tab === 'staff' && <StaffTab ws={ws} />}
+          {tab === 'shifts' && <ShiftsTab ws={ws} userId={userId} />}
           {tab === 'expenses' && <ExpensesTab ws={ws} userId={userId} range={range} />}
         </main>
       </div>

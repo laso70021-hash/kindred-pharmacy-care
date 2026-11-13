@@ -1,1 +1,2 @@
 - AI import category suggestions use authenticated server functions, tenant-scoped existing categories, validated model output, and explicit user approval; suggestions never persist or bypass import validation.
+- Shifts change only via `shift_action` (server time, one open shift per user); timers derive from stored times.
