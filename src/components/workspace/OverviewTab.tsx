@@ -226,7 +226,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
           </div>
         </Panel>
 
-        <Panel title="Restock Needed" sub="Products at or below minimum stock level" Icon={Package} action="View All" onAction={openReports}>
+        <Panel title="Restock Needed" sub="Products at or below minimum stock level" Icon={Package} action="View All" onAction={() => onNavigate('stock-alerts')}>
           {lowStock.length === 0 ? <NoData>All products are above their minimum stock.</NoData> : (
             <div className="overflow-x-auto"><table className="w-full text-xs">
               <thead><tr className="bg-slate-50 text-slate-600 text-xs"><th className="text-left font-semibold px-2.5 py-1.5">Product</th><th className="text-center font-semibold px-2.5 py-1.5">Current Stock</th><th className="text-center font-semibold px-2.5 py-1.5">Min. Stock</th><th className="text-left font-semibold px-2.5 py-1.5">Status</th></tr></thead>
@@ -240,7 +240,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, a
             </table></div>)}
         </Panel>
 
-        <Panel title="Expiring Soon" sub={`Batches nearing expiry (within ${EXPIRY_WARNING_DAYS} days)`} Icon={CalendarClock} action="View All" onAction={openReports}>
+        <Panel title="Expiring Soon" sub={`Batches nearing expiry (within ${EXPIRY_WARNING_DAYS} days)`} Icon={CalendarClock} action="View All" onAction={() => onNavigate('stock-alerts:expiry')}>
           {expiring.length === 0 ? <NoData>No batches expire in the next {EXPIRY_WARNING_DAYS} days.</NoData> : (
             <div className="overflow-x-auto"><table className="w-full text-xs">
               <thead><tr className="bg-slate-50 text-slate-600 text-xs"><th className="text-left font-semibold px-2.5 py-1.5">Product</th><th className="text-left font-semibold px-2.5 py-1.5">Batch No.</th><th className="text-left font-semibold px-2.5 py-1.5">Expiry Date</th><th className="text-left font-semibold px-2.5 py-1.5">Days Left</th></tr></thead>

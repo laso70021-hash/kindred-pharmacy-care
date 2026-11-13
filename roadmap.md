@@ -1,4 +1,5 @@
 # Swahivo roadmap (unified master plan)
+- [x] 19. Stock Alerts page (restock + expiry within 6 months/1 year, sell advice, filters, filtered CSV) for all workspace roles.
 
 - [~] 18. Edit/delete controls, add-confirmation emails, team/import email invitations, secure first-password setup and owner-selected daily/weekly/monthly report settings implemented; 68 tests passed, public password page and scheduler denial verified; Resend swahivo.com sender verified. Activation waits on Vercel deployment with CRON_SECRET/RESEND_API_KEY/LOVABLE_API_KEY and Supabase allowing https://swahivo.com/set-password. External-account end-to-end and inbox delivery are unverified; external SMTP settings cannot be read here. Contact invitations create accounts without granting team/provider access. Reports run hourly at minute 17 (24 invocations/day); delivery can be deferred by the three-recipient batch cap and requires a Vercel plan supporting hourly cron.
 
