@@ -45,7 +45,7 @@ export const sendRecordEmail=createServerFn({method:'POST'}).middleware([require
  const {data:admin}=await context.supabase.rpc('is_platform_admin');
  const pid='pharmacy_id' in record?record.pharmacy_id:data.kind==='pharmacies'?record.id:null;
  if(!admin){if(!pid)throw new Error('Permission denied.');const {data:allowed}=await context.supabase.rpc('can_write_pharmacy',{_pharmacy_id:pid,_roles:data.kind==='customers'?['manager','cashier','pharmacist']:['manager','inventory_manager']});if(!allowed)throw new Error('Permission denied.');if(data.kind==='pharmacy_invites'){const {data:owner}=await context.supabase.rpc('is_pharmacy_owner',{_pharmacy_id:pid});if(!owner)throw new Error('Only the business owner can send team invitations.');}}
- const email=z.string().email().parse(record.email);
+ const email=z.string().email().parse(record.email?.trim().toLowerCase());
  const {sendAppEmail}=await import('./resend.server');
  const origin=process.env['APP_ORIGIN']||'https://swahivo.com';
  if(!data.invite&&data.kind!=='pharmacy_invites')return sendAppEmail(email,'Your details were added — Swahivo','Your contact details have been added to Swahivo. If you did not expect this, contact info@swahivo.com.',`record-confirm:${data.kind}:${data.id}`);

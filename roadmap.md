@@ -1,6 +1,6 @@
 # Swahivo roadmap (unified master plan)
 
-- [ ] 18. Edit/delete controls for suppliers, customers, users and businesses; confirmation emails and optional contact account invitations; team invitation delivery and secure password setup; owner/supplier-selected daily, weekly and monthly AI report recipients. Awaiting approval of the combined plan.
+- [~] 18. Edit/delete controls, add-confirmation emails, team/import email invitations, secure first-password setup and owner-selected daily/weekly/monthly report settings implemented; 64 tests passed, public password page and scheduler denial verified. Activation waits on Vercel deployment with CRON_SECRET/RESEND_API_KEY/LOVABLE_API_KEY and Supabase allowing https://swahivo.com/set-password. External-account end-to-end and inbox delivery are unverified; external SMTP settings cannot be read here. Contact invitations create accounts without granting team/provider access.
 
 - [x] 17. Collapsible phone/tablet navigation; uncropped hero photo, centered AI banner and single-row action buttons. Public flow verified at 320, 394, 768, 1024 and 1280px; authenticated dashboard checks unavailable on external Supabase.
 
@@ -13,7 +13,7 @@
 - [x] 5. Cashier POS with product photo grid, cart, payments, cash drawer
 - [x] 6. Dispenser portal (prescription queue)
 - [~] 7. Notifications (done), reports CSV (done), pharmacy logo (done), favicon (already set) — emails blocked: needs an email domain the user owns
-- [ ] 8. Role-based landing + view switcher for all portals
+- [x] 8. Role-based account navigation; view switcher removed at the user's request.
 - [x] 9. Complete real-world manual entry for business settings, branches, categories, suppliers, products, batches and staff
 - [x] 10. CSV/Excel templates, mapping, editable preview, validation, transaction-safe imports and import history
 - [x] 11. Create one demo pharmacy through normal workflows: main + two branches, two suppliers, products, batches and staff invitations
