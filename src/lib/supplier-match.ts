@@ -22,3 +22,39 @@ export function matchCatalog<T extends { name: string; generic_name?: string; st
   return catalog.map((c) => ({ ...c, score: matchScore(need, c) })).filter((c) => c.score > 0)
     .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0) || b.score - a.score || a.unit_price - b.unit_price);
 }
+
+export interface ListLine { name: string; strength?: string; quantity: number }
+const HEAD = { name: ['name', 'product', 'medicine', 'item', 'product name', 'drug'], strength: ['strength', 'dose', 'dosage'], quantity: ['quantity', 'qty', 'units', 'amount', 'needed'] };
+
+/** Turns spreadsheet rows (first row = headers, or plain "name, qty" rows) into purchase-list lines. */
+export function parsePurchaseList(rows: string[][]): ListLine[] {
+  const clean = rows.map((r) => r.map((c) => String(c ?? '').trim())).filter((r) => r.some(Boolean));
+  if (!clean.length) return [];
+  const h = clean[0]!.map((c) => c.toLowerCase());
+  const col = (k: keyof typeof HEAD) => h.findIndex((c) => HEAD[k].includes(c));
+  let ni = col('name'), si = col('strength'), qi = col('quantity'), body = clean.slice(1);
+  if (ni < 0) { ni = 0; si = -1; qi = 1; body = clean; }
+  const out = new Map<string, ListLine>();
+  for (const r of body) {
+    const name = r[ni] ?? ''; if (!name) continue;
+    const qty = Math.max(1, Math.floor(Number(String(r[qi] ?? '').replace(/[^0-9.]/g, '')) || 1));
+    const strength = si >= 0 ? r[si] || undefined : undefined;
+    const key = norm(`${name} ${strength ?? ''}`);
+    const prev = out.get(key);
+    out.set(key, prev ? { ...prev, quantity: prev.quantity + qty } : { name, ...(strength ? { strength } : {}), quantity: qty });
+  }
+  return [...out.values()];
+}
+
+export interface PlanPick<T> { item: T; quantity: number }
+/** For each line, fill the quantity from the best-matching suppliers (splitting when one runs short). */
+export function planPurchase<T extends { product_id: string; supplier_id: string; name: string; generic_name?: string; strength?: string; unit_price: number; stock: number }>(lines: ListLine[], catalog: T[]) {
+  return lines.map((line) => {
+    let left = line.quantity; const picks: PlanPick<T>[] = [];
+    for (const c of matchCatalog(line, catalog)) {
+      if (left <= 0 || c.stock <= 0) break;
+      const n = Math.min(left, c.stock); picks.push({ item: c, quantity: n }); left -= n;
+    }
+    return { line, picks, missing: left, exact: picks.every((p) => (p.item as T & { score: number }).score >= 1) };
+  });
+}
