@@ -20,7 +20,7 @@ export function ProductsCanvas({ products, batches, onAdd, onEdit, editable }: {
   const rows = useMemo(() => {
     let r = canvasRows(products, batches, filter).filter((x) => `${x.product.name} ${x.product.generic_name} ${x.product.sku} ${x.batch?.batch_number ?? ''}`.toLowerCase().includes(q.toLowerCase()));
     if (from || to) {
-      const range: DateRange = { from: from || '1900-01-01', to: to || '2999-12-31' } as DateRange;
+      const range: DateRange = { preset: 'custom', from: from || null, to: to || null };
       r = filterByRange(r, (x: CanvasRow) => x.batch?.received_date || x.batch?.created_at || x.product.created_at, range);
     }
     const val = (x: CanvasRow): string | number => ({ name: x.product.name, quantity: x.quantity, unit: x.product.dosage_form, cost: x.cost, sell: x.sell, markup: x.markup, margin: x.margin, batch: x.batch?.batch_number ?? '' })[sort.k];
