@@ -9,7 +9,7 @@ describe('record action approval',()=>{
  it('does not delete until the confirmation is approved',async()=>{
   render(<RecordActions kind="suppliers" record={{id:'supplier-1',name:'Supplier'}} onChanged={()=>{}}/>);
   fireEvent.click(screen.getByRole('button',{name:'Delete Supplier'}));expect(actions.manage).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button',{name:'Delete',exact:true}));
+  fireEvent.click(screen.getByRole('button',{name:/^Delete$/}));
   await waitFor(()=>expect(actions.manage).toHaveBeenCalledWith({data:{kind:'suppliers',id:'supplier-1',action:'delete',values:{}}}));
  });
  it('sends confirmation without creating an account',async()=>{
