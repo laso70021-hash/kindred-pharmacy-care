@@ -428,6 +428,122 @@ export type Database = {
           },
         ]
       }
+      business_document_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          document_id: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          document_id: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          document_id?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_document_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "business_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer: Json
+          delivery_info: string | null
+          discount: number
+          doc_number: string
+          doc_type: string
+          id: string
+          items: Json
+          notes: string | null
+          payment_info: string | null
+          pharmacy_id: string
+          source_sale_id: string | null
+          status: string
+          subtotal: number
+          tax: number
+          tax_rate: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer?: Json
+          delivery_info?: string | null
+          discount?: number
+          doc_number: string
+          doc_type: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          payment_info?: string | null
+          pharmacy_id: string
+          source_sale_id?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer?: Json
+          delivery_info?: string | null
+          discount?: number
+          doc_number?: string
+          doc_type?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          payment_info?: string | null
+          pharmacy_id?: string
+          source_sale_id?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_documents_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_documents_source_sale_id_fkey"
+            columns: ["source_sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -2255,6 +2371,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      create_business_document: {
+        Args: { _payload: Json; _pharmacy: string; _type: string }
+        Returns: string
+      }
       create_registration: {
         Args: { _payload: Json; _user_id: string }
         Returns: string
@@ -2372,6 +2492,10 @@ export type Database = {
       save_business_entry: {
         Args: { _id?: string; _module: string; _pharmacy: string; _row: Json }
         Returns: string
+      }
+      set_document_status: {
+        Args: { _id: string; _note?: string; _status: string }
+        Returns: undefined
       }
       shift_action: {
         Args: {
