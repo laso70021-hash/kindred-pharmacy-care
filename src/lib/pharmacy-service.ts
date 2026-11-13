@@ -1492,7 +1492,7 @@ export class WholesaleService {
     const col = side === 'buyer' ? 'buyer_pharmacy_id' : 'supplier_id';
     const { data, error } = await supabase
       .from('wholesale_orders')
-      .select('*, wholesale_order_items(product_name, quantity, unit_price, total_price)')
+      .select('*, wholesale_order_items(id, product_name, quantity, unit_price, total_price)')
       .eq(col, pharmacyId)
       .order('created_at', { ascending: false });
     fail(error);
