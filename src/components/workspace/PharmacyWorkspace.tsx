@@ -33,6 +33,7 @@ import { RoleHome } from './RoleHome';
 import { SupplierDashboard, InventoryAvailability, SupplierPayments, SupplierReports, SupplierNotifications, SupplierMessages } from './SupplierPortal';
 import { Bell, MessageCircle, Wallet, Layers, Upload, Settings as SettingsIcon } from 'lucide-react';
 import { homeFor } from '@/lib/role-home';
+import type { RestockPrefill } from '@/lib/supplier-match';
 
 const sub = () => () => {};
 
@@ -41,6 +42,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
   const [tab, setTabRaw] = useState('overview');
   const [alertView, setAlertView] = useState<'restock' | 'expiry'>('restock');
   const setTab = (t: string) => { if (t.startsWith('stock-alerts')) { setAlertView(t.endsWith(':expiry') ? 'expiry' : 'restock'); setTabRaw('stock-alerts'); } else setTabRaw(t); };
+  const [prefill, setPrefill] = useState<RestockPrefill | null>(null);
   const [range, setRange] = useState<DateRange | null>(null);
   useEffect(() => setRange(presetRange('last30')), []);
   const readOnly = isReadOnly(ws.status, ws.role);
@@ -158,10 +160,10 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           {tab === 'imports' && <ImportsTab ws={ws} />}
           {(['suppliers','categories','settings'] as const).map(module => tab === module && <RecordsTab key={module} ws={ws} module={module} />)}
           {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} onImport={can(ws.role, 'manageStock', 'active') ? () => setTab('imports') : undefined} />}
-          {tab === 'stock-alerts' && <StockAlertsTab key={alertView} ws={ws} initialView={alertView} onOrder={ws.business_type === 'pharmacy' && canOrderStock(ws.role) ? () => setTab('restock') : undefined} />}
+          {tab === 'stock-alerts' && <StockAlertsTab key={alertView} ws={ws} initialView={alertView} onOrder={ws.business_type === 'pharmacy' && canOrderStock(ws.role) ? (p?: RestockPrefill) => { setPrefill(p ?? null); setTab('restock'); } : undefined} />}
           {tab === 'pos' && <PosTab ws={ws} />}
           {tab === 'rx' && <DispenserTab ws={ws} userId={userId} />}
-          {tab === 'restock' && <MarketplaceTab ws={ws} userId={userId} onOrdered={() => setTab('orders')} />}
+          {tab === 'restock' && <MarketplaceTab key={prefill?.name ?? 'all'} ws={ws} userId={userId} prefill={prefill} onClearPrefill={() => setPrefill(null)} onOrdered={() => { setPrefill(null); setTab('orders'); }} />}
           {tab === 'orders' && <OrdersTab ws={ws} />}
           {tab === 'branches' && <BranchesTab ws={ws} />}
           {tab === 'staff' && <StaffTab ws={ws} />}

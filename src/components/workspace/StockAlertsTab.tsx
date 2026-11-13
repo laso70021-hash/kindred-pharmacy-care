@@ -1,3 +1,4 @@
+import type { RestockPrefill } from '@/lib/supplier-match';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Download, Package, CalendarClock, AlertTriangle, Search } from 'lucide-react';
@@ -19,7 +20,7 @@ function download(name: string, rows: Record<string, string | number>[]) {
   const a = document.createElement('a'); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
 }
 
-export function StockAlertsTab({ ws, initialView = 'restock', onOrder }: { ws: Workspace; initialView?: 'restock' | 'expiry'; onOrder?: (() => void) | undefined }) {
+export function StockAlertsTab({ ws, initialView = 'restock', onOrder }: { ws: Workspace; initialView?: 'restock' | 'expiry'; onOrder?: ((prefill?: RestockPrefill) => void) | undefined }) {
   const pid = ws.id;
   const { data: products = [] } = useQuery({ queryKey: ['ws', pid, 'products'], queryFn: () => WorkspaceService.getProducts(pid) });
   const { data: batches = [] } = useQuery({ queryKey: ['ws', pid, 'batches'], queryFn: () => WorkspaceService.getBatches(pid) });
@@ -65,7 +66,7 @@ export function StockAlertsTab({ ws, initialView = 'restock', onOrder }: { ws: W
         <div><h1 className="text-xl font-black text-slate-900 tracking-tight">Stock Alerts</h1>
           <p className="text-sm text-slate-500">Products to restock and batches expiring within 1 year, with selling advice.</p></div>
         <div className="flex gap-2">
-          {onOrder && view === 'restock' && <button onClick={onOrder} className="h-9 px-3 rounded-xl border border-blue-200 text-blue-700 text-sm font-bold hover:bg-blue-50">Order from suppliers</button>}
+          {onOrder && view === 'restock' && <button onClick={() => onOrder()} className="h-9 px-3 rounded-xl border border-blue-200 text-blue-700 text-sm font-bold hover:bg-blue-50">Order from suppliers</button>}
           <button onClick={exportCsv} className="h-9 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center gap-1.5"><Download className="w-4 h-4" /> Download filtered list</button>
         </div>
       </div>
@@ -91,13 +92,13 @@ export function StockAlertsTab({ ws, initialView = 'restock', onOrder }: { ws: W
 
       <div className={`${card} overflow-x-auto`}>
         {view === 'restock' ? (
-          <table className="w-full text-sm"><thead><tr className="bg-[#1E3A8A] text-white text-xs">{['Product', 'Category', 'Current', 'Min.', 'Status', 'Suggested order', 'Advice'].map((h) => <th key={h} className="text-left font-semibold px-3 py-2">{h}</th>)}</tr></thead>
-            <tbody className="divide-y divide-slate-100">{restock.length === 0 ? <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-400 font-semibold">Nothing needs restocking for these filters.</td></tr> : restock.map((p) => (
+          <table className="w-full text-sm"><thead><tr className="bg-[#1E3A8A] text-white text-xs">{['Product', 'Category', 'Current', 'Min.', 'Status', 'Suggested order', 'Advice', ...(onOrder ? [''] : [])].map((h) => <th key={h} className="text-left font-semibold px-3 py-2">{h}</th>)}</tr></thead>
+            <tbody className="divide-y divide-slate-100">{restock.length === 0 ? <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-400 font-semibold">Nothing needs restocking for these filters.</td></tr> : restock.map((p) => (
               <tr key={p.id}><td className="px-3 py-2 font-semibold text-slate-800">{p.name}{p.strength ? ` ${p.strength}` : ''}</td><td className="px-3 py-2 text-slate-600">{p.category || 'Uncategorised'}</td>
                 <td className="px-3 py-2 tabular-nums">{p.qty}</td><td className="px-3 py-2 tabular-nums">{p.min_stock_level}</td>
                 <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${p.qty <= 0 ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-700'}`}>{p.qty <= 0 ? 'Out of stock' : 'Low stock'}</span></td>
                 <td className="px-3 py-2 tabular-nums font-bold">{reorderQty(p.qty, p.min_stock_level)}</td>
-                <td className="px-3 py-2 text-xs text-slate-600">{p.qty <= 0 ? 'Order now — patients are being turned away.' : 'Order soon before it runs out.'}</td></tr>))}</tbody></table>
+                <td className="px-3 py-2 text-xs text-slate-600">{p.qty <= 0 ? 'Order now — patients are being turned away.' : 'Order soon before it runs out.'}</td>{onOrder && <td className="px-3 py-2"><button onClick={() => onOrder({ name: p.name, generic: p.generic_name, strength: p.strength, quantity: reorderQty(p.qty, p.min_stock_level), ...(branchId ? { branchId } : {}) })} className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold whitespace-nowrap">Order from suppliers</button></td>}</tr>))}</tbody></table>
         ) : (
           <table className="w-full text-sm"><thead><tr className="bg-[#1E3A8A] text-white text-xs">{['Product', 'Batch', 'Branch', 'Qty', 'Expiry', 'Days left', 'Value (cost)', 'Sell recommendation'].map((h) => <th key={h} className="text-left font-semibold px-3 py-2">{h}</th>)}</tr></thead>
             <tbody className="divide-y divide-slate-100">{expiry.length === 0 ? <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-400 font-semibold">No batches expire within 1 year for these filters.</td></tr> : expiry.map((b) => (
