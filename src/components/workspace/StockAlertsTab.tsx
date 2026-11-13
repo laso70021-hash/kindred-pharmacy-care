@@ -19,7 +19,7 @@ function download(name: string, rows: Record<string, string | number>[]) {
   const a = document.createElement('a'); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
 }
 
-export function StockAlertsTab({ ws, initialView = 'restock', onOrder }: { ws: Workspace; initialView?: 'restock' | 'expiry'; onOrder?: () => void }) {
+export function StockAlertsTab({ ws, initialView = 'restock', onOrder }: { ws: Workspace; initialView?: 'restock' | 'expiry'; onOrder?: (() => void) | undefined }) {
   const pid = ws.id;
   const { data: products = [] } = useQuery({ queryKey: ['ws', pid, 'products'], queryFn: () => WorkspaceService.getProducts(pid) });
   const { data: batches = [] } = useQuery({ queryKey: ['ws', pid, 'batches'], queryFn: () => WorkspaceService.getBatches(pid) });
