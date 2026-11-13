@@ -49,22 +49,22 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
     body: 'Pay the yearly plan to keep using every feature.' }] : [];
 
   const nav = [
-    { id: 'overview', label: 'Overview', Icon: LayoutDashboard, show: true },
-    { id: 'ai-reports', label: 'AI email reports', Icon: ClipboardList, show: ws.role==='owner'||ws.role==='admin' },
-    { id: 'pos', label: 'Cashier (POS)', Icon: Store, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
-    { id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
-    { id: 'imports', label: 'Bulk imports', Icon: ClipboardList, show: can(ws.role, 'manageStock', 'active') || can(ws.role, 'manageStaff', 'active') },
-    { id: 'suppliers', label: 'Suppliers', Icon: Store, show: can(ws.role, 'manageStock', 'active') },
-    { id: 'categories', label: 'Categories', Icon: Boxes, show: can(ws.role, 'manageStock', 'active') },
-    { id: 'settings', label: 'Business settings', Icon: GitBranch, show: ws.role === 'owner' || ws.role === 'admin' },
-    { id: 'inventory', label: ws.business_type === 'supplier' ? 'Wholesale catalog' : 'Inventory', Icon: Boxes, show: true },
-    { id: 'restock', label: 'Restock (suppliers)', Icon: ShoppingCart, show: ws.business_type === 'pharmacy' && canOrderStock(ws.role) },
-    { id: 'orders', label: ws.business_type === 'supplier' ? 'Wholesale orders' : 'Supplier orders', Icon: ClipboardList, show: canOrderStock(ws.role) },
-    { id: 'branches', label: 'Branches', Icon: GitBranch, show: true },
-    { id: 'staff', label: 'Staff & Roles', Icon: Users2, show: can(ws.role, 'manageBranches', 'active') },
-    { id: 'documents', label: 'Documents', Icon: FileText, show: true },
-    { id: 'shifts', label: 'Shifts', Icon: Clock, show: true },
-    { id: 'expenses', label: 'Expenses', Icon: DollarSign, show: can(ws.role, 'viewFinance', ws.status) },
+    { s: 'Main', id: 'overview', label: 'Overview', Icon: LayoutDashboard, show: true },
+    { s: 'Sales & Clinical', id: 'pos', label: 'Cashier (POS)', Icon: Store, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
+    { s: 'Sales & Clinical', id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
+    { s: 'Sales & Clinical', id: 'documents', label: 'Documents', Icon: FileText, show: true },
+    { s: 'Inventory & Purchasing', id: 'inventory', label: ws.business_type === 'supplier' ? 'Wholesale catalog' : 'Inventory', Icon: Boxes, show: true },
+    { s: 'Inventory & Purchasing', id: 'categories', label: 'Categories', Icon: Boxes, show: can(ws.role, 'manageStock', 'active') },
+    { s: 'Inventory & Purchasing', id: 'imports', label: 'Bulk imports', Icon: ClipboardList, show: can(ws.role, 'manageStock', 'active') || can(ws.role, 'manageStaff', 'active') },
+    { s: 'Inventory & Purchasing', id: 'restock', label: 'Restock (suppliers)', Icon: ShoppingCart, show: ws.business_type === 'pharmacy' && canOrderStock(ws.role) },
+    { s: 'Inventory & Purchasing', id: 'orders', label: ws.business_type === 'supplier' ? 'Wholesale orders' : 'Supplier orders', Icon: ClipboardList, show: canOrderStock(ws.role) },
+    { s: 'Inventory & Purchasing', id: 'suppliers', label: 'Suppliers', Icon: Store, show: can(ws.role, 'manageStock', 'active') },
+    { s: 'Business Management', id: 'branches', label: 'Branches', Icon: GitBranch, show: true },
+    { s: 'Business Management', id: 'staff', label: 'Staff & Roles', Icon: Users2, show: can(ws.role, 'manageBranches', 'active') },
+    { s: 'Business Management', id: 'shifts', label: 'Shifts', Icon: Clock, show: true },
+    { s: 'Business Management', id: 'expenses', label: 'Expenses', Icon: DollarSign, show: can(ws.role, 'viewFinance', ws.status) },
+    { s: 'AI & Reports', id: 'ai-reports', label: 'AI email reports', Icon: ClipboardList, show: ws.role==='owner'||ws.role==='admin' },
+    { s: 'Settings', id: 'settings', label: 'Business settings', Icon: GitBranch, show: ws.role === 'owner' || ws.role === 'admin' },
   ].filter((n) => n.show);
 
   const navigation = (
@@ -77,10 +77,11 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           <div><div className="font-extrabold text-white text-sm">Swahivo</div><div className="text-[11px] text-blue-400 font-bold">{ws.business_type === 'supplier' ? 'Supplier Dashboard' : 'Pharmacy Dashboard'}</div></div>
         </div>
         <nav className="p-3 space-y-1 flex-1">
-          {nav.map((n) => (
-            <button key={n.id} onClick={() => setTab(n.id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${tab === n.id ? 'bg-blue-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}>
+          {nav.map((n, i) => (<div key={n.id}>
+            {n.s !== nav[i - 1]?.s && <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{n.s}</div>}
+            <button onClick={() => setTab(n.id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${tab === n.id ? 'bg-blue-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}>
               <n.Icon className="w-4 h-4" /> {n.label}
-            </button>))}
+            </button></div>))}
         </nav>
         <div className="p-3 border-t border-slate-800"><button onClick={onSignOut} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-800"><LogOut className="w-3.5 h-3.5" /> Sign out</button></div>
       </aside>

@@ -19,7 +19,7 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
   const { data: branches = [] } = useQuery({ queryKey: ['ws', pid, 'branches'], queryFn: () => WorkspaceService.getBranches(pid) });
   const { data: entryProducts = [] } = useQuery({ queryKey: ['entry', pid, 'products'], queryFn: () => EntryService.list(pid, 'products') });
   const { data: refs = {} } = useQuery({ queryKey: ['entry-refs', pid], queryFn: () => EntryService.references(pid) });
-  const [view, setView] = useState<'table' | 'grid' | 'batches'>('table');
+  const [view, setView] = useState<'table' | 'grid' | 'batches'>('grid');
   const [q, setQ] = useState('');
   const [branch, setBranch] = useState('');
   const [editing, setEditing] = useState<Partial<WsProduct> | null>(null);
@@ -52,7 +52,7 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
           <option value="">All branches</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
         <div className="flex bg-slate-100 rounded-lg p-0.5 text-xs font-bold">
-          {(['table', 'grid', 'batches'] as const).map((v) => <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-md ${view === v ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>{v === 'table' ? 'Pharmacy Products' : v === 'grid' ? 'Photo grid' : 'Batches'}</button>)}
+          {(['grid', 'table', 'batches'] as const).map((v) => <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-md ${view === v ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>{v === 'grid' ? 'Inventory' : v === 'table' ? 'Pharmacy Products' : 'Batches'}</button>)}
         </div>
       </div>
 
