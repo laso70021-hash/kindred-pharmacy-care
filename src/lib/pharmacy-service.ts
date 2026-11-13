@@ -1263,7 +1263,7 @@ export class WorkspaceService {
   // ---------- products & stock ----------
   static async getProducts(pharmacyId: string): Promise<WsProduct[]> {
     const [{ data: rows, error }, { data: batches, error: bErr }] = await Promise.all([
-      supabase.from('products').select('*').eq('pharmacy_id', pharmacyId).order('name', { ascending: true }),
+      supabase.from('products').select('*, categories(name)').eq('pharmacy_id', pharmacyId).order('name', { ascending: true }),
       supabase.from('inventory_batches').select('product_id, branch_id, quantity, expiry_date').eq('pharmacy_id', pharmacyId).gt('quantity', 0),
     ]);
     fail(error);
@@ -1285,6 +1285,7 @@ export class WorkspaceService {
         id: p.id,
         name: p.name,
         generic_name: p.generic_name || '',
+        category: p.categories?.name || 'Uncategorised',
         sku: p.sku || '',
         barcode: p.barcode || '',
         dosage_form: p.dosage_form || '',
@@ -1381,7 +1382,7 @@ export class WorkspaceService {
   static async getSales(pharmacyId: string): Promise<WsSale[]> {
     const { data, error } = await supabase
       .from('sales')
-      .select('id, invoice_number, total, branch_id, payment_method, created_at, sale_items(quantity, products(cost_price), inventory_batches(cost_per_unit))')
+      .select('id, invoice_number, total, branch_id, payment_method, created_at, sale_items(quantity, product_id, total_price, products(cost_price), inventory_batches(cost_per_unit)), cashier_id')
       .eq('pharmacy_id', pharmacyId)
       .order('created_at', { ascending: false });
     fail(error);
@@ -1395,7 +1396,10 @@ export class WorkspaceService {
       items: (s.sale_items || []).map((i: any) => ({
         quantity: i.quantity || 0,
         unit_cost: Number(i.inventory_batches?.cost_per_unit ?? i.products?.cost_price ?? 0),
+        product_id: i.product_id,
+        line_total: Number(i.total_price || 0),
       })),
+      cashier_id: s.cashier_id ?? null,
     }));
   }
 

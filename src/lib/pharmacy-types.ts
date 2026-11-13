@@ -361,6 +361,7 @@ export interface WsProduct {
   id: string;
   name: string;
   generic_name: string;
+  category?: string;
   sku: string;
   barcode: string;
   dosage_form: string;
@@ -412,7 +413,8 @@ export interface WsSale {
   branch_id: string | null;
   payment_method: string;
   created_at: string;
-  items: { quantity: number; unit_cost: number }[];
+  items: { quantity: number; unit_cost: number; product_id?: string; line_total?: number }[];
+  cashier_id?: string | null;
 }
 
 export interface WsExpense {
