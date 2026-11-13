@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, PackagePlus, Pill, Search } from 'lucide-react';
+import { Plus, PackagePlus, Pill, Search, Box, Upload } from 'lucide-react';
 import { EntryForm } from './EntryForm';
 import { ProductsCanvas } from './ProductsCanvas';
 import { EntryService, WorkspaceService } from '@/lib/pharmacy-service';
@@ -10,7 +10,7 @@ import { can, stockState, EXPIRY_WARNING_DAYS } from '@/lib/workspace';
 import { formatNumber, formatDateDeterministic } from '@/lib/utils';
 import { cardCls, Empty, Field, Modal, SectionHeader, errorText, ghostBtn, inputCls, primaryBtn } from './ws-ui';
 
-export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) {
+export function InventoryTab({ ws, userId, onImport }: { ws: Workspace; userId: string; onImport?: () => void }) {
   const pid = ws.id;
   const qc = useQueryClient();
   const editable = can(ws.role, 'manageStock', ws.status);
@@ -40,24 +40,31 @@ export function InventoryTab({ ws, userId }: { ws: Workspace; userId: string }) 
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Inventory" subtitle={`${products.length} products · stock per branch`} action={editable && (
-        <div className="flex gap-2">
-          <button className={ghostBtn} disabled={!products.length || !branches.length} onClick={() => setReceiving('')}><PackagePlus className="w-3.5 h-3.5" /> Receive stock</button>
-          <button className={primaryBtn} onClick={() => setEditing({})}><Plus className="w-3.5 h-3.5" /> Add product</button>
-        </div>)} />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-sm"><Box className="w-7 h-7" /></div>
+          <div><h2 className="text-2xl font-black text-slate-900 tracking-tight">{view === 'table' ? 'Pharmacy Products' : 'Inventory'}</h2>
+            <p className="text-sm text-slate-500">{view === 'table' ? 'Manage your pharmacy catalogue and inventory across branches' : `${products.length} products · stock per branch`}</p></div>
+        </div>
+        {editable && <div className="flex flex-wrap gap-2">
+          <button className="h-11 px-4 rounded-xl border border-blue-600 text-blue-700 bg-white font-bold text-sm inline-flex items-center gap-2 disabled:opacity-50" disabled={!products.length || !branches.length} onClick={() => setReceiving('')}><PackagePlus className="w-4 h-4" /> Receive Stock</button>
+          {onImport && <button className="h-11 px-4 rounded-xl border border-blue-600 text-blue-700 bg-white font-bold text-sm inline-flex items-center gap-2" onClick={onImport}><Upload className="w-4 h-4" /> Bulk Import</button>}
+          <button className="h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm inline-flex items-center gap-2" onClick={() => setEditing({})}><Plus className="w-4 h-4" /> Add Product</button>
+        </div>}
+      </div>
       {editable && branches.length === 0 && <div className="text-xs bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-2.5 font-semibold">Add a branch first so you can receive stock into it.</div>}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex gap-6 border-b border-slate-200 text-sm font-semibold">
+        {(['grid', 'table', 'batches'] as const).map((v) => <button key={v} onClick={() => setView(v)} className={`pb-2.5 -mb-px border-b-2 ${view === v ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-600 hover:text-slate-900'}`}>{v === 'grid' ? 'Inventory' : v === 'table' ? 'Pharmacy Products' : 'Batches'}</button>)}
+      </div>
+      {view !== 'table' && <div className="flex flex-wrap gap-2 items-center">
         <div className="relative"><Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" /><input className={`${inputCls.replace('w-full ', '')} pl-8 w-56`} placeholder="Search products" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <select className={`${inputCls.replace('w-full ', '')} w-44`} value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Branch">
           <option value="">All branches</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
-        <div className="flex bg-slate-100 rounded-lg p-0.5 text-xs font-bold">
-          {(['grid', 'table', 'batches'] as const).map((v) => <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-md ${view === v ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>{v === 'grid' ? 'Inventory' : v === 'table' ? 'Pharmacy Products' : 'Batches'}</button>)}
-        </div>
-      </div>
+      </div>}
 
       {isLoading ? <Empty>Loading…</Empty> : view === 'table' ? (
-        <ProductsCanvas products={products.filter((p) => !branch || (p.stock_by_branch[branch] || 0) > 0 || p.stock <= 0)} batches={batches.filter((b) => !branch || b.branch_id === branch)} editable={editable} onAdd={() => setEditing({})} onEdit={(p) => setEditing(p)} />
+        <ProductsCanvas products={products} batches={batches} branches={branches} editable={editable} onEdit={(p) => setEditing(p)} onStock={(p) => setReceiving(p.id)} />
       ) : view === 'grid' ? (
         shown.length === 0 ? <Empty>No products yet.</Empty> : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">

@@ -120,7 +120,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
           {tab === 'ai-reports' && <AIReportsTab ws={ws} />}
           {tab === 'imports' && <ImportsTab ws={ws} />}
           {(['suppliers','categories','settings'] as const).map(module => tab === module && <RecordsTab key={module} ws={ws} module={module} />)}
-          {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} />}
+          {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} onImport={can(ws.role, 'manageStock', 'active') ? () => setTab('imports') : undefined} />}
           {tab === 'pos' && <PosTab ws={ws} />}
           {tab === 'rx' && <DispenserTab ws={ws} userId={userId} />}
           {tab === 'restock' && <MarketplaceTab ws={ws} userId={userId} onOrdered={() => setTab('orders')} />}
