@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShoppingCart, CheckCircle2, XCircle, Wallet, Boxes, CalendarClock, AlertTriangle, ArrowRight, Download, Search, Bell, Upload, MessageCircle, Package } from 'lucide-react';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { WholesaleService, SupplierPortalService, NotificationService, type WholesaleOrder } from '@/lib/pharmacy-service';
-import { batchStatus, availableUnits, ORDER_STATUS_LABEL, notificationGroup, type BatchStatus } from '@/lib/supplier-portal';
+import { batchStatus, availableUnits, ORDER_STATUS_LABEL, isConfirmedOrder, notificationGroup, type BatchStatus } from '@/lib/supplier-portal';
 import { cardCls, inputCls, ghostBtn, primaryBtn } from './ws-ui';
 import { WholesaleChat } from './WholesaleChat';
 
@@ -22,7 +22,7 @@ function Kpi({ label, value, Icon, tone, onClick }: { label: string; value: stri
     <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tone}`}><Icon className="w-5 h-5" /></span>
     <span className="min-w-0"><span className="block text-[11px] font-bold text-slate-500">{label}</span><span className="block text-lg font-black text-slate-900 truncate">{value}</span></span></button>;
 }
-const pill: Record<string, string> = { New: 'bg-blue-50 text-blue-700', Confirmed: 'bg-emerald-50 text-emerald-700', Rejected: 'bg-rose-50 text-rose-700' };
+const pill: Record<string, string> = { New: 'bg-blue-50 text-blue-700', Confirmed: 'bg-indigo-50 text-indigo-700', Preparing: 'bg-amber-50 text-amber-700', Dispatched: 'bg-sky-50 text-sky-700', 'In transit': 'bg-sky-50 text-sky-700', Delivered: 'bg-teal-50 text-teal-700', Received: 'bg-emerald-50 text-emerald-700', Rejected: 'bg-rose-50 text-rose-700' };
 const StatusPill = ({ s }: { s: string }) => { const l = ORDER_STATUS_LABEL[s] ?? s; return <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${pill[l] ?? 'bg-slate-100 text-slate-600'}`}>{l}</span>; };
 const Empty = ({ text }: { text: string }) => <p className="text-sm text-slate-400 py-8 text-center">{text}</p>;
 
@@ -33,7 +33,7 @@ export function SupplierDashboard({ ws, onNavigate }: { ws: Workspace; onNavigat
   const { data: orders = [] } = useOrders(ws); const { data: batches = [] } = useBatches(ws);
   const month = new Date(); month.setDate(1); month.setHours(0, 0, 0, 0);
   const pending = orders.filter((o) => o.status === 'payment_submitted');
-  const confirmedMonth = orders.filter((o) => o.status === 'completed' && new Date(o.reviewed_at ?? o.created_at) >= month);
+  const confirmedMonth = orders.filter((o) => isConfirmedOrder(o.status) && new Date(o.reviewed_at ?? o.created_at) >= month);
   const near = batches.filter((b) => batchStatus(b) === 'near_expiry').length;
   const top = useMemo(() => { const m = new Map<string, number>(); for (const b of batches) if (batchStatus(b) !== 'expired') m.set(b.name, (m.get(b.name) ?? 0) + b.qty); return [...m].sort((a, b) => b[1] - a[1]).slice(0, 5); }, [batches]);
   const max = top[0]?.[1] ?? 1;
@@ -107,12 +107,12 @@ export function SupplierPayments({ ws }: { ws: Workspace }) {
   const [busy, setBusy] = useState<string | null>(null);
   const rows = orders.filter((o) => (!st || o.status === st) && (!method || o.payment_method === method));
   const methods = [...new Set(orders.map((o) => o.payment_method))];
-  const collected = orders.filter((o) => o.status === 'completed').reduce((a, o) => a + o.total_amount, 0);
+  const collected = orders.filter((o) => isConfirmedOrder(o.status)).reduce((a, o) => a + o.total_amount, 0);
   const openReceipt = async (o: WholesaleOrder) => { if (!o.receipt_path) return; setBusy(o.id); try { window.open(await WholesaleService.receiptUrl(o.receipt_path), '_blank'); } finally { setBusy(null); } };
   return <div className="space-y-4">
     <Header title="Payments" sub="Payment proofs from pharmacies; confirming the order on Purchase Orders verifies the payment." right={<button className={primaryBtn} onClick={() => csv('payment-ledger.csv', [['Order', 'Pharmacy', 'Amount', 'Method', 'Reference', 'Submitted', 'Status'], ...rows.map((o) => [o.order_number, o.buyer_name, o.total_amount, o.payment_method, o.payment_reference ?? '', o.created_at, ORDER_STATUS_LABEL[o.status] ?? o.status])])}><Download className="w-4 h-4" />Export Ledger</button>} />
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <Kpi label="Total collected (confirmed)" value={tzs(collected)} Icon={Wallet} tone="bg-emerald-50 text-emerald-600" onClick={() => setSt('completed')} />
+      <Kpi label="Total collected (confirmed)" value={tzs(collected)} Icon={Wallet} tone="bg-emerald-50 text-emerald-600" onClick={() => setSt('')} />
       <Kpi label="Waiting for your check" value={tzs(orders.filter((o) => o.status === 'payment_submitted').reduce((a, o) => a + o.total_amount, 0))} Icon={CalendarClock} tone="bg-amber-50 text-amber-600" onClick={() => setSt('payment_submitted')} />
       <Kpi label="Payment methods" value={methods.length} Icon={Wallet} tone="bg-blue-50 text-blue-600" />
       <Kpi label="Paying pharmacies" value={new Set(orders.map((o) => o.buyer_pharmacy_id)).size} Icon={ShoppingCart} tone="bg-violet-50 text-violet-600" />
@@ -137,13 +137,13 @@ export function SupplierReports({ ws }: { ws: Workspace }) {
   const trend = useMemo(() => { const m = new Map<string, number>(); for (let i = days - 1; i >= 0; i--) m.set(new Date(Date.now() - i * 86400000).toISOString().slice(0, 10), 0); for (const o of rows) { const k = o.created_at.slice(0, 10); if (m.has(k)) m.set(k, m.get(k)! + 1); } return [...m]; }, [rows, days]);
   const peak = Math.max(1, ...trend.map((t) => t[1]));
   const byStatus = Object.keys(ORDER_STATUS_LABEL).map((k) => [ORDER_STATUS_LABEL[k]!, rows.filter((o) => o.status === k).length] as const);
-  const products = useMemo(() => { const m = new Map<string, [number, number]>(); for (const o of rows) if (o.status === 'completed') for (const i of o.items) { const c = m.get(i.product_name) ?? [0, 0]; m.set(i.product_name, [c[0] + i.quantity, c[1] + i.total_price]); } return [...m].sort((a, b) => b[1][1] - a[1][1]).slice(0, 8); }, [rows]);
+  const products = useMemo(() => { const m = new Map<string, [number, number]>(); for (const o of rows) if (isConfirmedOrder(o.status)) for (const i of o.items) { const c = m.get(i.product_name) ?? [0, 0]; m.set(i.product_name, [c[0] + i.quantity, c[1] + i.total_price]); } return [...m].sort((a, b) => b[1][1] - a[1][1]).slice(0, 8); }, [rows]);
   return <div className="space-y-4">
     <Header title="Reports" sub="Your orders, sales and best-selling products on the marketplace." right={<div className="flex gap-2"><select className={`${inputCls} w-auto`} value={days} onChange={(e) => setDays(Number(e.target.value))}>{[7, 30, 90, 365].map((d) => <option key={d} value={d}>Last {d} days</option>)}</select>
       <button className={primaryBtn} onClick={() => csv(`orders-report-${days}d.csv`, [['Order', 'Pharmacy', 'Items', 'Amount', 'Status', 'Date'], ...rows.map((o) => [o.order_number, o.buyer_name, o.items.length, o.total_amount, ORDER_STATUS_LABEL[o.status] ?? o.status, o.created_at])])}><Download className="w-4 h-4" />Export</button></div>} />
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <Kpi label="Orders" value={rows.length} Icon={ShoppingCart} tone="bg-blue-50 text-blue-600" />
-      <Kpi label="Confirmed sales" value={tzs(rows.filter((o) => o.status === 'completed').reduce((a, o) => a + o.total_amount, 0))} Icon={Wallet} tone="bg-emerald-50 text-emerald-600" />
+      <Kpi label="Confirmed sales" value={tzs(rows.filter((o) => isConfirmedOrder(o.status)).reduce((a, o) => a + o.total_amount, 0))} Icon={Wallet} tone="bg-emerald-50 text-emerald-600" />
       <Kpi label="Rejected" value={rows.filter((o) => o.status === 'rejected').length} Icon={XCircle} tone="bg-rose-50 text-rose-600" />
       <Kpi label="Pharmacies served" value={new Set(rows.map((o) => o.buyer_pharmacy_id)).size} Icon={CheckCircle2} tone="bg-violet-50 text-violet-600" />
     </div>
