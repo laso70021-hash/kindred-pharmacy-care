@@ -33,3 +33,16 @@ describe('order lifecycle', () => {
     expect(canReceive('completed')).toBe(false);
   });
 });
+
+import { availableOrderDocs, paymentStamp } from '@/lib/order-documents';
+describe('order documents', () => {
+  it('delivery note only after dispatch, receipt only after payment is verified', () => {
+    expect(availableOrderDocs('payment_submitted')).toEqual(['quotation', 'invoice']);
+    expect(availableOrderDocs('confirmed')).toEqual(['quotation', 'invoice', 'receipt']);
+    expect(availableOrderDocs('dispatched')).toContain('delivery_note');
+  });
+  it('invoice says paid only once the supplier verified it', () => {
+    expect(paymentStamp('payment_submitted')).toMatch(/AWAITING/);
+    expect(paymentStamp('confirmed')).toMatch(/VERIFIED/);
+  });
+});

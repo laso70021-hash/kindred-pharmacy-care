@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FileText, Check, X, MessageCircle, Phone, MapPin } from 'lucide-react';
 import { WholesaleChat } from './WholesaleChat';
+import { OrderDocument } from './OrderDocument';
+import { availableOrderDocs, ORDER_DOC_LABEL, type OrderDocType } from '@/lib/order-documents';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { WholesaleService, type WholesaleOrder } from '@/lib/pharmacy-service';
 import { isReadOnly } from '@/lib/workspace';
@@ -29,6 +31,7 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const readOnly = isReadOnly(ws.status, ws.role);
   const [chat, setChat] = useState<WholesaleOrder | null>(null);
+  const [doc, setDoc] = useState<{ o: WholesaleOrder; t: OrderDocType } | null>(null);
   const ids = orders.map((o) => o.id);
   const { data: events = [] } = useQuery({ queryKey: ['wholesale', 'timeline', ids], queryFn: () => WholesaleService.timeline(ids), enabled: ids.length > 0 });
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['wholesale'] }); void qc.invalidateQueries({ queryKey: ['ws', ws.id] }); };
@@ -91,7 +94,10 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
               {o.delivery_address && <span className="inline-flex items-center gap-1 text-slate-600"><MapPin className="w-3 h-3" />{o.delivery_address}</span>}
               {o.delivery_note && <div className="text-slate-500">Note: {o.delivery_note}</div>}
             </div>)}
-          <button className={ghostBtn} onClick={() => setChat(o)}><MessageCircle className="w-3.5 h-3.5" /> Chat with {side === 'supplier' ? o.buyer_name : o.supplier_name}</button>
+          <div className="flex flex-wrap gap-2">
+            <button className={ghostBtn} onClick={() => setChat(o)}><MessageCircle className="w-3.5 h-3.5" /> Chat about this order</button>
+            {availableOrderDocs(o.status).map((t) => <button key={t} className={ghostBtn} onClick={() => setDoc({ o, t })}><FileText className="w-3.5 h-3.5" /> {ORDER_DOC_LABEL[t]}</button>)}
+          </div>
           {o.supplier_note && <p className="text-xs text-slate-600">Supplier note: {o.supplier_note}</p>}
           {side === 'supplier' && o.status === 'payment_submitted' && (
             <div className="flex flex-col sm:flex-row gap-2">
@@ -113,7 +119,8 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
             </div>)}
         </div>))}
       {chat && <WholesaleChat buyerId={chat.buyer_pharmacy_id} supplierId={chat.supplier_id} side={side} myName={ws.name}
-        partnerName={side === 'supplier' ? chat.buyer_name : chat.supplier_name} onClose={() => setChat(null)} />}
+        partnerName={side === 'supplier' ? chat.buyer_name : chat.supplier_name} orderRef={chat.order_number} onClose={() => setChat(null)} />}
+      {doc && <OrderDocument order={doc.o} type={doc.t} onClose={() => setDoc(null)} />}
     </div>
   );
 }

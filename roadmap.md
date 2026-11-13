@@ -7,5 +7,5 @@ Reference: 19 uploaded designs + "COMPLETE SUPPLIER MARKETPLACE" brief. Keep the
 - [x] 3. Stock Alerts "Order from Suppliers" → prefilled restock, supplier matching across catalogs
 - [x] 4. Purchase-list import (CSV/XLSX) with automatic supplier matching, multi-supplier orders
 - [x] 5. Full order lifecycle: request → quotation → confirmed → preparing → dispatched → in transit → delivered → stock received (stock added only on receipt)
-- [ ] 6. Order-linked chat, documents, notifications; invoices & verified payments
+- [x] 6. Order-linked chat, documents, notifications; invoices & verified payments
 - [ ] 7. Tests: lifecycle, matching, tenant isolation, regression
