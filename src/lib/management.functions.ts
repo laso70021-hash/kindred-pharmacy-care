@@ -11,13 +11,23 @@ export const manageRecord=createServerFn({method:'POST'}).middleware([requireSup
   guardAdminDeletion(context.userId,data.id,(roles??[]).some(r=>r.user_id===data.id),new Set((roles??[]).map(r=>r.user_id)).size);
   // Only accounts without operational history can be permanently removed.
   const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
-  for(const [table,col] of [['pharmacies','owner_id'],['pharmacy_memberships','user_id'],['sales','cashier_id'],['audit_logs','user_id']] as const){
-   const {count,error:e}=await supabaseAdmin.from(table).select('id',{count:'exact',head:true}).eq(col,data.id);if(e)throw e;if(count)throw new Error('This account has business or audit history. Remove workspace access instead of deleting it.');
-  }
+  if((roles??[]).some(r=>r.user_id===data.id))throw new Error('Remove this administrator role before deleting the account.');
+  const history=await Promise.all([
+   supabaseAdmin.from('pharmacies').select('id',{count:'exact',head:true}).eq('owner_id',data.id),
+   supabaseAdmin.from('pharmacy_memberships').select('id',{count:'exact',head:true}).eq('user_id',data.id),
+   supabaseAdmin.from('sales').select('id',{count:'exact',head:true}).eq('cashier_id',data.id),
+   supabaseAdmin.from('audit_logs').select('id',{count:'exact',head:true}).eq('user_id',data.id),
+  ]);
+  for(const h of history){if(h.error)throw h.error;if(h.count)throw new Error('This account has business or audit history. Remove workspace access instead of deleting it.');}
   const {error:e}=await supabaseAdmin.auth.admin.deleteUser(data.id);if(e)throw new Error('Account could not be deleted. It may have linked records.');
  }else{
-  const query=context.supabase.from(data.kind);
-  const result=data.action==='delete'?await query.delete().eq('id',data.id).select('id'):await query.update(data.action==='deactivate'?data.kind==='suppliers'?{is_active:false}:{}:safeRecordValues(data.kind,data.values)).eq('id',data.id).select('id');
+  const values=safeRecordValues(data.kind,data.values);
+  if(data.action==='deactivate'&&data.kind!=='suppliers')throw new Error('This record cannot be deactivated here.');
+  const result=data.action==='delete'?await context.supabase.from(data.kind).delete().eq('id',data.id).select('id'):
+   data.kind==='suppliers'?await context.supabase.from('suppliers').update(data.action==='deactivate'?{is_active:false}:values).eq('id',data.id).select('id'):
+   data.kind==='customers'?await context.supabase.from('customers').update(values).eq('id',data.id).select('id'):
+   data.kind==='profiles'?await context.supabase.from('profiles').update(values).eq('id',data.id).select('id'):
+   await context.supabase.from('pharmacies').update(values).eq('id',data.id).select('id');
   if(result.error){if(result.error.code==='23503')throw new Error('Linked records prevent deletion. Keep the history and deactivate this record instead.');throw new Error(result.error.message);}
   if(!result.data?.length)throw new Error('Record not found or permission denied.');
  }
@@ -40,6 +50,10 @@ export const sendRecordEmail=createServerFn({method:'POST'}).middleware([require
  const generated=await supabaseAdmin.auth.admin.generateLink({type:'invite',email,options:{redirectTo:`${origin}/set-password`}});
  if(generated.error){
   if(!['email_exists','user_already_exists'].includes(generated.error.code??''))throw new Error('Could not generate the account invitation.');
+  const {data:profile}=await supabaseAdmin.from('profiles').select('id').eq('email',email).maybeSingle();
+  if(profile){const {data:onboarding}=await supabaseAdmin.from('account_onboarding').select('password_required').eq('user_id',profile.id).maybeSingle();
+   if(onboarding?.password_required){const recovery=await supabaseAdmin.auth.admin.generateLink({type:'recovery',email,options:{redirectTo:`${origin}/set-password`}});if(recovery.error)throw new Error('Could not regenerate the invitation.');return sendAppEmail(email,'Set your password — Swahivo',`Verify your email and set your password: ${recovery.data.properties.action_link}`,`invite-recovery:${data.kind}:${data.id}:${Math.floor(Date.now()/86400000)}`);}
+  }
   return sendAppEmail(email,'You are invited — Swahivo',`Sign in to Swahivo at ${origin}/auth to view your invitations. Your existing password has not changed.`,`existing-invite:${data.kind}:${data.id}`);
  }
  const invited=generated.data.user;if(!invited||!generated.data.properties.action_link)throw new Error('Could not generate the account invitation.');

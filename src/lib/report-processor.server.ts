@@ -15,7 +15,7 @@ export async function processAIReports(now=new Date()){
    if(pref.frequency==='weekly'&&local.getUTCDay()!==1)continue;
    if(pref.frequency==='monthly'&&local.getUTCDate()!==1)continue;
    if(pref.frequency!=='daily'&&pref.frequency!=='weekly'&&pref.frequency!=='monthly')continue;
-   const {data:business}=await sb.from('pharmacies').select('name,owner_id,status,trial_ends_at,subscription_ends_at').eq('id',pref.pharmacy_id).single();if(!business)continue;
+   const {data:business}=await sb.from('pharmacies').select('name,business_type,owner_id,status,trial_ends_at,subscription_ends_at').eq('id',pref.pharmacy_id).single();if(!business)continue;
    const until=business.status==='trial'?business.trial_ends_at:business.status==='active'?business.subscription_ends_at:null;if(!until||new Date(until)<=now)continue;
    const period=reportPeriod(pref.frequency,now);
    for(const recipient of pref.recipient_ids){
@@ -28,9 +28,9 @@ export async function processAIReports(now=new Date()){
     processed++;
     try{
      const sales=await sb.from('sales').select('total,discount,tax').eq('pharmacy_id',pref.pharmacy_id).gte('created_at',period.start).lt('created_at',period.end).limit(1001);
-     const expenses=await sb.from('expenses').select('amount,category').eq('pharmacy_id',pref.pharmacy_id).gte('expense_date',period.start.slice(0,10)).lt('expense_date',period.end.slice(0,10)).limit(1001);
+     const expenses=await sb.from('expenses').select('amount,category').eq('pharmacy_id',pref.pharmacy_id).gte('expense_date',new Date(new Date(period.start).getTime()+3*3600000).toISOString().slice(0,10)).lt('expense_date',new Date(new Date(period.end).getTime()+3*3600000).toISOString().slice(0,10)).limit(1001);
      const stock=await sb.from('inventory_batches').select('quantity,expiry_date').eq('pharmacy_id',pref.pharmacy_id).limit(1001);
-     const orders=await sb.from('wholesale_orders').select('status,total_amount').eq(business.owner_id&&pref.pharmacy_id?'supplier_id':'buyer_pharmacy_id',pref.pharmacy_id).gte('created_at',period.start).lt('created_at',period.end).limit(1001);
+     const orders=await sb.from('wholesale_orders').select('status,total_amount').eq(business.business_type==='supplier'?'supplier_id':'buyer_pharmacy_id',pref.pharmacy_id).gte('created_at',period.start).lt('created_at',period.end).limit(1001);
      for(const result of [sales,expenses,stock,orders]){if(result.error)throw result.error;if((result.data?.length??0)>1000)throw new Error('Report exceeds the supported record limit; export the full report instead.');}
      const facts:Record<string,unknown>={business:business.name,period,currency:'TZS'};
      if(pref.topics.includes('sales'))facts['sales']={count:sales.data?.length,total:(sales.data??[]).reduce((sum,r)=>sum+Number(r.total),0)};
