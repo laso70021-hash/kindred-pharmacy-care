@@ -1439,7 +1439,7 @@ export interface CatalogItem {
 }
 export interface WholesaleOrder {
   id: string; order_number: string; buyer_pharmacy_id: string; buyer_name: string; supplier_id: string; supplier_name: string;
-  branch_id: string | null; branch_name: string; status: 'payment_submitted' | 'completed' | 'rejected';
+  branch_id: string | null; branch_name: string; status: 'payment_submitted' | 'confirmed' | 'preparing' | 'dispatched' | 'in_transit' | 'delivered' | 'completed' | 'rejected';
   total_amount: number; payment_method: string; payment_reference: string | null; receipt_path: string | null;
   supplier_note: string | null; created_at: string; reviewed_at: string | null;
   contact_name: string | null; contact_phone: string | null; delivery_address: string | null; delivery_note: string | null;
@@ -1524,6 +1524,23 @@ export class WholesaleService {
   static async review(orderId: string, decision: 'accept' | 'reject', note: string): Promise<void> {
     const { error } = await supabase.rpc('review_wholesale_order', { _order: orderId, _decision: decision, _note: note });
     fail(error);
+  }
+
+  static async advance(orderId: string, status: string, note: string): Promise<void> {
+    const { error } = await (supabase.rpc as any)('advance_wholesale_order', { _order: orderId, _status: status, _note: note });
+    fail(error);
+  }
+
+  static async receive(orderId: string, note: string): Promise<void> {
+    const { error } = await (supabase.rpc as any)('receive_wholesale_order', { _order: orderId, _note: note });
+    fail(error);
+  }
+
+  static async timeline(orderIds: string[]): Promise<{ order_id: string; status: string; note: string | null; created_at: string }[]> {
+    if (!orderIds.length) return [];
+    const { data, error } = await (supabase.from as any)('wholesale_order_events').select('order_id, status, note, created_at').in('order_id', orderIds).order('created_at');
+    fail(error);
+    return data || [];
   }
 
   static async suppliers(): Promise<SupplierContact[]> {

@@ -2260,6 +2260,86 @@ export type Database = {
           },
         ]
       }
+      wholesale_order_allocations: {
+        Row: {
+          batch_number: string
+          created_at: string
+          expiry_date: string
+          id: string
+          item_id: string
+          order_id: string
+          quantity: number
+        }
+        Insert: {
+          batch_number: string
+          created_at?: string
+          expiry_date: string
+          id?: string
+          item_id: string
+          order_id: string
+          quantity: number
+        }
+        Update: {
+          batch_number?: string
+          created_at?: string
+          expiry_date?: string
+          id?: string
+          item_id?: string
+          order_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesale_order_allocations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "wholesale_order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wholesale_order_allocations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "wholesale_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wholesale_order_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          order_id: string
+          status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          order_id: string
+          status: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          order_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesale_order_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "wholesale_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wholesale_order_items: {
         Row: {
           created_at: string
@@ -2411,6 +2491,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      advance_wholesale_order: {
+        Args: { _note: string; _order: string; _status: string }
+        Returns: undefined
+      }
       can_access_branch: {
         Args: { _branch: string; _pharmacy: string }
         Returns: boolean
@@ -2533,6 +2617,10 @@ export type Database = {
         Returns: string
       }
       plan_yearly_price: { Args: { _plan_id: string }; Returns: number }
+      receive_wholesale_order: {
+        Args: { _note: string; _order: string }
+        Returns: undefined
+      }
       review_prescription: {
         Args: { _decision: string; _id: string; _method: string; _note: string }
         Returns: string

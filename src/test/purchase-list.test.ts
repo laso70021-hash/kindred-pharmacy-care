@@ -19,3 +19,17 @@ describe('purchase list', () => {
     expect(planPurchase([{ name: 'Paracetamol', quantity: 200 }], cat)[0]!.missing).toBe(70);
   });
 });
+
+import { supplierNextStep, canReceive } from '@/lib/supplier-portal';
+describe('order lifecycle', () => {
+  it('supplier moves confirmed → preparing → dispatched → in transit → delivered', () => {
+    expect(['confirmed', 'preparing', 'dispatched', 'in_transit'].map(supplierNextStep)).toEqual(['preparing', 'dispatched', 'in_transit', 'delivered']);
+    expect(supplierNextStep('delivered')).toBeNull();
+    expect(supplierNextStep('payment_submitted')).toBeNull();
+  });
+  it('buyer can receive only after dispatch', () => {
+    expect(canReceive('preparing')).toBe(false);
+    expect(canReceive('dispatched')).toBe(true);
+    expect(canReceive('completed')).toBe(false);
+  });
+});
