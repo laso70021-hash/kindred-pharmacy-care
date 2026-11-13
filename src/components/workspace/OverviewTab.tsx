@@ -15,7 +15,7 @@ const card = 'bg-white rounded-2xl border border-slate-200/70 shadow-sm';
 const COLORS = ['#2563EB', '#14B8A6', '#22C55E', '#F59E0B', '#8B5CF6', '#0EA5E9', '#EF4444', '#64748B'];
 const PAY_COLORS = ['#2563EB', '#60A5FA', '#8B5CF6', '#14B8A6', '#F59E0B'];
 const tzs = (v: unknown) => `TZS ${formatNumber(Math.round(Number(v) || 0))}`;
-const sel = 'h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 min-w-[160px]';
+const sel = 'h-8 px-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 min-w-[160px]';
 
 /** Range of equal length immediately before the selected one (for "vs previous period"). */
 function previousRange(r: DateRange | null): DateRange | null {
@@ -34,13 +34,13 @@ function delta(cur: number, prev: number | null) {
 
 function Kpi({ label, value, Icon, tone, change, sub, onClick }: { label: string; value: string; Icon: typeof ShoppingCart; tone: string; change?: number | null; sub?: string | undefined; onClick?: () => void }) {
   return (
-    <button type="button" onClick={onClick} className={`${card} p-4 text-left hover:border-blue-300 hover:shadow transition`}>
-      <div className="flex items-center gap-2.5 mb-3">
+    <button type="button" onClick={onClick} className={`${card} p-3 text-left hover:border-blue-300 hover:shadow transition`}>
+      <div className="flex items-center gap-2 mb-1.5">
         <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${tone}`}><Icon className="w-4 h-4" /></span>
         <span className="text-[13px] font-medium text-slate-600">{label}</span>
       </div>
-      <div className="text-xl font-black text-slate-900 tracking-tight truncate">{value}</div>
-      <div className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
+      <div className="text-lg font-black text-slate-900 tracking-tight truncate">{value}</div>
+      <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
         {sub !== undefined ? sub : change === undefined || change === null ? 'No previous data' : change === 0 ? 'No change' : (
           <><span className={`font-bold flex items-center ${change > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{change > 0 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}{change > 0 ? '+' : ''}{change}%</span> vs. previous period</>
         )}
@@ -51,11 +51,11 @@ function Kpi({ label, value, Icon, tone, change, sub, onClick }: { label: string
 
 function Panel({ title, sub, Icon, action, onAction, children }: { title: string; sub: string; Icon: typeof ShoppingCart; action: string; onAction: () => void; children: React.ReactNode }) {
   return (
-    <div className={`${card} p-5 flex flex-col`}>
-      <div className="flex items-start justify-between gap-3 mb-4">
+    <div className={`${card} p-3.5 flex flex-col`}>
+      <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Icon className="w-5 h-5" /></span>
-          <div className="min-w-0"><h3 className="font-extrabold text-slate-900 text-[15px]">{title}</h3><p className="text-xs text-slate-500 truncate">{sub}</p></div>
+          <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Icon className="w-4 h-4" /></span>
+          <div className="min-w-0"><h3 className="font-extrabold text-slate-900 text-sm">{title}</h3><p className="text-xs text-slate-500 truncate">{sub}</p></div>
         </div>
         <button onClick={onAction} className="shrink-0 h-8 px-3 rounded-lg border border-slate-200 text-xs font-bold text-blue-700 hover:bg-blue-50 flex items-center gap-1.5">{action}<ArrowUpRight className="w-3.5 h-3.5" /></button>
       </div>
@@ -63,10 +63,10 @@ function Panel({ title, sub, Icon, action, onAction, children }: { title: string
     </div>
   );
 }
-const NoData = ({ children }: { children: React.ReactNode }) => <div className="h-full min-h-[180px] flex items-center justify-center text-xs font-semibold text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center px-4">{children}</div>;
+const NoData = ({ children }: { children: React.ReactNode }) => <div className="h-full min-h-[140px] flex items-center justify-center text-xs font-semibold text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center px-4">{children}</div>;
 
-export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate }: {
-  ws: Workspace; range: DateRange | null; onRangeChange: (r: DateRange | null) => void; isMounted: boolean; onNavigate: (tab: string) => void;
+export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate, actions }: {
+  ws: Workspace; range: DateRange | null; onRangeChange: (r: DateRange | null) => void; isMounted: boolean; onNavigate: (tab: string) => void; actions?: React.ReactNode;
 }) {
   const pid = ws.id;
   const showFinance = can(ws.role, 'viewFinance', ws.status);
@@ -117,11 +117,11 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate }:
   const payLabel = (m: string) => m.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Overview</h1>
+    <div className="space-y-3">
+      <div className="flex items-end justify-between gap-3"><div>
+        <h1 className="text-xl font-black text-slate-900 tracking-tight">Overview</h1>
         <p className="text-sm text-slate-500">Business performance and key pharmacy insights at a glance.</p>
-      </div>
+      </div>{actions}</div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <Kpi label="Sales" value={tzs(cur.revenue)} Icon={ShoppingCart} tone="bg-emerald-50 text-emerald-600" change={delta(cur.revenue, prev?.revenue ?? null)} onClick={() => setFull(true)} />
@@ -136,10 +136,10 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate }:
         <Kpi label="Expiring Soon" value={String(expiring.length)} Icon={CalendarClock} tone="bg-orange-50 text-orange-600" sub={`Batches within ${EXPIRY_WARNING_DAYS} days`} onClick={() => onNavigate('inventory')} />
       </div>
 
-      <div className={`${card} p-3 flex flex-wrap items-center gap-2`}>
+      <div className={`${card} p-2 flex flex-wrap items-center gap-2`}>
         <div className="flex gap-1">
           {(['day', 'week', 'month'] as const).map((x) => (
-            <button key={x} onClick={() => setG(x)} className={`h-10 px-5 rounded-full text-sm font-bold ${g === x ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+            <button key={x} onClick={() => setG(x)} className={`h-8 px-4 rounded-full text-sm font-bold ${g === x ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
               {x === 'day' ? 'Daily' : x === 'week' ? 'Weekly' : 'Monthly'}
             </button>))}
         </div>
@@ -152,9 +152,9 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate }:
         <div className="ml-auto"><DateRangeFilter value={range} onChange={onRangeChange} /></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3">
         <Panel title="Sales Trend" sub={`${g === 'day' ? 'Daily' : g === 'week' ? 'Weekly' : 'Monthly'} sales over the selected period`} Icon={TrendingUp} action={full ? 'Hide Full Dashboard' : 'View Full Dashboard'} onAction={() => setFull((v) => !v)}>
-          <div className="h-60">{isMounted && points.length > 0 ? (
+          <div className="h-44">{isMounted && points.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={points} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} onClick={() => setFull(true)}>
                 <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563EB" stopOpacity={0.25} /><stop offset="100%" stopColor="#2563EB" stopOpacity={0.02} /></linearGradient></defs>
@@ -169,7 +169,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate }:
         </Panel>
 
         <Panel title="Branch Performance" sub="Sales by branch" Icon={Building2} action="View Report" onAction={() => setFull(true)}>
-          <div className="h-60">{isMounted && branchPerf.some((b) => b.sales > 0) ? (
+          <div className="h-44">{isMounted && branchPerf.some((b) => b.sales > 0) ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart layout="vertical" data={branchPerf} margin={{ top: 4, right: 110, left: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
@@ -187,22 +187,22 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate }:
 
         <Panel title="Payment Methods" sub="Sales by payment method" Icon={CreditCard} action="View All" onAction={() => setFull(true)}>
           {payTotal > 0 && isMounted ? (
-            <div className="flex flex-col sm:flex-row items-center gap-6 h-full">
-              <div className="relative w-44 h-44 shrink-0">
+            <div className="flex flex-col sm:flex-row items-center gap-4 h-full">
+              <div className="relative w-32 h-32 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart><Pie data={payments} dataKey="value" nameKey="name" innerRadius={52} outerRadius={80} startAngle={90} endAngle={-270} stroke="#fff" strokeWidth={2}>
+                  <PieChart><Pie data={payments} dataKey="value" nameKey="name" innerRadius={40} outerRadius={62} startAngle={90} endAngle={-270} stroke="#fff" strokeWidth={2}>
                     {payments.map((p, i) => <Cell key={p.name} fill={PAY_COLORS[i % PAY_COLORS.length]} />)}
                   </Pie><Tooltip formatter={(v, n) => [tzs(v), payLabel(String(n))]} /></PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[11px] font-bold text-slate-700">TZS</span>
-                  <span className="text-lg font-black text-slate-900 leading-tight">{formatNumber(Math.round(payTotal))}</span>
+                  <span className="text-sm font-black text-slate-900 leading-tight">{formatNumber(Math.round(payTotal))}</span>
                   <span className="text-[11px] text-slate-500">Total Sales</span>
                 </div>
               </div>
-              <ul className="flex-1 w-full divide-y divide-slate-100 text-sm">
+              <ul className="flex-1 w-full divide-y divide-slate-100 text-xs">
                 {payments.map((p, i) => (
-                  <li key={p.name} className="py-2.5 grid grid-cols-[1fr_auto_auto] gap-4 items-center">
+                  <li key={p.name} className="py-1.5 grid grid-cols-[1fr_auto_auto] gap-4 items-center">
                     <span className="flex items-center gap-2 font-semibold text-slate-700"><span className="w-2.5 h-2.5 rounded-full" style={{ background: PAY_COLORS[i % PAY_COLORS.length] }} />{payLabel(p.name)}</span>
                     <span className="font-bold text-slate-700 tabular-nums">{(Math.round((p.value / payTotal) * 1000) / 10).toFixed(1)}%</span>
                     <span className="text-slate-600 tabular-nums text-right">{tzs(p.value)}</span>
@@ -212,7 +212,7 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate }:
         </Panel>
 
         <Panel title="Inventory by Category" sub="Inventory value (cost) by category" Icon={Layers} action="View Report" onAction={() => onNavigate('inventory')}>
-          <div className="h-60">{isMounted && invByCat.length > 0 ? (
+          <div className="h-44">{isMounted && invByCat.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={invByCat} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -229,28 +229,28 @@ export function OverviewTab({ ws, range, onRangeChange, isMounted, onNavigate }:
 
         <Panel title="Restock Needed" sub="Products at or below minimum stock level" Icon={Package} action="View All" onAction={() => onNavigate('inventory')}>
           {lowStock.length === 0 ? <NoData>All products are above their minimum stock.</NoData> : (
-            <div className="overflow-x-auto"><table className="w-full text-sm">
-              <thead><tr className="bg-slate-50 text-slate-600 text-xs"><th className="text-left font-semibold px-3 py-2">Product</th><th className="text-center font-semibold px-3 py-2">Current Stock</th><th className="text-center font-semibold px-3 py-2">Min. Stock</th><th className="text-left font-semibold px-3 py-2">Status</th></tr></thead>
-              <tbody className="divide-y divide-slate-100">{lowStock.slice(0, 5).map((p) => (
+            <div className="overflow-x-auto"><table className="w-full text-xs">
+              <thead><tr className="bg-slate-50 text-slate-600 text-xs"><th className="text-left font-semibold px-2.5 py-1.5">Product</th><th className="text-center font-semibold px-2.5 py-1.5">Current Stock</th><th className="text-center font-semibold px-2.5 py-1.5">Min. Stock</th><th className="text-left font-semibold px-2.5 py-1.5">Status</th></tr></thead>
+              <tbody className="divide-y divide-slate-100">{lowStock.slice(0, 4).map((p) => (
                 <tr key={p.id} onClick={() => onNavigate('inventory')} className="cursor-pointer hover:bg-blue-50/50">
-                  <td className="px-3 py-2 text-slate-800">{p.name}{p.strength ? ` ${p.strength}` : ''}</td>
-                  <td className="px-3 py-2 text-center tabular-nums">{p.qty}</td>
-                  <td className="px-3 py-2 text-center tabular-nums">{p.min_stock_level}</td>
-                  <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${p.qty <= 0 ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-700'}`}>{p.qty <= 0 ? 'Out of stock' : 'Low stock'}</span></td>
+                  <td className="px-2.5 py-1.5 text-slate-800">{p.name}{p.strength ? ` ${p.strength}` : ''}</td>
+                  <td className="px-2.5 py-1.5 text-center tabular-nums">{p.qty}</td>
+                  <td className="px-2.5 py-1.5 text-center tabular-nums">{p.min_stock_level}</td>
+                  <td className="px-2.5 py-1.5"><span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${p.qty <= 0 ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-700'}`}>{p.qty <= 0 ? 'Out of stock' : 'Low stock'}</span></td>
                 </tr>))}</tbody>
             </table></div>)}
         </Panel>
 
         <Panel title="Expiring Soon" sub={`Batches nearing expiry (within ${EXPIRY_WARNING_DAYS} days)`} Icon={CalendarClock} action="View All" onAction={() => onNavigate('inventory')}>
           {expiring.length === 0 ? <NoData>No batches expire in the next {EXPIRY_WARNING_DAYS} days.</NoData> : (
-            <div className="overflow-x-auto"><table className="w-full text-sm">
-              <thead><tr className="bg-slate-50 text-slate-600 text-xs"><th className="text-left font-semibold px-3 py-2">Product</th><th className="text-left font-semibold px-3 py-2">Batch No.</th><th className="text-left font-semibold px-3 py-2">Expiry Date</th><th className="text-left font-semibold px-3 py-2">Days Left</th></tr></thead>
-              <tbody className="divide-y divide-slate-100">{expiring.slice(0, 5).map((b) => (
+            <div className="overflow-x-auto"><table className="w-full text-xs">
+              <thead><tr className="bg-slate-50 text-slate-600 text-xs"><th className="text-left font-semibold px-2.5 py-1.5">Product</th><th className="text-left font-semibold px-2.5 py-1.5">Batch No.</th><th className="text-left font-semibold px-2.5 py-1.5">Expiry Date</th><th className="text-left font-semibold px-2.5 py-1.5">Days Left</th></tr></thead>
+              <tbody className="divide-y divide-slate-100">{expiring.slice(0, 4).map((b) => (
                 <tr key={b.id} onClick={() => onNavigate('inventory')} className="cursor-pointer hover:bg-blue-50/50">
-                  <td className="px-3 py-2 text-slate-800">{b.product_name}</td>
-                  <td className="px-3 py-2 text-slate-700">{b.batch_number}</td>
-                  <td className="px-3 py-2 text-slate-700 whitespace-nowrap">{formatDateDeterministic(b.expiry_date)}</td>
-                  <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap ${b.days_to_expiry <= 30 ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-700'}`}>{b.days_to_expiry <= 0 ? 'Expired' : `${b.days_to_expiry} days`}</span></td>
+                  <td className="px-2.5 py-1.5 text-slate-800">{b.product_name}</td>
+                  <td className="px-2.5 py-1.5 text-slate-700">{b.batch_number}</td>
+                  <td className="px-2.5 py-1.5 text-slate-700 whitespace-nowrap">{formatDateDeterministic(b.expiry_date)}</td>
+                  <td className="px-2.5 py-1.5"><span className={`px-2 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap ${b.days_to_expiry <= 30 ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-700'}`}>{b.days_to_expiry <= 0 ? 'Expired' : `${b.days_to_expiry} days`}</span></td>
                 </tr>))}</tbody>
             </table></div>)}
         </Panel>
