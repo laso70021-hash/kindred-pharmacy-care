@@ -53,3 +53,12 @@ describe('quotation documents', () => {
     expect(availableOrderDocs('quoted')).toEqual(['quotation']);
   });
 });
+
+import { landingWorkspace } from '@/lib/workspace';
+describe('login landing', () => {
+  it('owners land on their own approved business, staff on theirs, pending goes to account', () => {
+    expect(landingWorkspace([{ id: 'a', role: 'cashier', status: 'active' }, { id: 's', role: 'owner', status: 'trial' }])?.id).toBe('s');
+    expect(landingWorkspace([{ id: 'a', role: 'cashier', status: 'active' }])?.id).toBe('a');
+    expect(landingWorkspace([{ id: 'p', role: 'owner', status: 'pending' }])).toBeNull();
+  });
+});

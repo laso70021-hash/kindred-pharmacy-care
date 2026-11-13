@@ -49,6 +49,9 @@ function GoogleLogo() {
   );
 }
 
+import { WorkspaceService } from '@/lib/pharmacy-service';
+import { landingWorkspace } from '@/lib/workspace';
+
 export function AuthPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -65,7 +68,12 @@ export function AuthPage() {
     if (!isLoading && user) {
       void supabase.from('account_onboarding').select('password_required').eq('user_id',user.id).maybeSingle().then(({data,error})=>{
         if(error){toast.error('Could not check account setup. Please try again.');return;}
-        void navigate({to:data?.password_required?'/set-password':isSuperAdmin?'/admin':'/account',replace:true});
+        if(data?.password_required){void navigate({to:'/set-password',replace:true});return;}
+        if(isSuperAdmin){void navigate({to:'/admin',replace:true});return;}
+        void WorkspaceService.listWorkspaces(user.id,false).then((list)=>{
+          const ws=landingWorkspace(list);
+          void (ws?navigate({to:'/pharmacy',search:{id:ws.id},replace:true}):navigate({to:'/account',replace:true}));
+        }).catch(()=>void navigate({to:'/account',replace:true}));
       });
     }
   }, [isLoading, user, isSuperAdmin, navigate]);
