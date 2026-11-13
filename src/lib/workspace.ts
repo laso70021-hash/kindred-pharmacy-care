@@ -135,3 +135,9 @@ export function drawerSummary(sales: { total: number; payment_method: string }[]
 export function changeDue(total: number, tendered: number): number | null {
   return tendered >= total ? tendered - total : null;
 }
+
+/** Where a signed-in non-admin lands: their first own/staff business that is approved (owner first), else their account page. */
+export function landingWorkspace<T extends { id: string; role: string; status: string }>(list: T[]): T | null {
+  const mine = list.filter((w) => w.role !== 'admin' && !['pending', 'rejected', 'suspended'].includes(w.status));
+  return mine.find((w) => w.role === 'owner') ?? mine[0] ?? null;
+}

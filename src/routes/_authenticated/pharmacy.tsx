@@ -34,7 +34,7 @@ function PharmacyPage() {
     queryFn: () => WorkspaceService.listWorkspaces(userId, isSuperAdmin),
     enabled: Boolean(userId) && !isLoading,
   });
-  const pharmacies = (list ?? []).filter((w) => w.business_type === "pharmacy");
+  const pharmacies = list ?? [];
   const ws = pharmacies.find((w) => w.id === id) ?? pharmacies.find((w) => w.role !== "admin") ?? pharmacies[0];
 
   if (isLoading || wsLoading) return <div className="min-h-screen flex items-center justify-center text-sm font-semibold text-slate-500">Loading pharmacy…</div>;
