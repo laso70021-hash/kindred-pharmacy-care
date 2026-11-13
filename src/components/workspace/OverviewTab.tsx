@@ -32,7 +32,7 @@ function delta(cur: number, prev: number | null) {
   return Math.round(((cur - prev) / Math.abs(prev)) * 1000) / 10;
 }
 
-function Kpi({ label, value, Icon, tone, change, sub, onClick }: { label: string; value: string; Icon: typeof ShoppingCart; tone: string; change?: number | null; sub?: string; onClick?: () => void }) {
+function Kpi({ label, value, Icon, tone, change, sub, onClick }: { label: string; value: string; Icon: typeof ShoppingCart; tone: string; change?: number | null; sub?: string | undefined; onClick?: () => void }) {
   return (
     <button type="button" onClick={onClick} className={`${card} p-4 text-left hover:border-blue-300 hover:shadow transition`}>
       <div className="flex items-center gap-2.5 mb-3">
