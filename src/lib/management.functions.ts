@@ -21,6 +21,16 @@ export const manageRecord=createServerFn({method:'POST'}).middleware([requireSup
   for(const h of history){if(h.error)throw h.error;if(h.count)throw new Error('This account has business or audit history. Remove workspace access instead of deleting it.');}
   const {error:e}=await supabaseAdmin.auth.admin.deleteUser(data.id);if(e)throw new Error('Account could not be deleted. It may have linked records.');
  }else{
+  if(data.kind==='pharmacies'&&data.action==='delete'){
+   const linked=await Promise.all([
+    context.supabase.from('branches').select('id',{count:'exact',head:true}).eq('pharmacy_id',data.id),
+    context.supabase.from('sales').select('id',{count:'exact',head:true}).eq('pharmacy_id',data.id),
+    context.supabase.from('pharmacy_memberships').select('id',{count:'exact',head:true}).eq('pharmacy_id',data.id),
+    context.supabase.from('products').select('id',{count:'exact',head:true}).eq('pharmacy_id',data.id),
+    context.supabase.from('wholesale_orders').select('id',{count:'exact',head:true}).or(`buyer_pharmacy_id.eq.${data.id},supplier_id.eq.${data.id}`),
+   ]);
+   if(linked.some(r=>r.error||r.count))throw new Error('This business has linked records. Suspend it from the business list instead of deleting its history.');
+  }
   const values=safeRecordValues(data.kind,data.values);
   if(data.action==='deactivate'&&data.kind!=='suppliers')throw new Error('This record cannot be deactivated here.');
   const result=data.action==='delete'?await context.supabase.from(data.kind).delete().eq('id',data.id).select('id'):
@@ -51,7 +61,7 @@ export const sendRecordEmail=createServerFn({method:'POST'}).middleware([require
  if(!data.invite&&data.kind!=='pharmacy_invites')return sendAppEmail(email,'Your details were added — Swahivo','Your contact details have been added to Swahivo. If you did not expect this, contact info@swahivo.com.',`record-confirm:${data.kind}:${data.id}`);
  if(data.kind==='pharmacy_invites'&&'status' in record&&record.status!=='pending')throw new Error('This invitation is no longer pending.');
  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
- // generateLink creates a confirmed-link invitation without relying on external SMTP.
+ // generateLink prepares a verification link; only clicking the email confirms ownership.
  const generated=await supabaseAdmin.auth.admin.generateLink({type:'invite',email,options:{redirectTo:`${origin}/set-password`}});
  if(generated.error){
   if(!['email_exists','user_already_exists'].includes(generated.error.code??''))throw new Error('Could not generate the account invitation.');
