@@ -56,3 +56,6 @@ use the editor.
 - Membership `branch_ids` restrict selected branches (empty uses legacy branch_id or all); enforce tenant and branch scope in SQL, not just dropdowns.
 - External database handoffs use ordered, byte-preserved migration copies and a separate current-configuration seed; verify destination accounts, private buckets and data independently after reconnecting.
 - External Supabase sign-in uses Supabase Auth directly with a public `/auth` callback; role-based navigation follows session hydration because the Lovable OAuth broker does not serve external projects.
+- Record actions use authenticated server functions with allowlisted fields and existing RLS; privileged account deletion refuses operational history and administrator accounts to preserve business records.
+- Account invitations use the existing owner-supplied Resend key and Supabase-generated verification links; server-owned onboarding state requires first-password setup without granting tenant roles from contact records.
+- AI reports use a secret-protected external scheduler, a database lease and unique recipient/period runs; failures pause preferences rather than replay uncertain model outcomes, and full-business reports require verified business-wide finance access.

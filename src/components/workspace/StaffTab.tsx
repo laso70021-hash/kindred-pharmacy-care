@@ -190,7 +190,7 @@ export function StaffTab({ ws }: { ws: Workspace }) {
         )}
       </div>
 
-      {inviting && <EntryForm module="staff" references={refs} onClose={()=>setInviting(false)} onSave={async row=>{const id=await EntryService.save(pid,'staff',row);refresh();await sendEmail({data:{kind:'pharmacy_invites',id,invite:true}});toast.success('Invitation email sent');}} />}
+      {inviting && <EntryForm module="staff" references={refs} onClose={()=>setInviting(false)} onSave={async row=>{await EntryService.save(pid,'staff',row);refresh();toast.success('Invitation saved');}} />}
       {editing&&<EntryForm module="staff" initial={editing} references={refs} onClose={()=>setEditing(null)} onSave={async row=>{const id=editing['id'];if(!id)return;await EntryService.updateStaff(pid,id,row);refresh();toast.success('Staff updated');}}/>}
 
     </div>
