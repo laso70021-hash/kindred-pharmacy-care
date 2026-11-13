@@ -2212,6 +2212,54 @@ export type Database = {
         }
         Relationships: []
       }
+      wholesale_messages: {
+        Row: {
+          body: string
+          buyer_pharmacy_id: string
+          created_at: string
+          id: string
+          sender_id: string
+          sender_name: string | null
+          sender_side: string
+          supplier_id: string
+        }
+        Insert: {
+          body: string
+          buyer_pharmacy_id: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_name?: string | null
+          sender_side: string
+          supplier_id: string
+        }
+        Update: {
+          body?: string
+          buyer_pharmacy_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_name?: string | null
+          sender_side?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesale_messages_buyer_pharmacy_id_fkey"
+            columns: ["buyer_pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wholesale_messages_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wholesale_order_items: {
         Row: {
           created_at: string
@@ -2264,8 +2312,12 @@ export type Database = {
         Row: {
           branch_id: string | null
           buyer_pharmacy_id: string
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string
           created_by: string | null
+          delivery_address: string | null
+          delivery_note: string | null
           id: string
           order_number: string
           payment_method: string
@@ -2281,8 +2333,12 @@ export type Database = {
         Insert: {
           branch_id?: string | null
           buyer_pharmacy_id: string
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          delivery_address?: string | null
+          delivery_note?: string | null
           id?: string
           order_number: string
           payment_method: string
@@ -2298,8 +2354,12 @@ export type Database = {
         Update: {
           branch_id?: string | null
           buyer_pharmacy_id?: string
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          delivery_address?: string | null
+          delivery_note?: string | null
           id?: string
           order_number?: string
           payment_method?: string
@@ -2497,6 +2557,16 @@ export type Database = {
         Args: { _id: string; _note?: string; _status: string }
         Returns: undefined
       }
+      set_wholesale_order_delivery: {
+        Args: {
+          _address: string
+          _contact_name: string
+          _contact_phone: string
+          _note: string
+          _order: string
+        }
+        Returns: undefined
+      }
       shift_action: {
         Args: {
           _action: string
@@ -2534,6 +2604,17 @@ export type Database = {
           supplier_id: string
           supplier_name: string
           unit_price: number
+        }[]
+      }
+      supplier_directory: {
+        Args: never
+        Returns: {
+          address: string
+          city: string
+          email: string
+          id: string
+          name: string
+          phone: string
         }[]
       }
       try_uuid: { Args: { _value: string }; Returns: string }
