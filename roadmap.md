@@ -24,4 +24,4 @@
 - [x] Ops 1: Pharmacy Products canvas
 - [x] Ops 2–3: Employee shifts + individual shift reports
 - [x] Ops 4: Document generation (invoice, proforma, delivery note, labels)
-- [ ] Ops 5: Overview analytics charts
+- [x] Ops 5: Overview analytics charts

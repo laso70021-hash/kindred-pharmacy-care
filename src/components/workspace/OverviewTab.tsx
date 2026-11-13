@@ -7,6 +7,7 @@ import { filterByRange, recordDayKey, formatDayKey, type DateRange } from '@/lib
 import { can, limitLabel, profitSummary, stockState, EXPIRY_WARNING_DAYS } from '@/lib/workspace';
 import { formatNumber, formatDateDeterministic } from '@/lib/utils';
 import { cardCls, Empty } from './ws-ui';
+import { OverviewAnalytics } from './OverviewAnalytics';
 
 function Kpi({ label, value, sub, Icon, tone }: { label: string; value: string; sub: string; Icon: typeof ShoppingCart; tone: string }) {
   return (
@@ -117,6 +118,8 @@ export function OverviewTab({ ws, range, isMounted }: { ws: Workspace; range: Da
           )}
         </div>
       </div>
+
+      <OverviewAnalytics ws={ws} range={range} isMounted={isMounted} allSales={allSales} allExpenses={allExpenses} products={products} batches={batches} branches={branches} staff={staff} showFinance={showFinance} canSeeStaff={canSeeStaff} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className={`${cardCls} p-5`}>
