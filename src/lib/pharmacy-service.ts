@@ -1696,3 +1696,39 @@ export class RoleHomeService {
     return { stats: out, byMethod, rows };
   }
 }
+
+/** Supplier-portal reads; scoped to the supplier's own pharmacy id (RLS applies). */
+export class SupplierPortalService {
+  static async batches(pid: string) {
+    const { data, error } = await supabase.from('inventory_batches')
+      .select('id,batch_number,quantity,expiry_date,cost_per_unit,branch_id,products(name,strength,dosage_form,min_stock_level,selling_price,category_id),branches(name)')
+      .eq('pharmacy_id', pid).order('expiry_date');
+    fail(error);
+    return (data ?? []).map((b: any) => ({
+      id: b.id as string, batch: b.batch_number as string, qty: Number(b.quantity || 0), expiry: b.expiry_date as string,
+      name: b.products?.name ?? 'Product', detail: [b.products?.strength, b.products?.dosage_form].filter(Boolean).join(' · '),
+      min: Number(b.products?.min_stock_level || 0), price: Number(b.products?.selling_price || 0), warehouse: b.branches?.name ?? 'Main',
+    }));
+  }
+  static async conversations(supplierId: string) {
+    const { data, error } = await (supabase.from as any)('wholesale_messages').select('buyer_pharmacy_id,body,created_at,sender_side')
+      .eq('supplier_id', supplierId).order('created_at', { ascending: false }).limit(500);
+    fail(error);
+    const map = new Map<string, { buyerId: string; last: string; at: string; fromBuyer: number }>();
+    for (const m of (data ?? []) as any[]) {
+      const c = map.get(m.buyer_pharmacy_id) ?? { buyerId: m.buyer_pharmacy_id, last: m.body, at: m.created_at, fromBuyer: 0 };
+      if (m.sender_side === 'buyer') c.fromBuyer++;
+      map.set(m.buyer_pharmacy_id, c);
+    }
+    const ids = [...map.keys()];
+    const names = new Map<string, string>();
+    if (ids.length) { const { data: ph } = await supabase.from('pharmacies').select('id,name').in('id', ids); for (const p of ph ?? []) names.set(p.id, p.name); }
+    return [...map.values()].map((c) => ({ ...c, name: names.get(c.buyerId) ?? 'Pharmacy' }));
+  }
+  static async notifications(pid: string) {
+    const { data, error } = await supabase.from('notifications').select('id,kind,title,body,link,read_at,created_at')
+      .or(`pharmacy_id.eq.${pid},pharmacy_id.is.null`).order('created_at', { ascending: false }).limit(500);
+    fail(error);
+    return (data ?? []) as AppNotification[];
+  }
+}
