@@ -106,7 +106,7 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
         </header>
 
 
-        <main className="p-4 sm:p-6 space-y-6 max-w-[1500px] w-full mx-auto">
+        <main className="p-3 sm:p-4 space-y-4 max-w-[1500px] w-full mx-auto">
           {readOnly && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-rose-900">
               <div className="flex items-center gap-2 font-bold"><AlertTriangle className="w-4 h-4" />
@@ -114,10 +114,9 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
               </div>
               {ws.role === 'owner' && <Link to="/account" className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold whitespace-nowrap">{ws.status === 'pending' ? 'View status' : 'Pay yearly'}</Link>}
             </div>)}
-          {tab === 'overview' && can(ws.role, 'viewFinance', 'active') && <div className="flex justify-end"><ReportButton ws={ws} range={range} /></div>}
           {tab === 'expenses' && (
             <div className="flex justify-end gap-2">{can(ws.role, 'viewFinance', 'active') && <ReportButton ws={ws} range={range} />}<DateRangeFilter value={range} onChange={setRange} /></div>)}
-          {tab === 'overview' && <OverviewTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} onNavigate={setTab} />}
+          {tab === 'overview' && <OverviewTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} onNavigate={setTab} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
           {tab === 'ai-reports' && <AIReportsTab ws={ws} />}
           {tab === 'imports' && <ImportsTab ws={ws} />}
           {(['suppliers','categories','settings'] as const).map(module => tab === module && <RecordsTab key={module} ws={ws} module={module} />)}
