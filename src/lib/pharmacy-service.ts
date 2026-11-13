@@ -1442,8 +1442,12 @@ export interface WholesaleOrder {
   branch_id: string | null; branch_name: string; status: 'payment_submitted' | 'completed' | 'rejected';
   total_amount: number; payment_method: string; payment_reference: string | null; receipt_path: string | null;
   supplier_note: string | null; created_at: string; reviewed_at: string | null;
+  contact_name: string | null; contact_phone: string | null; delivery_address: string | null; delivery_note: string | null;
   items: { product_name: string; quantity: number; unit_price: number; total_price: number }[];
 }
+
+export interface SupplierContact { id: string; name: string; city: string; phone: string; email: string; address: string }
+export interface WholesaleMessage { id: string; buyer_pharmacy_id: string; supplier_id: string; sender_id: string; sender_side: 'buyer' | 'supplier'; sender_name: string | null; body: string; created_at: string }
 
 export class WholesaleService {
   static async catalog(): Promise<CatalogItem[]> {
@@ -1512,12 +1516,38 @@ export class WholesaleService {
       branch_name: r.branch_id ? branches.get(r.branch_id) || 'Branch' : '—', status: r.status,
       total_amount: Number(r.total_amount || 0), payment_method: r.payment_method, payment_reference: r.payment_reference,
       receipt_path: r.receipt_path, supplier_note: r.supplier_note, created_at: r.created_at, reviewed_at: r.reviewed_at,
+      contact_name: r.contact_name ?? null, contact_phone: r.contact_phone ?? null, delivery_address: r.delivery_address ?? null, delivery_note: r.delivery_note ?? null,
       items: (r.wholesale_order_items || []).map((i: any) => ({ ...i, unit_price: Number(i.unit_price), total_price: Number(i.total_price) })),
     }));
   }
 
   static async review(orderId: string, decision: 'accept' | 'reject', note: string): Promise<void> {
     const { error } = await supabase.rpc('review_wholesale_order', { _order: orderId, _decision: decision, _note: note });
+    fail(error);
+  }
+
+  static async suppliers(): Promise<SupplierContact[]> {
+    const { data, error } = await (supabase.rpc as any)('supplier_directory');
+    fail(error);
+    return ((data || []) as any[]).map((r) => ({ id: r.id, name: r.name, city: r.city || '', phone: r.phone || '', email: r.email || '', address: r.address || '' }));
+  }
+
+  static async setDelivery(orderId: string, d: { name: string; phone: string; address: string; note: string }): Promise<void> {
+    const { error } = await (supabase.rpc as any)('set_wholesale_order_delivery', { _order: orderId, _contact_name: d.name, _contact_phone: d.phone, _address: d.address, _note: d.note });
+    fail(error);
+  }
+
+  static async messages(buyerId: string, supplierId: string): Promise<WholesaleMessage[]> {
+    const { data, error } = await (supabase.from as any)('wholesale_messages').select('*')
+      .eq('buyer_pharmacy_id', buyerId).eq('supplier_id', supplierId).order('created_at', { ascending: true }).limit(300);
+    fail(error);
+    return (data || []) as WholesaleMessage[];
+  }
+
+  static async sendMessage(m: { buyerId: string; supplierId: string; side: 'buyer' | 'supplier'; senderId: string; senderName: string; body: string }): Promise<void> {
+    const { error } = await (supabase.from as any)('wholesale_messages').insert({
+      buyer_pharmacy_id: m.buyerId, supplier_id: m.supplierId, sender_side: m.side, sender_id: m.senderId, sender_name: m.senderName, body: m.body,
+    });
     fail(error);
   }
 
