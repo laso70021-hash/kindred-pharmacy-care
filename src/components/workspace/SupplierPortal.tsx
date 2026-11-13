@@ -201,4 +201,3 @@ export function SupplierMessages({ ws }: { ws: Workspace }) {
     {open && <WholesaleChat buyerId={open.id} supplierId={ws.id} side="supplier" myName={ws.name} partnerName={open.name} onClose={() => setOpen(null)} />}
   </div>;
 }
-export const SupplierIcons = { Upload };
