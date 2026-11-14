@@ -16,6 +16,7 @@ export function BranchesTab({ ws }: { ws: Workspace }) {
   const { data: products = [] } = useQuery({ queryKey: ['ws', pid, 'products'], queryFn: () => WorkspaceService.getProducts(pid) });
   const { data: entryRows = [] } = useQuery({ queryKey: ['entry', pid, 'branches'], queryFn: () => EntryService.list(pid, 'branches') });
   const { data: refs = {} } = useQuery({ queryKey: ['entry-refs', pid], queryFn: () => EntryService.references(pid) });
+  const { data: logos } = useQuery({ queryKey: ['logos', pid], queryFn: () => BrandingService.getLogoUrls(pid) });
   const [editing, setEditing] = useState<Partial<WsBranch> | null>(null);
   const [busy, setBusy] = useState(false);
   const full = ws.role !== 'admin' && limitReached(branches.length, ws.limits.max_branches);

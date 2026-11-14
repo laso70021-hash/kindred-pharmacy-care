@@ -6,7 +6,7 @@ import { formatNumber } from '@/lib/utils';
 export type ReceiptData = {
   invoice: string; business: string; branch: string; cashier: string; date: Date;
   items: { name: string; strength?: string | undefined; qty: number; price: number }[];
-  subtotal: number; discount: number; total: number; method: string; tendered?: number | undefined; change?: number | null; reference?: string;
+  subtotal: number; discount: number; total: number; method: string; tendered?: number | undefined; change?: number | null; reference?: string; logoUrl?: string | null;
 };
 
 const PRINT_CSS = (size: '80mm' | 'A4') => `@page{size:${size === '80mm' ? '80mm auto' : 'A4'};margin:${size === '80mm' ? '0' : '14mm'}}
@@ -48,7 +48,7 @@ function Thermal({ d, when }: { d: ReceiptData; when: string }) {
   return (
     <div className="w-[80mm] mx-auto p-3 font-mono text-[11px] leading-tight">
       <div className="text-center">
-        <img src={BRAND.logoUrl} alt="Swahivo" className="h-8 mx-auto mb-1 grayscale" />
+        <img src={d.logoUrl || BRAND.logoUrl} alt={d.business} className="h-8 mx-auto mb-1 grayscale object-contain" />
         <div className="font-black text-sm uppercase">{d.business}</div>
         <div>{d.branch}</div>
         <div>{BRAND.phones.join(' / ')}</div>
@@ -80,7 +80,7 @@ function A4({ d, when }: { d: ReceiptData; when: string }) {
   return (
     <div className="w-full max-w-[210mm] mx-auto p-8 text-sm">
       <div className="flex justify-between items-start border-b-2 border-blue-600 pb-4">
-        <div><img src={BRAND.logoUrl} alt="Swahivo" className="h-10 mb-2" /><div className="font-black text-lg">{d.business}</div><div className="text-slate-500">{d.branch}</div><div className="text-slate-500">{BRAND.phones.join(' · ')} · {BRAND.email}</div></div>
+        <div><img src={d.logoUrl || BRAND.logoUrl} alt={d.business} className="h-10 mb-2 object-contain" /><div className="font-black text-lg">{d.business}</div><div className="text-slate-500">{d.branch}</div><div className="text-slate-500">{BRAND.phones.join(' · ')} · {BRAND.email}</div></div>
         <div className="text-right"><div className="text-2xl font-black text-blue-600">TAX INVOICE</div><div className="font-bold">{d.invoice}</div><div className="text-slate-500">{when}</div><span className="inline-block mt-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs">PAID</span></div>
       </div>
       <table className="w-full mt-6">
