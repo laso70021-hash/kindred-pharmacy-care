@@ -30,6 +30,8 @@ import { ShiftsTab } from './ShiftsTab';
 import { DocumentsTab } from './DocumentsTab';
 import { StockAlertsTab } from './StockAlertsTab';
 import { RoleHome } from './RoleHome';
+import { CovloTab } from './CovloTab';
+import { Bot } from 'lucide-react';
 import { SupplierDashboard, InventoryAvailability, SupplierPayments, SupplierReports, SupplierNotifications, SupplierMessages } from './SupplierPortal';
 import { Bell, MessageCircle, Wallet, Layers, Upload, Settings as SettingsIcon } from 'lucide-react';
 import { homeFor } from '@/lib/role-home';
@@ -63,6 +65,7 @@ export function PharmacyWorkspace({ ws: realWs, all, userId, onSwitch, onSignOut
 
   const supplierNav = [
     { s: 'Supplier Portal', id: 'overview', label: 'Dashboard', Icon: LayoutDashboard, show: true },
+    { s: 'Supplier Portal', id: 'covlo', label: 'Covlo AI', Icon: Bot, show: true },
     { s: 'Supplier Portal', id: 'orders', label: 'Purchase Orders', Icon: ShoppingCart, show: true },
     { s: 'Supplier Portal', id: 'inventory', label: 'Product Catalogue', Icon: Boxes, show: true },
     { s: 'Supplier Portal', id: 'imports', label: 'Bulk Import', Icon: Upload, show: can(ws.role, 'manageStock', 'active') },
@@ -80,6 +83,7 @@ export function PharmacyWorkspace({ ws: realWs, all, userId, onSwitch, onSignOut
 
   const pharmacyNav = [
     { s: 'Main', id: 'overview', label: homeFor(ws.role) === 'business' ? 'Overview' : 'My Dashboard', Icon: LayoutDashboard, show: true },
+    { s: 'Main', id: 'covlo', label: 'Covlo AI', Icon: Bot, show: true },
     { s: 'Main', id: 'pos', label: 'Cashier (POS)', Icon: Store, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { s: 'Main', id: 'rx', label: 'Prescriptions', Icon: Pill, show: ws.business_type === 'pharmacy' && can(ws.role, 'sell', 'active') },
     { s: 'Main', id: 'documents', label: 'Documents', Icon: FileText, show: true },
@@ -175,6 +179,7 @@ export function PharmacyWorkspace({ ws: realWs, all, userId, onSwitch, onSignOut
           {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} onImport={can(ws.role, 'manageStock', 'active') ? () => setTab('imports') : undefined} />}
           {tab === 'stock-alerts' && <StockAlertsTab key={alertView} ws={ws} initialView={alertView} onOrder={ws.business_type === 'pharmacy' && canOrderStock(ws.role) ? (p?: RestockPrefill) => { setPrefill(p ?? null); setTab('restock'); } : undefined} />}
           {tab === 'pos' && <PosTab ws={ws} />}
+          {tab === 'covlo' && <CovloTab ws={ws} userId={userId} />}
           {tab === 'rx' && <DispenserTab ws={ws} userId={userId} />}
           {tab === 'restock' && <MarketplaceTab key={prefill?.name ?? 'all'} ws={ws} userId={userId} prefill={prefill} onClearPrefill={() => setPrefill(null)} onOrdered={() => { setPrefill(null); setTab('orders'); }} />}
           {tab === 'orders' && <OrdersTab ws={ws} />}
