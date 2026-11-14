@@ -1679,7 +1679,7 @@ export class BrandingService {
     if (up) throw new Error(`Logo upload failed: ${up.message}`);
     const { data } = await supabase.from('pharmacies').select('settings').eq('id', pharmacyId).maybeSingle();
     const cur = (data?.settings as Record<string, any>) || {};
-    const settings = branchId ? { ...cur, branch_logos: { ...(cur.branch_logos || {}), [branchId]: path } } : { ...cur, logo_path: path };
+    const settings = branchId ? { ...cur, branch_logos: { ...(cur['branch_logos'] || {}), [branchId]: path } } : { ...cur, logo_path: path };
     const { error } = await supabase.from('pharmacies').update({ settings: settings as any }).eq('id', pharmacyId);
     fail(error);
   }
