@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { GitBranch, Plus, Star, MapPin, Phone, Pencil, Power } from 'lucide-react';
 import { EntryForm } from './EntryForm';
-import { EntryService, WorkspaceService } from '@/lib/pharmacy-service';
+import { BrandingService, EntryService, WorkspaceService } from '@/lib/pharmacy-service';
 import type { Workspace, WsBranch } from '@/lib/pharmacy-types';
 import { can, limitLabel, limitReached } from '@/lib/workspace';
 import { cardCls, Empty, Field, Modal, SectionHeader, errorText, ghostBtn, inputCls, primaryBtn } from './ws-ui';
@@ -66,9 +66,10 @@ export function BranchesTab({ ws }: { ws: Workspace }) {
             <div key={b.id} className={`${cardCls} p-4 space-y-3 ${b.is_active ? '' : 'opacity-60'}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <GitBranch className="w-4 h-4" />
-                  </div>
+                  <label title={editable ? 'Upload branch logo' : b.name} className={`w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center overflow-hidden ${editable ? 'cursor-pointer' : ''}`}>
+                    {(logos?.branches[b.id] || logos?.main) ? <img src={logos?.branches[b.id] || logos?.main || ''} alt={`${b.name} logo`} className="w-full h-full object-cover" /> : <GitBranch className="w-4 h-4" />}
+                    {editable && <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void run(() => BrandingService.uploadLogo(pid, f, b.id).then(() => qc.invalidateQueries({ queryKey: ['logos', pid] })), 'Branch logo updated'); }} />}
+                  </label>
                   <div>
                     <div className="font-black text-slate-900 text-sm">{b.name}</div>
                     <div className="text-[11px] text-slate-400 font-semibold">{b.code || 'No code'}</div>

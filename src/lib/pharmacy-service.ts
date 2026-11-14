@@ -1663,13 +1663,23 @@ export class BrandingService {
     const { data: s } = await supabase.storage.from('product-images').createSignedUrl(path, 3600);
     return s?.signedUrl ?? null;
   }
-  static async uploadLogo(pharmacyId: string, file: File): Promise<void> {
+  /** Main logo plus per-branch logos (branch falls back to the main logo). */
+  static async getLogoUrls(pharmacyId: string): Promise<{ main: string | null; branches: Record<string, string> }> {
+    const { data } = await supabase.from('pharmacies').select('settings').eq('id', pharmacyId).maybeSingle();
+    const st = (data?.settings as any) || {};
+    const sign = async (p?: string) => (p ? (await supabase.storage.from('product-images').createSignedUrl(p, 3600)).data?.signedUrl ?? null : null);
+    const branches: Record<string, string> = {};
+    for (const [id, p] of Object.entries((st.branch_logos || {}) as Record<string, string>)) { const u = await sign(p); if (u) branches[id] = u; }
+    return { main: await sign(st.logo_path), branches };
+  }
+  static async uploadLogo(pharmacyId: string, file: File, branchId?: string): Promise<void> {
     if (file.size > 2 * 1024 * 1024) throw new Error('Logo must be under 2 MB');
     const path = `${pharmacyId}/logo-${Date.now()}.${(file.name.split('.').pop() || 'png').toLowerCase()}`;
     const { error: up } = await supabase.storage.from('product-images').upload(path, file, { contentType: file.type || 'image/png' });
     if (up) throw new Error(`Logo upload failed: ${up.message}`);
     const { data } = await supabase.from('pharmacies').select('settings').eq('id', pharmacyId).maybeSingle();
-    const settings = { ...((data?.settings as Record<string, unknown>) || {}), logo_path: path };
+    const cur = (data?.settings as Record<string, any>) || {};
+    const settings = branchId ? { ...cur, branch_logos: { ...(cur.branch_logos || {}), [branchId]: path } } : { ...cur, logo_path: path };
     const { error } = await supabase.from('pharmacies').update({ settings: settings as any }).eq('id', pharmacyId);
     fail(error);
   }
