@@ -8,7 +8,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from '@tanstack/react-router';
 import { LayoutDashboard, GitBranch, Users2, Boxes, DollarSign, LogOut, AlertTriangle, ShoppingCart, ClipboardList, Store, Pill, Clock, FileText, BarChart3 } from 'lucide-react';
 import type { Workspace } from '@/lib/pharmacy-types';
-import { can, canOrderStock, isReadOnly, roleLabel } from '@/lib/workspace';
+import { can, canOrderStock, isReadOnly, roleLabel, STAFF_ROLES, type WorkspaceRole } from '@/lib/workspace';
 import { STATUS_LABELS, expiryReminder } from '@/lib/billing';
 import { NotificationBell, type ExtraNotice } from '@/components/common/NotificationBell';
 import { ReportButton } from './ReportButton';
@@ -37,7 +37,10 @@ import type { RestockPrefill } from '@/lib/supplier-match';
 
 const sub = () => () => {};
 
-export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws: Workspace; all: Workspace[]; userId: string; onSwitch: (id: string) => void; onSignOut: () => void }) {
+export function PharmacyWorkspace({ ws: realWs, all, userId, onSwitch, onSignOut }: { ws: Workspace; all: Workspace[]; userId: string; onSwitch: (id: string) => void; onSignOut: () => void }) {
+  const [viewAs, setViewAs] = useState<WorkspaceRole | null>(null);
+  const ws: Workspace = viewAs ? { ...realWs, role: viewAs } : realWs;
+  const canPreview = realWs.role === 'owner' || realWs.role === 'admin';
   const isMounted = useSyncExternalStore(sub, () => true, () => false);
   const [tab, setTabRaw] = useState('overview');
   const [alertView, setAlertView] = useState<'restock' | 'expiry'>('restock');
@@ -132,11 +135,21 @@ export function PharmacyWorkspace({ ws, all, userId, onSwitch, onSignOut }: { ws
             ) : <span className="font-black text-slate-900 text-sm truncate">{ws.name}</span>}
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 self-start truncate max-w-full">{ws.plan_name} · {STATUS_LABELS[ws.status]}</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0"><NotificationBell extra={extra} /><span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">{roleLabel(ws.role)}</span></div>
+          <div className="flex items-center gap-2 shrink-0"><NotificationBell extra={extra} />{canPreview ? (
+            <select aria-label="Switch role view" title="See the workspace as each role sees it" value={viewAs ?? ''} onChange={(e) => { setViewAs((e.target.value || null) as WorkspaceRole | null); setTabRaw('overview'); }} className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 max-w-[170px]">
+              <option value="">{roleLabel(realWs.role)} (full view)</option>
+              {STAFF_ROLES.map((r) => <option key={r.value} value={r.value}>View as {r.label}</option>)}
+            </select>
+          ) : <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">{roleLabel(ws.role)}</span>}</div>
         </header>
 
 
         <main className="p-3 sm:p-4 space-y-4 max-w-[1500px] w-full mx-auto">
+          {viewAs && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 flex items-center justify-between gap-3 text-xs font-bold text-amber-900">
+              <span>Previewing what a {roleLabel(viewAs)} sees. Actions still use your own permissions.</span>
+              <button onClick={() => { setViewAs(null); setTabRaw('overview'); }} className="px-3 py-1 rounded-lg bg-amber-600 text-white">Back to full view</button>
+            </div>)}
           {readOnly && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-rose-900">
               <div className="flex items-center gap-2 font-bold"><AlertTriangle className="w-4 h-4" />
