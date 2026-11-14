@@ -15,7 +15,7 @@ Reference: 19 uploaded designs + "COMPLETE SUPPLIER MARKETPLACE" brief. Keep the
 - [x] 9. Owner/admin "View as role" switcher at top of workspace (pharmacy + supplier)
 - [x] 10. Admin opens any business (Paman, Novea…) with "Return to admin dashboard" bar; admin-opened businesses never appear in other users' switcher, and admin switcher shows only the opened business
 - [x] 11. Staff: change role, add/remove extra roles, suspend/reactivate users
-- [ ] 12. Logo upload for main business and each branch (existing + new accounts), used on receipts
+- [x] 12. Logo upload for main business and each branch (existing + new accounts), used on receipts
 - [ ] 13. Covlo ("Kovlo") AI assistant — chat, quick save, reports, order/service tracking; per-role advice (owner, pharmacist, cashier, manager, accountant, supplier, rider)
 - [ ] 14. Covlo for suppliers: platform-wide demand forecast, trending products, next-batch suggestions
 - [ ] 15. AI Prescription Assistant: scan/type/speak prescription → medicine matches, dosage, stock

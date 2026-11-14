@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Search, Package, Plus, Minus, Trash2, Wallet, ShoppingBag } from 'lucide-react';
 import type { Workspace } from '@/lib/pharmacy-types';
-import { PosService, WorkspaceService } from '@/lib/pharmacy-service';
+import { BrandingService, PosService, WorkspaceService } from '@/lib/pharmacy-service';
 import { changeDue, drawerSummary, isReadOnly } from '@/lib/workspace';
 import { recordDayKey } from '@/lib/date-range';
 import { formatNumber } from '@/lib/utils';
