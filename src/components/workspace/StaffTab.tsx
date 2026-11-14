@@ -138,12 +138,12 @@ export function StaffTab({ ws }: { ws: Workspace }) {
                       <button
                         className={ghostBtn}
                         disabled={busy}
-                        onClick={() => void run(() => WorkspaceService.updateMembership(s.membership_id, { is_active: !s.is_active }), s.is_active ? 'Access removed' : 'Access restored')}
+                        onClick={() => { if (s.is_active && !window.confirm(`Suspend ${s.full_name}? They will lose access until reactivated.`)) return; void run(() => WorkspaceService.updateMembership(s.membership_id, { is_active: !s.is_active }), s.is_active ? 'User suspended' : 'User reactivated'); }}
                       >
-                        {s.is_active ? 'Remove access' : 'Restore'}
+                        {s.is_active ? 'Suspend' : 'Reactivate'}
                       </button>
                     ) : (
-                      <span className="font-semibold">{s.is_active ? 'Active' : 'Removed'}</span>
+                      <span className="font-semibold">{s.is_active ? 'Active' : 'Suspended'}</span>
                     )}
                   </td>
                 </tr>
