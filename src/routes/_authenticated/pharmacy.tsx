@@ -45,11 +45,17 @@ function PharmacyPage() {
         <Link to="/account" className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold">Go to My Account</Link>
       </div>
     );
+  const adminView = ws.role === "admin";
   return (
     <div className="relative">
-      {isSuperAdmin&&<div className="absolute bottom-16 left-3 z-20"><Button size="sm" onClick={()=>setRegistering(true)}>Register pharmacy</Button></div>}
+      {adminView && (
+        <div className="sticky top-0 z-30 bg-[#0F172A] text-white px-4 py-2 flex items-center justify-between gap-3 text-xs font-bold">
+          <span className="truncate">Viewing {ws.name} as platform administrator</span>
+          <Link to="/admin" className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 whitespace-nowrap">Return to admin dashboard</Link>
+        </div>)}
+      {isSuperAdmin&&!adminView&&<div className="absolute bottom-16 left-3 z-20"><Button size="sm" onClick={()=>setRegistering(true)}>Register pharmacy</Button></div>}
       {registering&&<AdminBusinessForm onClose={()=>setRegistering(false)} onCreated={()=>{setRegistering(false);void navigate({to:'/admin'});}}/>}
-      <PharmacyWorkspace key={ws.id} ws={ws} all={pharmacies} userId={userId} onSwitch={(nid) => navigate({ to: "/pharmacy", search: { id: nid } })} onSignOut={() => void signOut()} />
+      <PharmacyWorkspace key={ws.id} ws={ws} all={adminView ? [ws] : pharmacies.filter((w) => w.role !== "admin")} userId={userId} onSwitch={(nid) => navigate({ to: "/pharmacy", search: { id: nid } })} onSignOut={() => void signOut()} />
     </div>
   );
 }
