@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Search, Package, Plus, Minus, Trash2, Wallet, ShoppingBag } from 'lucide-react';
 import type { Workspace } from '@/lib/pharmacy-types';
-import { PosService, WorkspaceService } from '@/lib/pharmacy-service';
+import { BrandingService, PosService, WorkspaceService } from '@/lib/pharmacy-service';
 import { changeDue, drawerSummary, isReadOnly } from '@/lib/workspace';
 import { recordDayKey } from '@/lib/date-range';
 import { formatNumber } from '@/lib/utils';
@@ -63,7 +63,7 @@ export function PosTab({ ws }: { ws: Workspace }) {
     try {
       const saleId = await PosService.createSale({ pharmacyId: pid, branchId: branch, items: cart.map((l) => ({ product_id: l.id, quantity: l.qty })), method, discount: disc, reference });
       toast.success(change ? `Sale saved. Change: TZS ${formatNumber(change)}` : 'Sale saved');
-      setReceipt({ invoice: `INV-${saleId.slice(0, 8).toUpperCase()}`, business: ws.name, branch: open.find((b) => b.id === branch)?.name || '', cashier: auth.user?.email || 'Cashier', date: new Date(),
+      setReceipt({ invoice: `INV-${saleId.slice(0, 8).toUpperCase()}`, business: ws.name, branch: open.find((b) => b.id === branch)?.name || '', logoUrl: await BrandingService.getLogoUrls(ws.id).then((l) => l.branches[branch] || l.main).catch(() => null), cashier: auth.user?.email || 'Cashier', date: new Date(),
         items: cart.map((l) => { const p = byId.get(l.id); return { name: p?.name || '', strength: p?.strength, qty: l.qty, price: p?.selling_price || 0 }; }),
         subtotal, discount: disc, total, method, tendered: Number(tendered) || undefined, change, reference });
       setCart([]); setDiscount(''); setTendered(''); setReference('');
