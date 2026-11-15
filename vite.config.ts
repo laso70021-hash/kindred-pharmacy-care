@@ -12,7 +12,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 export default defineConfig({
   // On Netlify builds, target Netlify (static assets in dist/, SSR as a Netlify Function).
   // Lovable's own builds ignore this and keep their Cloudflare target.
-  ...(process.env.NETLIFY ? { nitro: { preset: "netlify" } } : {}),
+  ...(process.env['NETLIFY'] ? { nitro: { preset: "netlify" } } : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

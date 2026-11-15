@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import { covloRoleBrief } from './covlo';
+import { covloRoleBrief, demandPlan, type DemandRow } from './covlo';
 
 const input = z.object({ pharmacyId: z.string().uuid(), threadId: z.string().uuid().nullable(), message: z.string().trim().min(1).max(4000) });
 
@@ -51,6 +51,10 @@ export const askCovlo = createServerFn({ method: 'POST' })
       recentWholesaleOrders: (orders.data ?? []).map((o) => ({ no: o.order_number, status: o.status, total: o.total_amount, side: o.supplier_id === pid ? 'we supply' : 'we buy', date: o.created_at.slice(0, 10) })),
     };
 
+    if (biz.business_type === 'supplier') {
+      const { data: d } = await sb.rpc('platform_demand_trends', { _supplier: pid });
+      (snapshot as Record<string, unknown>)['platformDemand'] = ((d ?? []) as DemandRow[]).slice(0, 25).map((r) => ({ medicine: `${r.product} ${r.strength}`.trim(), sold30d: r.units_30d, pharmacies: r.pharmacies, yourStock: r.your_stock, ...demandPlan(r) }));
+    }
     const { generateResponse, GatewayError } = await import('@lovable.dev/ai-gateway');
     let reply: string;
     try {
