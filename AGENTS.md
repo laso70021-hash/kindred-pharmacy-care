@@ -59,3 +59,4 @@ use the editor.
 - Record actions use authenticated server functions with allowlisted fields and existing RLS; privileged account deletion refuses operational history and administrator accounts to preserve business records.
 - Account invitations use the existing owner-supplied Resend key and Supabase-generated verification links; server-owned onboarding state requires first-password setup without granting tenant roles from contact records.
 - AI reports use a secret-protected external scheduler, a database lease and unique recipient/period runs; failures pause preferences rather than replay uncertain model outcomes, and full-business reports require verified business-wide finance access.
+- Covlo AI chat is the `askCovlo` server function; threads/messages are per user and business (owner-only access rules), and figures come from a snapshot read with the caller's own permissions.
