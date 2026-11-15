@@ -2687,6 +2687,18 @@ export type Database = {
         Returns: string
       }
       plan_yearly_price: { Args: { _plan_id: string }; Returns: number }
+      platform_demand_trends: {
+        Args: { _supplier: string }
+        Returns: {
+          pharmacies: number
+          product: string
+          strength: string
+          units_30d: number
+          units_90d: number
+          units_prev_30d: number
+          your_stock: number
+        }[]
+      }
       receive_wholesale_order: {
         Args: { _note: string; _order: string }
         Returns: undefined
