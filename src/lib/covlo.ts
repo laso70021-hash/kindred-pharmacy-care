@@ -12,3 +12,12 @@ export const COVLO_ROLES: Record<string, { brief: string; prompts: string[] }> =
 };
 export const covloRoleBrief = (role: string) => (COVLO_ROLES[role] ?? COVLO_ROLES['manager']!).brief;
 export const covloPrompts = (role: string) => (COVLO_ROLES[role] ?? COVLO_ROLES['manager']!).prompts;
+
+export type DemandRow = { product: string; strength: string; units_90d: number; units_30d: number; units_prev_30d: number; pharmacies: number; your_stock: number };
+/** Trend % vs previous 30 days, and next-month batch = recent 30-day demand grown by the trend (capped ±50%), minus stock on hand. */
+export function demandPlan(r: DemandRow) {
+  const trend = r.units_prev_30d > 0 ? Math.round(((r.units_30d - r.units_prev_30d) / r.units_prev_30d) * 100) : r.units_30d > 0 ? 100 : 0;
+  const growth = Math.max(-50, Math.min(50, trend)) / 100;
+  const expected = Math.round(r.units_30d * (1 + growth));
+  return { trend, expected, nextBatch: Math.max(0, expected - r.your_stock), trending: trend >= 20 && r.units_30d >= 10 };
+}
