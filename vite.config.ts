@@ -11,8 +11,11 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   // On Netlify builds, target Netlify (static assets in dist/, SSR as a Netlify Function).
+  // On Vercel builds (VERCEL=1 is set by Vercel), emit the Vercel Build Output API
+  // format (.vercel/output) so SSR runs as a Vercel Function.
   // Lovable's own builds ignore this and keep their Cloudflare target.
   ...(process.env['NETLIFY'] ? { nitro: { preset: "netlify" } } : {}),
+  ...(process.env['VERCEL'] ? { nitro: { preset: "vercel" } } : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
