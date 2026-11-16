@@ -2656,6 +2656,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      pharmacy_has_plan_feature: {
+        Args: { _feature: string; _pharmacy_id: string }
+        Returns: boolean
+      }
       pharmacy_is_current: { Args: { _pharmacy_id: string }; Returns: boolean }
       pharmacy_plan_limits: {
         Args: { _pharmacy_id: string }
@@ -2688,6 +2692,18 @@ export type Database = {
       }
       plan_yearly_price: { Args: { _plan_id: string }; Returns: number }
       platform_demand_trends: {
+        Args: { _supplier: string }
+        Returns: {
+          pharmacies: number
+          product: string
+          strength: string
+          units_30d: number
+          units_90d: number
+          units_prev_30d: number
+          your_stock: number
+        }[]
+      }
+      platform_demand_trends_internal: {
         Args: { _supplier: string }
         Returns: {
           pharmacies: number
