@@ -18,6 +18,13 @@ export function inviteLink(email: string): string {
   return `${origin}/auth?invite=${encodeURIComponent(email)}`;
 }
 
+export function whatsappInviteUrl(business: string, email: string, phone?: string | null): string {
+  let digits = (phone || '').replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = `255${digits.slice(1)}`;
+  const text = `You've been invited to join ${business} on Swahivo. Sign up with ${email} here: ${inviteLink(email)}`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+
 export function StaffTab({ ws }: { ws: Workspace }) {
   const sendEmail=useServerFn(sendRecordEmail);
   const pid = ws.id;
@@ -178,6 +185,9 @@ export function StaffTab({ ws }: { ws: Workspace }) {
                   <button className={ghostBtn} onClick={() => copy(i.email)}>
                     <Copy className="w-3 h-3" /> Copy link
                   </button>
+                  <a className={ghostBtn} target="_blank" rel="noopener noreferrer" href={whatsappInviteUrl(ws.name, i.email, (i as { phone?: string | null }).phone)}>
+                    WhatsApp
+                  </a>
                   {editable && (
                     <button className={ghostBtn} disabled={busy} onClick={() => void run(() => WorkspaceService.revokeInvite(i.id), 'Invitation cancelled')}>
                       <X className="w-3 h-3" /> Cancel
