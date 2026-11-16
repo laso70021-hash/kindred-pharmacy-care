@@ -11,6 +11,6 @@ export async function requirePlanFeature(sb: SupabaseClient<Database>, pharmacyI
   if (adminError) throw new Error('Could not verify access.');
   const { data: plan, error: planError } = business.plan_id ? await sb.from('subscription_plans').select('has_ai_insights,has_prescription_stt_ttt,has_advanced_ai_forecasting,has_bulk_import_ocr,has_delivery_management').eq('id', business.plan_id).maybeSingle() : { data: null, error: null };
   if (planError) throw new Error('Could not verify your plan.');
-  if (!canUsePlanFeature(plan, feature, effectiveStatus(business), admin === true)) throw new Error(`${PLAN_FEATURES[feature]} requires an eligible plan and a current trial or paid subscription. Ask the business owner to upgrade or renew.`);
+  if (!canUsePlanFeature(plan, feature, effectiveStatus({ ...business, status: business.status ?? 'pending' }), admin === true)) throw new Error(`${PLAN_FEATURES[feature]} requires an eligible plan and a current trial or paid subscription. Ask the business owner to upgrade or renew.`);
   return plan;
 }

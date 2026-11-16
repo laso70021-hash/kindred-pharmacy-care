@@ -14,9 +14,8 @@ export const analyzePrescription = createServerFn({ method: 'POST' })
     if (permissionError || !allowed) throw new Error('Prescription assistance requires an active account and a prescription staff role.');
     const { data: business } = await sb.from('pharmacies').select('business_type,plan_id').eq('id', data.pharmacyId).single();
     if (!business || business.business_type !== 'pharmacy') throw new Error('Select a pharmacy workspace.');
-    const { data: admin } = await sb.rpc('is_platform_admin');
-    const { data: plan } = business.plan_id ? await sb.from('subscription_plans').select('has_prescription_stt_ttt').eq('id', business.plan_id).single() : { data: null };
-    if (!admin && !plan?.has_prescription_stt_ttt) throw new Error('Your plan does not include the AI Prescription Assistant. Contact your business owner to upgrade.');
+    const { requirePlanFeature } = await import('./plan-access.server');
+    await requirePlanFeature(sb, data.pharmacyId, 'prescription');
     const { data: branch } = await sb.from('branches').select('id').eq('pharmacy_id', data.pharmacyId).eq('id', data.branchId).eq('is_active', true).maybeSingle();
     if (!branch) throw new Error('This branch is not accessible.');
     const [products, batches] = await Promise.all([
