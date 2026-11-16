@@ -14,6 +14,7 @@ export const getReportSettings=createServerFn({method:'POST'}).middleware([requi
 });
 export const saveReportSettings=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((v:unknown)=>reportPreferenceInput.parse(v)).handler(async({data,context})=>{
  const {data:admin}=await context.supabase.rpc('is_platform_admin');const {data:owner}=await context.supabase.rpc('is_pharmacy_owner',{_pharmacy_id:data.pharmacyId});if(!admin&&!owner)throw new Error('Owner access required.');
+ if(data.enabled){const {requirePlanFeature}=await import('./plan-access.server');await requirePlanFeature(context.supabase,data.pharmacyId,'ai');}
  const {pharmacyId,...values}=data;
  const {error}=await context.supabase.from('ai_report_preferences').upsert({pharmacy_id:pharmacyId,...values,pause_reason:null},{onConflict:'pharmacy_id,frequency'});if(error)throw error;return {ok:true};
 });

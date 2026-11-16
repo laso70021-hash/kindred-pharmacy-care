@@ -2,6 +2,7 @@ import { supabaseAdmin as sb } from '@/integrations/supabase/client.server';
 import { generateResponse,GatewayError } from '@lovable.dev/ai-gateway';
 import { reportPeriod } from './management';
 import { sendAppEmail } from './resend.server';
+import { hasPlanFeature } from './plan-features';
 
 /** One shared database lease, at most three recipient/period generations per invocation. */
 export async function processAIReports(now=new Date()){
@@ -15,7 +16,9 @@ export async function processAIReports(now=new Date()){
    if(pref.frequency==='weekly'&&local.getUTCDay()!==1)continue;
    if(pref.frequency==='monthly'&&local.getUTCDate()!==1)continue;
    if(pref.frequency!=='daily'&&pref.frequency!=='weekly'&&pref.frequency!=='monthly')continue;
-   const {data:business}=await sb.from('pharmacies').select('name,business_type,owner_id,status,trial_ends_at,subscription_ends_at').eq('id',pref.pharmacy_id).single();if(!business)continue;
+   const {data:business}=await sb.from('pharmacies').select('name,business_type,owner_id,status,trial_ends_at,subscription_ends_at,plan_id').eq('id',pref.pharmacy_id).single();if(!business)continue;
+   const {data:plan}=business.plan_id?await sb.from('subscription_plans').select('has_ai_insights').eq('id',business.plan_id).maybeSingle():{data:null};
+   if(!hasPlanFeature(plan,'ai'))continue;
    const until=business.status==='trial'?business.trial_ends_at:business.status==='active'?business.subscription_ends_at:null;if(!until||new Date(until)<=now)continue;
    const period=reportPeriod(pref.frequency,now);
    for(const recipient of pref.recipient_ids){

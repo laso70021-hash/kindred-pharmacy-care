@@ -10,6 +10,8 @@ export const suggestImportCategory=createServerFn({method:'POST'})
    _pharmacy_id:data.pharmacyId,_roles:['manager','pharmacist','inventory_manager'],
   });
   if(accessError||!allowed)throw new Error('You do not have permission to import products for this workspace.');
+  const {requirePlanFeature}=await import('./plan-access.server');
+  await requirePlanFeature(context.supabase,data.pharmacyId,'import_ai');
   const {data:categories,error}=await context.supabase.from('categories').select('id,name,description').eq('pharmacy_id',data.pharmacyId).eq('is_active',true).order('name').limit(501);
   if(error)throw new Error('Could not load workspace categories.');
   if(!categories?.length)return {category:null,reason:'No active categories are available.',error:null};
@@ -41,6 +43,8 @@ export const resolveImportReferences=createServerFn({method:'POST'})
  .handler(async({data,context})=>{
   const {data:allowed,error:accessError}=await context.supabase.rpc('can_write_pharmacy',{_pharmacy_id:data.pharmacyId,_roles:['manager','pharmacist','inventory_manager']});
   if(accessError||!allowed)throw new Error('You do not have permission to import products for this workspace.');
+  const {requirePlanFeature}=await import('./plan-access.server');
+  await requirePlanFeature(context.supabase,data.pharmacyId,'import_ai');
   const [cats,sups]=await Promise.all([
    context.supabase.from('categories').select('name').eq('pharmacy_id',data.pharmacyId).eq('is_active',true).limit(500),
    context.supabase.from('suppliers').select('name').eq('pharmacy_id',data.pharmacyId).eq('is_active',true).limit(500),
