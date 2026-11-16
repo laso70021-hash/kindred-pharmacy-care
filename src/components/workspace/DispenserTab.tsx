@@ -7,6 +7,7 @@ import { PrescriptionService, WorkspaceService, type Prescription, type RxItem }
 import { can, isReadOnly } from '@/lib/workspace';
 import { formatNumber, formatDateDeterministic } from '@/lib/utils';
 import { Modal, Field, Empty, SectionHeader, inputCls, primaryBtn, ghostBtn, cardCls, errorText } from './ws-ui';
+import { PrescriptionAssistant } from './PrescriptionAssistant';
 
 const STATUS = { pending: 'bg-amber-50 text-amber-700', dispensed: 'bg-emerald-50 text-emerald-700', rejected: 'bg-rose-50 text-rose-700' } as const;
 const LABEL = { pending: 'Waiting', dispensed: 'Dispensed', rejected: 'Rejected' } as const;
@@ -68,14 +69,15 @@ export function DispenserTab({ ws, userId }: { ws: Workspace; userId: string }) 
               </div>)}
           </div>);
       })}
-      {adding && <NewRx products={products.filter((p) => p.is_active)} branches={branches.filter((b) => b.is_active)}
+      {adding && <NewRx pharmacyId={pid} products={products.filter((p) => p.is_active)} branches={branches.filter((b) => b.is_active)}
         onClose={() => setAdding(false)}
         onSave={async (input) => { await PrescriptionService.add(pid, userId, input); toast.success('Added to the queue'); setAdding(false); void qc.invalidateQueries({ queryKey: ['ws', pid, 'rx'] }); }} />}
     </div>
   );
 }
 
-function NewRx({ products, branches, onClose, onSave }: {
+function NewRx({ pharmacyId, products, branches, onClose, onSave }: {
+  pharmacyId: string;
   products: { id: string; name: string; strength: string; is_prescription_required: boolean }[]; branches: { id: string; name: string; is_main: boolean }[];
   onClose: () => void; onSave: (i: { branch_id: string; patient_name: string; patient_phone: string; prescriber: string; notes: string; items: RxItem[] }) => Promise<void>;
 }) {
@@ -100,6 +102,7 @@ function NewRx({ products, branches, onClose, onSave }: {
           <Field label="Branch"><select required className={inputCls} value={f.branch_id} onChange={(e) => setF({ ...f, branch_id: e.target.value })}>
             {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>
         </div>
+        <PrescriptionAssistant pharmacyId={pharmacyId} branchId={f.branch_id} onApply={(approved) => setItems([...items.filter(i => i.product_id), ...approved])} />
         <div className="space-y-2">
           {items.map((it, k) => (
             <div key={k} className="grid grid-cols-[1fr_70px_1fr_auto] gap-2 items-center">
