@@ -18,7 +18,7 @@ Reference: 19 uploaded designs + "COMPLETE SUPPLIER MARKETPLACE" brief. Keep the
 - [x] 12. Logo upload for main business and each branch (existing + new accounts), used on receipts
 - [x] 13. Covlo ("Kovlo") AI assistant — chat, quick save, reports, order/service tracking; per-role advice (owner, pharmacist, cashier, manager, accountant, supplier, rider)
 - [x] 14. Covlo for suppliers: platform-wide demand forecast, trending products, next-batch suggestions
-- [ ] 15. AI Prescription Assistant: scan/type/speak prescription → medicine matches, dosage, stock
+- [x] 15. AI Prescription Assistant: scan/type/browser speech → catalogue matches, written dosage, unexpired branch stock; explicit review into existing queue (authenticated live verification unavailable on external Supabase)
 - [ ] 16. Plan feature gating (branches/staff/AI/prescription/delivery flags from subscription_plans) + upgrade prompts
 - [ ] 17. Landing-page audit: implement features promised but missing
 - [ ] 18. Optional AI providers: OpenAI and OpenRouter keys with per-task model recommendations — blocked: needs user's API keys
