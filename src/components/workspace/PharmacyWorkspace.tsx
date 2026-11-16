@@ -1,4 +1,5 @@
 import { MobileNavigation } from '@/components/common/MobileNavigation';
+import { PlanFeatureGate } from './PlanFeatureGate';
 import { RecordsTab } from './RecordsTab';
 import { AIReportsTab } from './AIReportsTab';
 import { SalesReportsTab } from './SalesReportsTab';
@@ -77,6 +78,7 @@ export function PharmacyWorkspace({ ws: realWs, all, userId, onSwitch, onSignOut
     { s: 'Supplier Portal', id: 'payments', label: 'Payments', Icon: Wallet, show: can(ws.role, 'viewFinance', ws.status) },
     { s: 'Supplier Portal', id: 'notifications', label: 'Notifications', Icon: Bell, show: true },
     { s: 'Supplier Portal', id: 'reports', label: 'Reports', Icon: BarChart3, show: can(ws.role, 'viewFinance', ws.status) },
+    { s: 'Supplier Portal', id: 'ai-reports', label: 'AI Email Reports', Icon: ClipboardList, show: ws.role === 'owner' || ws.role === 'admin' },
     { s: 'Supplier Portal', id: 'messages', label: 'Messages', Icon: MessageCircle, show: true },
     { s: 'Team', id: 'staff', label: 'Staff & Roles', Icon: Users2, show: can(ws.role, 'manageBranches', 'active') },
     { s: 'Team', id: 'branches', label: 'Warehouses', Icon: GitBranch, show: true },
@@ -176,14 +178,14 @@ export function PharmacyWorkspace({ ws: realWs, all, userId, onSwitch, onSignOut
           {tab === 'overview' && homeFor(ws.role) !== 'business' && ws.business_type === 'pharmacy' && <RoleHome ws={ws} userId={userId} kind={homeFor(ws.role) as Exclude<ReturnType<typeof homeFor>, 'business'>} onNavigate={setTab} />}
           {tab === 'overview' && homeFor(ws.role) === 'business' && ws.business_type === 'pharmacy' && <OverviewTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} onNavigate={setTab} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
           {tab === 'sales-reports' && <SalesReportsTab ws={ws} range={range} onRangeChange={setRange} isMounted={isMounted} actions={can(ws.role, 'viewFinance', 'active') ? <ReportButton ws={ws} range={range} /> : undefined} />}
-          {tab === 'ai-reports' && <AIReportsTab ws={ws} />}
+          {tab === 'ai-reports' && <PlanFeatureGate ws={ws} feature="ai"><AIReportsTab ws={ws} /></PlanFeatureGate>}
           {tab === 'imports' && <ImportsTab ws={ws} />}
           {(['suppliers','categories','settings'] as const).map(module => tab === module && <RecordsTab key={module} ws={ws} module={module} />)}
           {tab === 'inventory' && <InventoryTab ws={ws} userId={userId} onImport={can(ws.role, 'manageStock', 'active') ? () => setTab('imports') : undefined} />}
           {tab === 'stock-alerts' && <StockAlertsTab key={alertView} ws={ws} initialView={alertView} onOrder={ws.business_type === 'pharmacy' && canOrderStock(ws.role) ? (p?: RestockPrefill) => { setPrefill(p ?? null); setTab('restock'); } : undefined} />}
           {tab === 'pos' && <PosTab ws={ws} />}
-          {tab === 'demand' && <MarketDemandTab ws={ws} />}
-          {tab === 'covlo' && <CovloTab ws={ws} userId={userId} />}
+          {tab === 'demand' && <PlanFeatureGate ws={ws} feature="forecasting"><MarketDemandTab ws={ws} /></PlanFeatureGate>}
+          {tab === 'covlo' && <PlanFeatureGate ws={ws} feature="ai"><CovloTab ws={ws} userId={userId} /></PlanFeatureGate>}
           {tab === 'rx' && <DispenserTab ws={ws} userId={userId} />}
           {tab === 'restock' && <MarketplaceTab key={prefill?.name ?? 'all'} ws={ws} userId={userId} prefill={prefill} onClearPrefill={() => setPrefill(null)} onOrdered={() => { setPrefill(null); setTab('orders'); }} />}
           {tab === 'orders' && <OrdersTab ws={ws} />}

@@ -1121,6 +1121,12 @@ function daysUntil(dateStr: string): number {
 }
 
 export class WorkspaceService {
+  static async getPlanFeatures(pharmacyId: string) {
+    const { data: business, error } = await supabase.from('pharmacies').select('status,trial_ends_at,subscription_ends_at,subscription_plans!pharmacies_plan_id_fkey(has_ai_insights,has_prescription_stt_ttt,has_advanced_ai_forecasting,has_bulk_import_ocr,has_delivery_management)').eq('id', pharmacyId).single();
+    fail(error);
+    if (!business) throw new Error('Business not found.');
+    return { status: effectiveStatus(business), plan: business.subscription_plans as import('./plan-features').PlanFeatureFlags | null };
+  }
   static async listWorkspaces(userId: string, isAdmin: boolean): Promise<Workspace[]> {
     const [{ data: rows, error }, { data: memberships }] = await Promise.all([
       supabase

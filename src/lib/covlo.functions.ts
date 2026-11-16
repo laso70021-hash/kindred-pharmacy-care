@@ -17,6 +17,8 @@ export const askCovlo = createServerFn({ method: 'POST' })
     const { data: admin } = await sb.rpc('is_platform_admin');
     const role = biz.owner_id === uid ? (biz.business_type === 'supplier' ? 'supplier' : 'pharmacy_owner') : mem?.is_active ? mem.role : admin ? 'platform_admin' : null;
     if (!role) throw new Error('You do not have access to this business.');
+    const { requirePlanFeature } = await import('./plan-access.server');
+    const plan = await requirePlanFeature(sb, pid, 'ai');
 
     let threadId = data.threadId;
     if (!threadId) {
@@ -51,7 +53,7 @@ export const askCovlo = createServerFn({ method: 'POST' })
       recentWholesaleOrders: (orders.data ?? []).map((o) => ({ no: o.order_number, status: o.status, total: o.total_amount, side: o.supplier_id === pid ? 'we supply' : 'we buy', date: o.created_at.slice(0, 10) })),
     };
 
-    if (biz.business_type === 'supplier') {
+    if (biz.business_type === 'supplier' && (admin || plan?.has_advanced_ai_forecasting)) {
       const { data: d } = await sb.rpc('platform_demand_trends', { _supplier: pid });
       (snapshot as Record<string, unknown>)['platformDemand'] = ((d ?? []) as DemandRow[]).slice(0, 25).map((r) => ({ medicine: `${r.product} ${r.strength}`.trim(), sold30d: r.units_30d, pharmacies: r.pharmacies, yourStock: r.your_stock, ...demandPlan(r) }));
     }
