@@ -1,0 +1,31 @@
+
+name: Run Scheduled Jobs
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-jobs
+  cancel-in-progress: false
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger Vercel API
+        env:
+          CRON_URL: ${{ secrets.CRON_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail --show-error --silent \
+            --retry 2 \
+            --max-time 120 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${CRON_URL}"
