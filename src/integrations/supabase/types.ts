@@ -784,21 +784,188 @@ export type Database = {
           },
         ]
       }
+      delivery_job_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          job_id: string
+          lat: number | null
+          lng: number | null
+          note: string | null
+          status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          status: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_job_events_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_jobs: {
+        Row: {
+          buyer_pharmacy_id: string | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          dropoff_address: string
+          dropoff_lat: number | null
+          dropoff_lng: number | null
+          id: string
+          note: string | null
+          pharmacy_id: string
+          pickup_address: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          rider_id: string | null
+          rider_lat: number | null
+          rider_lng: number | null
+          rider_seen_at: string | null
+          sale_id: string | null
+          signature: string | null
+          signed_name: string | null
+          status: string
+          tracking_number: string
+          updated_at: string
+          wholesale_order_id: string | null
+        }
+        Insert: {
+          buyer_pharmacy_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          dropoff_address: string
+          dropoff_lat?: number | null
+          dropoff_lng?: number | null
+          id?: string
+          note?: string | null
+          pharmacy_id: string
+          pickup_address?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          rider_id?: string | null
+          rider_lat?: number | null
+          rider_lng?: number | null
+          rider_seen_at?: string | null
+          sale_id?: string | null
+          signature?: string | null
+          signed_name?: string | null
+          status?: string
+          tracking_number: string
+          updated_at?: string
+          wholesale_order_id?: string | null
+        }
+        Update: {
+          buyer_pharmacy_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          dropoff_address?: string
+          dropoff_lat?: number | null
+          dropoff_lng?: number | null
+          id?: string
+          note?: string | null
+          pharmacy_id?: string
+          pickup_address?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          rider_id?: string | null
+          rider_lat?: number | null
+          rider_lng?: number | null
+          rider_seen_at?: string | null
+          sale_id?: string | null
+          signature?: string | null
+          signed_name?: string | null
+          status?: string
+          tracking_number?: string
+          updated_at?: string
+          wholesale_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_jobs_buyer_pharmacy_id_fkey"
+            columns: ["buyer_pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_jobs_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_jobs_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_jobs_wholesale_order_id_fkey"
+            columns: ["wholesale_order_id"]
+            isOneToOne: false
+            referencedRelation: "wholesale_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_shifts: {
         Row: {
           accepted_at: string | null
           branch_id: string | null
           break_seconds: number
           break_started_at: string | null
+          cash_difference: number | null
+          close_note: string | null
+          counted_cash: number | null
           created_at: string
+          drawer_label: string | null
           ended_at: string | null
+          expected_cash: number | null
           extended_minutes: number
+          handover_cash: number | null
           handover_from_shift: string | null
+          handover_notes: Json | null
           handover_to: string | null
           id: string
           note: string | null
+          opening_cash: number
           pharmacy_id: string
+          received_cash: number | null
+          received_note: string | null
+          review_note: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sales_summary: Json | null
           scheduled_minutes: number
+          shift_number: string | null
           started_at: string
           status: string
           updated_at: string
@@ -809,15 +976,31 @@ export type Database = {
           branch_id?: string | null
           break_seconds?: number
           break_started_at?: string | null
+          cash_difference?: number | null
+          close_note?: string | null
+          counted_cash?: number | null
           created_at?: string
+          drawer_label?: string | null
           ended_at?: string | null
+          expected_cash?: number | null
           extended_minutes?: number
+          handover_cash?: number | null
           handover_from_shift?: string | null
+          handover_notes?: Json | null
           handover_to?: string | null
           id?: string
           note?: string | null
+          opening_cash?: number
           pharmacy_id: string
+          received_cash?: number | null
+          received_note?: string | null
+          review_note?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sales_summary?: Json | null
           scheduled_minutes?: number
+          shift_number?: string | null
           started_at?: string
           status?: string
           updated_at?: string
@@ -828,15 +1011,31 @@ export type Database = {
           branch_id?: string | null
           break_seconds?: number
           break_started_at?: string | null
+          cash_difference?: number | null
+          close_note?: string | null
+          counted_cash?: number | null
           created_at?: string
+          drawer_label?: string | null
           ended_at?: string | null
+          expected_cash?: number | null
           extended_minutes?: number
+          handover_cash?: number | null
           handover_from_shift?: string | null
+          handover_notes?: Json | null
           handover_to?: string | null
           id?: string
           note?: string | null
+          opening_cash?: number
           pharmacy_id?: string
+          received_cash?: number | null
+          received_note?: string | null
+          review_note?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sales_summary?: Json | null
           scheduled_minutes?: number
+          shift_number?: string | null
           started_at?: string
           status?: string
           updated_at?: string
@@ -1755,6 +1954,7 @@ export type Database = {
           payment_status: string | null
           pharmacy_id: string
           prescription_notes: string | null
+          shift_id: string | null
           subtotal: number
           tax: number | null
           total: number
@@ -1772,6 +1972,7 @@ export type Database = {
           payment_status?: string | null
           pharmacy_id: string
           prescription_notes?: string | null
+          shift_id?: string | null
           subtotal?: number
           tax?: number | null
           total?: number
@@ -1789,6 +1990,7 @@ export type Database = {
           payment_status?: string | null
           pharmacy_id?: string
           prescription_notes?: string | null
+          shift_id?: string | null
           subtotal?: number
           tax?: number | null
           total?: number
@@ -1820,6 +2022,61 @@ export type Database = {
             columns: ["pharmacy_id"]
             isOneToOne: false
             referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "employee_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_cash_movements: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          note: string | null
+          pharmacy_id: string
+          shift_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          pharmacy_id: string
+          shift_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          pharmacy_id?: string
+          shift_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_cash_movements_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_cash_movements_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "employee_shifts"
             referencedColumns: ["id"]
           },
         ]
@@ -2551,13 +2808,54 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_handover: {
+        Args: {
+          _minutes: number
+          _note: string
+          _received: number
+          _shift: string
+        }
+        Returns: string
+      }
       accept_invitation: { Args: { _invite_id: string }; Returns: string }
       acquire_ai_report_lock: { Args: never; Returns: boolean }
+      add_delivery_note: {
+        Args: { _job: string; _lat: number; _lng: number; _note: string }
+        Returns: undefined
+      }
+      add_employee_membership: {
+        Args: {
+          _branch_ids: string[]
+          _employment_status: string
+          _job_title: string
+          _pharmacy: string
+          _phone: string
+          _role: Database["public"]["Enums"]["user_role"]
+          _user: string
+        }
+        Returns: string
+      }
+      admin_change_plan: {
+        Args: { _pharmacy_id: string; _plan_id: string }
+        Returns: undefined
+      }
       admin_register_business: { Args: { _payload: Json }; Returns: string }
       admin_set_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
           _user_id: string
+        }
+        Returns: undefined
+      }
+      advance_delivery_job: {
+        Args: {
+          _job: string
+          _lat: number
+          _lng: number
+          _note: string
+          _signature: string
+          _signed_name: string
+          _status: string
         }
         Returns: undefined
       }
@@ -2569,12 +2867,23 @@ export type Database = {
         Args: { _branch: string; _pharmacy: string }
         Returns: boolean
       }
+      can_see_delivery: { Args: { _job: string }; Returns: boolean }
       can_write_pharmacy: {
         Args: {
           _pharmacy_id: string
           _roles: Database["public"]["Enums"]["user_role"][]
         }
         Returns: boolean
+      }
+      close_shift: {
+        Args: {
+          _counted: number
+          _handover: Json
+          _handover_cash: number
+          _note: string
+          _to_user: string
+        }
+        Returns: string
       }
       correct_batch_stock: {
         Args: {
@@ -2589,6 +2898,19 @@ export type Database = {
         Args: { _payload: Json; _pharmacy: string; _type: string }
         Returns: string
       }
+      create_delivery_job: {
+        Args: {
+          _dropoff: string
+          _lat: number
+          _lng: number
+          _note: string
+          _order: string
+          _pharmacy: string
+          _phone: string
+          _recipient: string
+        }
+        Returns: string
+      }
       create_registration: {
         Args: { _payload: Json; _user_id: string }
         Returns: string
@@ -2601,6 +2923,16 @@ export type Database = {
           _method: string
           _pharmacy: string
           _reference: string
+        }
+        Returns: string
+      }
+      create_sale_delivery: {
+        Args: {
+          _dropoff: string
+          _note: string
+          _phone: string
+          _recipient: string
+          _sale: string
         }
         Returns: string
       }
@@ -2645,6 +2977,7 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
         }[]
       }
+      next_tracking_number: { Args: { _pharmacy: string }; Returns: string }
       notify_user: {
         Args: {
           _body: string
@@ -2677,6 +3010,10 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           user_id: string
         }[]
+      }
+      ping_delivery_location: {
+        Args: { _job: string; _lat: number; _lng: number }
+        Returns: undefined
       }
       place_wholesale_order: {
         Args: {
@@ -2719,6 +3056,10 @@ export type Database = {
         Args: { _note: string; _order: string }
         Returns: undefined
       }
+      record_shift_cash: {
+        Args: { _amount: number; _kind: string; _note: string }
+        Returns: string
+      }
       request_wholesale_quote: {
         Args: {
           _branch: string
@@ -2745,6 +3086,10 @@ export type Database = {
       }
       review_registration: {
         Args: { _decision: string; _note?: string; _pharmacy_id: string }
+        Returns: undefined
+      }
+      review_shift: {
+        Args: { _decision: string; _note: string; _shift: string }
         Returns: undefined
       }
       review_subscription_payment: {
@@ -2790,6 +3135,17 @@ export type Database = {
           _note?: string
           _pharmacy: string
           _to_user?: string
+        }
+        Returns: string
+      }
+      shift_summary: { Args: { _shift: string }; Returns: Json }
+      start_shift: {
+        Args: {
+          _branch: string
+          _drawer: string
+          _minutes: number
+          _opening_cash: number
+          _pharmacy: string
         }
         Returns: string
       }
