@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Search, Package, Plus, Minus, Trash2, Wallet, ShoppingBag } from 'lucide-react';
+import { Search, Package, Plus, Minus, Trash2, Wallet, ShoppingBag, Bike } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import type { Workspace } from '@/lib/pharmacy-types';
 import { BrandingService, PosService, WorkspaceService } from '@/lib/pharmacy-service';
 import { changeDue, drawerSummary, isReadOnly } from '@/lib/workspace';
@@ -32,6 +33,8 @@ export function PosTab({ ws }: { ws: Workspace }) {
   const [tendered, setTendered] = useState('');
   const [reference, setReference] = useState('');
   const [busy, setBusy] = useState(false);
+  const [deliver, setDeliver] = useState(false);
+  const [dl, setDl] = useState({ address: '', name: '', phone: '', note: '' });
   const [drawer, setDrawer] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const auth = useAuth();
@@ -59,9 +62,19 @@ export function PosTab({ ws }: { ws: Workspace }) {
 
   const checkout = async () => {
     if (method === 'cash' && tendered && change === null) { toast.error('Cash given is less than the total'); return; }
+    if (deliver && !dl.address.trim()) { toast.error('Enter the delivery address'); return; }
     setBusy(true);
     try {
       const saleId = await PosService.createSale({ pharmacyId: pid, branchId: branch, items: cart.map((l) => ({ product_id: l.id, quantity: l.qty })), method, discount: disc, reference });
+      if (deliver) {
+        const { data: jobId, error: dErr } = await supabase.rpc('create_sale_delivery', { _sale: saleId, _dropoff: dl.address, _recipient: dl.name, _phone: dl.phone, _note: dl.note });
+        if (dErr) toast.error(`Sale saved, but delivery failed: ${dErr.message}`);
+        else {
+          const { data: job } = await supabase.from('delivery_jobs').select('tracking_number').eq('id', jobId as string).maybeSingle();
+          toast.success(`Sent to Deliveries & Tracking · ${job?.tracking_number ?? ''}`);
+        }
+        setDeliver(false); setDl({ address: '', name: '', phone: '', note: '' });
+      }
       toast.success(change ? `Sale saved. Change: TZS ${formatNumber(change)}` : 'Sale saved');
       setReceipt({ invoice: `INV-${saleId.slice(0, 8).toUpperCase()}`, business: ws.name, branch: open.find((b) => b.id === branch)?.name || '', logoUrl: await BrandingService.getLogoUrls(ws.id).then((l) => l.branches[branch] || l.main).catch(() => null), cashier: auth.user?.email || 'Cashier', date: new Date(),
         items: cart.map((l) => { const p = byId.get(l.id); return { name: p?.name || '', strength: p?.strength, qty: l.qty, price: p?.selling_price || 0 }; }),
@@ -122,6 +135,15 @@ export function PosTab({ ws }: { ws: Workspace }) {
               <input type="number" min={0} className={inputCls} value={tendered} onChange={(e) => setTendered(e.target.value)} /></Field>
           ) : (
             <Field label="Transaction reference"><input className={inputCls} value={reference} onChange={(e) => setReference(e.target.value)} /></Field>)}
+          <button type="button" onClick={() => setDeliver((v) => !v)} className={`w-full flex items-center justify-center gap-2 px-2 py-2 rounded-lg border text-xs font-bold ${deliver ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200'}`}>
+            <Bike className="w-4 h-4" /> {deliver ? 'Will send to delivery rider' : 'Submit to delivery rider'}</button>
+          {deliver && (<div className="space-y-2">
+            <Field label="Delivery address *"><input className={inputCls} value={dl.address} onChange={(e) => setDl({ ...dl, address: e.target.value })} /></Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Recipient"><input className={inputCls} value={dl.name} onChange={(e) => setDl({ ...dl, name: e.target.value })} /></Field>
+              <Field label="Phone"><input className={inputCls} value={dl.phone} onChange={(e) => setDl({ ...dl, phone: e.target.value })} /></Field></div>
+            <Field label="Note for rider"><input className={inputCls} value={dl.note} onChange={(e) => setDl({ ...dl, note: e.target.value })} /></Field>
+            <p className="text-[11px] text-slate-500">A tracking number (e.g. PAP16112026) is created automatically in Deliveries & Tracking.</p></div>)}
           <button className={`${primaryBtn} w-full justify-center py-3 text-sm`} disabled={busy || cart.length === 0 || readOnly || !branch} onClick={checkout}>
             {busy ? 'Saving…' : `Charge TZS ${formatNumber(total)}`}</button>
         </div>
