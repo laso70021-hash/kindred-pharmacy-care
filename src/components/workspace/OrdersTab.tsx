@@ -9,6 +9,8 @@ import { availableOrderDocs, ORDER_DOC_LABEL, type OrderDocType } from '@/lib/or
 import type { Workspace } from '@/lib/pharmacy-types';
 import { WholesaleService, type WholesaleOrder } from '@/lib/pharmacy-service';
 import { isReadOnly } from '@/lib/workspace';
+import { PlanFeatureGate } from './PlanFeatureGate';
+import { Button } from '@/components/ui/button';
 import { ORDER_FLOW, ORDER_STATUS_LABEL, supplierNextStep, canReceive } from '@/lib/supplier-portal';
 import { formatNumber, formatDateDeterministic } from '@/lib/utils';
 import { Empty, SectionHeader, primaryBtn, ghostBtn, cardCls, errorText, inputCls } from './ws-ui';
@@ -112,11 +114,12 @@ export function OrdersTab({ ws }: { ws: Workspace }) {
           {side === 'supplier' && (o.status === 'quote_requested' || o.status === 'quoted') && <QuoteReply order={o} disabled={readOnly} onDone={refresh} />}
           {side === 'buyer' && (o.status === 'quote_requested' || o.status === 'quoted') && <PayQuote order={o} disabled={readOnly} onDone={refresh} />}
           {side === 'supplier' && supplierNextStep(o.status) && (
+            <PlanFeatureGate ws={ws} feature="delivery">
             <div className="flex flex-col sm:flex-row gap-2">
               <input className={inputCls} placeholder="Note e.g. rider name, tracking (optional)" value={notes[o.id] || ''} onChange={(e) => setNotes({ ...notes, [o.id]: e.target.value })} />
-              <button className={primaryBtn} disabled={busy === o.id || readOnly} onClick={() => { const n = supplierNextStep(o.status)!; void step(o, () => WholesaleService.advance(o.id, n, notes[o.id] || ''), `Order marked ${ORDER_STATUS_LABEL[n]!.toLowerCase()}.`); }}>
-                <Check className="w-3.5 h-3.5" /> Mark {ORDER_STATUS_LABEL[supplierNextStep(o.status)!]!.toLowerCase()}</button>
-            </div>)}
+              <Button disabled={busy === o.id || readOnly} onClick={() => { const n = supplierNextStep(o.status); if (!n) return; void step(o, () => WholesaleService.advance(o.id, n, notes[o.id] || ''), `Order marked ${ORDER_STATUS_LABEL[n]?.toLowerCase()}.`); }}>
+                <Check className="w-3.5 h-3.5" /> Mark {ORDER_STATUS_LABEL[supplierNextStep(o.status) ?? '']?.toLowerCase()}</Button>
+            </div></PlanFeatureGate>)}
           {side === 'buyer' && canReceive(o.status) && (
             <div className="flex flex-col sm:flex-row gap-2">
               <input className={inputCls} placeholder="Receiving note (optional)" value={notes[o.id] || ''} onChange={(e) => setNotes({ ...notes, [o.id]: e.target.value })} />
