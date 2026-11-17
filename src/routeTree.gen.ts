@@ -17,6 +17,7 @@ import { Route as SetPasswordRouteImport } from './routes/set-password'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPharmacyRouteImport } from './routes/_authenticated/pharmacy'
+import { Route as TrackIdRouteImport } from './routes/track/$id'
 import { Route as ApiPublicAiReportsRouteImport } from './routes/api/public/ai-reports'
 
 const IndexRoute = IndexRouteImport.update({
@@ -58,6 +59,11 @@ const AuthenticatedPharmacyRoute = AuthenticatedPharmacyRouteImport.update({
   path: '/pharmacy',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const TrackIdRoute = TrackIdRouteImport.update({
+  id: '/track/$id',
+  path: '/track/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAiReportsRoute = ApiPublicAiReportsRouteImport.update({
   id: '/api/public/ai-reports',
   path: '/api/public/ai-reports',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/pharmacy': typeof AuthenticatedPharmacyRoute
+  '/track/$id': typeof TrackIdRoute
   '/api/public/ai-reports': typeof ApiPublicAiReportsRoute
 }
 export interface FileRoutesByTo {
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/pharmacy': typeof AuthenticatedPharmacyRoute
+  '/track/$id': typeof TrackIdRoute
   '/api/public/ai-reports': typeof ApiPublicAiReportsRoute
 }
 export interface FileRoutesById {
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/pharmacy': typeof AuthenticatedPharmacyRoute
+  '/track/$id': typeof TrackIdRoute
   '/api/public/ai-reports': typeof ApiPublicAiReportsRoute
 }
 export interface FileRouteTypes {
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/pharmacy'
+    | '/track/$id'
     | '/api/public/ai-reports'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/pharmacy'
+    | '/track/$id'
     | '/api/public/ai-reports'
   id:
     | '__root__'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/pharmacy'
+    | '/track/$id'
     | '/api/public/ai-reports'
   fileRoutesById: FileRoutesById
 }
@@ -136,6 +148,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SetPasswordRoute: typeof SetPasswordRoute
+  TrackIdRoute: typeof TrackIdRoute
   ApiPublicAiReportsRoute: typeof ApiPublicAiReportsRoute
 }
 
@@ -197,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPharmacyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/track/$id': {
+      id: '/track/$id'
+      path: '/track/$id'
+      fullPath: '/track/$id'
+      preLoaderRoute: typeof TrackIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ai-reports': {
       id: '/api/public/ai-reports'
       path: '/api/public/ai-reports'
@@ -228,6 +248,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SetPasswordRoute: SetPasswordRoute,
+  TrackIdRoute: TrackIdRoute,
   ApiPublicAiReportsRoute: ApiPublicAiReportsRoute,
 }
 export const routeTree = rootRouteImport
