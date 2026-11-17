@@ -41,7 +41,16 @@ create_delivery_job(_pharmacy uuid, _order uuid, _dropoff text,
   _lng double precision, _note text) RETURNS uuid
 ```
 
-Pass all four coordinate parameters explicitly (NULL when unknown) to select the extended dispatch overload. The five-argument wrapper dispatches without coordinates. Pickup address prefers the explicit address, then sale branch address, then business address. Coordinate pairs must both be present or both NULL; valid ranges are latitude −90..90 and longitude −180..180.
+Pass all four coordinate parameters explicitly (NULL when unknown) to select the extended dispatch overload. The five-argument wrapper dispatches without coordinates. Pickup address now comes from the sale's actual branch, then business address/city. Legacy pickup address/coordinate arguments remain accepted and coordinates validated, but caller pickup snapshots are not stored: pickup coordinates stay NULL so maps can geocode the canonical address. Drop-off coordinates are preserved. Coordinate pairs must both be present or both NULL; valid ranges are latitude −90..90 and longitude −180..180.
+
+## Central pickup locations (17 November update)
+
+- Migration `20261117112402_8451082f-dd6c-410b-8adb-5185786a5fdb.sql` adds nullable `pickup_branch_id` referencing branches with `ON DELETE SET NULL`, an open-job branch index, signature-compatible creators and private SECURITY DEFINER address-refresh triggers with fixed `search_path=public`.
+- POS saves the sale's branch, never substitutes the main branch. Manual/wholesale jobs save the current main branch (deterministic created_at/id ordering if legacy data has several). Missing/blank branch address falls back to trimmed business address/city; missing main branch leaves the reference NULL. Branches have no coordinates.
+- Active-job backfill was applied separately through the data-change tool; its repeatable SQL is in `supabase/tests/pickup-backfill.sql`. All **10 live jobs** now match their current source; all pickup coordinates are NULL. Digest of every field except pickup fields and updated_at remains `a9c9e8d85912a77e9b8ff95693a13be6`, identical before/after.
+- Branch address edits refresh linked jobs. Business address/city edits refresh jobs with no branch or a blank branch address. Both clear pickup coordinates and update updated_at. Only delivered/cancelled/returned are excluded; failed and returning remain eligible. No drop-off, customer, tracking, shipment-state or event-history changes.
+- Existing public tracking projection and party-scoped Realtime publication are unchanged. A real public tracking page displayed the refreshed address without page errors. Hosted authenticated Realtime receipt and new POS/manual UI checkout are not end-to-end verified; SQL creator/trigger behavior is tested in isolation, without adding production test deliveries.
+- **15 isolated SQL tests passed**, including canonical POS/main-branch/manual fallback, backfill, terminal preservation, failed/returning refresh, public projection, fallback edits, branch deletion and private trigger grants. Existing 67 security-linter findings predate this update; none were introduced.
 
 ## Lifecycle and legacy mapping
 
@@ -84,7 +93,7 @@ No SMS/WhatsApp provider was configured or verified; automated customer messages
 
 ## Verification and limits
 
-`src/lib/delivery-database.test.ts` runs the exact three applied migrations in a disposable local PostgreSQL database with a minimal fixture. Run with `DELIVERY_TEST_SOCKET=/tmp/<disposable-socket> bun run test src/lib/delivery-database.test.ts` (port 55432, user lovable); otherwise the suite skips. Never apply `supabase/tests/delivery-fixture.sql` to the connected database.
+`src/lib/delivery-database.test.ts` runs the workflow and central-pickup migrations in a disposable local PostgreSQL database with a minimal fixture. Run with `DELIVERY_TEST_SOCKET=/tmp/<disposable-socket> bun run test src/lib/delivery-database.test.ts` (port 55432, user lovable); otherwise the suite skips. Never apply `supabase/tests/delivery-fixture.sql` to the connected database.
 
 **9 tests passed:** parallel dispatch + unique-index enforcement, parallel acceptance, wrong-role/tenant/inactive access, unauthorized notes, skipped stages/pickup arrival, proof validation/completion GPS freeze, GPS restrictions/cancellation, failure/return sequence, historical preservation/append-only/privacy/publication/notifications.
 

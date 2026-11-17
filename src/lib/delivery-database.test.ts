@@ -158,7 +158,10 @@ suite('delivery PostgreSQL workflow (isolated database)', () => {
     for(const previous of before) {
       const row=(await sql`select * from public.delivery_jobs where id=${previous['id']}`)[0]
       const original=previous['row']
-      if(['delivered','cancelled','returned'].includes(original.status)) expect(JSON.parse(JSON.stringify(row))).toEqual(original)
+      if(['delivered','cancelled','returned'].includes(original.status)) {
+        const unchanged=(await sql`select to_jsonb(j) as row from public.delivery_jobs j where id=${previous['id']}`)[0]?.['row']
+        expect(unchanged).toEqual(original)
+      }
       else {
         expect(row).toMatchObject({pickup_branch_id:id(202),pickup_address:'Sale counter',pickup_lat:null,pickup_lng:null})
         for(const key of ['dropoff_address','recipient_name','recipient_phone','note','status','tracking_number']) expect(row?.[key]).toEqual(original[key])
