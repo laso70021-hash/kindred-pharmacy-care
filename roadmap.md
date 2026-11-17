@@ -24,3 +24,8 @@ Reference: 19 uploaded designs + "COMPLETE SUPPLIER MARKETPLACE" brief. Keep the
 - [x] 18. AI runs on OpenRouter (openai/gpt-5.6-terra)
 - [ ] 19. Demo test accounts with emails/passwords for Paman and Novea — blocked: user to confirm test email addresses
 - [x] 20. Invite link shareable via WhatsApp in addition to email
+
+# Delivery backend workflow (Nov 17)
+- [ ] Inspect live schema; apply additive dispatch, assignment, rider transitions, exceptions, GPS, audit and notification migration.
+- [ ] Run focused database tests and verify historical records, grants and Realtime.
+- [ ] Document exact RPC calls, legacy mapping and provider requirements; leave React UI unchanged.
