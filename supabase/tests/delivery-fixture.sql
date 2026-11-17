@@ -7,7 +7,8 @@ CREATE TYPE public.user_role AS ENUM ('super_admin','pharmacy_owner','supplier',
 CREATE TABLE public.pharmacies(id uuid PRIMARY KEY,owner_id uuid,address text,city text);
 CREATE TABLE public.pharmacy_memberships(id uuid DEFAULT gen_random_uuid(),pharmacy_id uuid,user_id uuid,role public.user_role,is_active boolean,employment_status text);
 CREATE TABLE public.user_roles(user_id uuid,role public.user_role);
-CREATE TABLE public.branches(id uuid PRIMARY KEY,address text);
+CREATE TABLE public.branches(id uuid PRIMARY KEY,address text,pharmacy_id uuid,is_main boolean,created_at timestamptz DEFAULT now());
+CREATE TABLE public.wholesale_orders(id uuid PRIMARY KEY,buyer_pharmacy_id uuid,supplier_id uuid);
 CREATE TABLE public.sales(id uuid PRIMARY KEY,pharmacy_id uuid,branch_id uuid);
 CREATE TABLE public.notifications(id uuid DEFAULT gen_random_uuid(),user_id uuid,pharmacy_id uuid,kind text,title text,body text,link text);
 CREATE TABLE public.delivery_jobs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),tracking_number text UNIQUE NOT NULL,pharmacy_id uuid NOT NULL,buyer_pharmacy_id uuid,wholesale_order_id uuid,sale_id uuid,rider_id uuid,status text NOT NULL DEFAULT 'pending',pickup_address text,dropoff_address text NOT NULL,recipient_name text,recipient_phone text,dropoff_lat double precision,dropoff_lng double precision,rider_lat double precision,rider_lng double precision,rider_seen_at timestamptz,signature text,signed_name text,delivered_at timestamptz,note text,created_by uuid,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now(),CONSTRAINT delivery_jobs_status_check CHECK(status IN ('pending','accepted','picked_up','in_transit','arrived','delivered','cancelled')));

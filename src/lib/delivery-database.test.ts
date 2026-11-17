@@ -26,9 +26,12 @@ suite('delivery PostgreSQL workflow (isolated database)', () => {
     asUser(11, `select public.advance_delivery_job('${job}','${status}',NULL,NULL,NULL,'${signature}','${name}')`)
   beforeAll(async () => {
     await sql.unsafe(readFileSync(resolve('supabase/tests/delivery-fixture.sql'),'utf8'))
-    historicalJob = (await sql`select to_jsonb(j) as row from public.delivery_jobs j where id=${id(99)}`)[0]?.['row']
+    historicalJob = (await sql`select to_jsonb(j)-ARRAY['pickup_address','updated_at'] as row from public.delivery_jobs j where id=${id(99)}`)[0]?.['row']
     historicalEvent = (await sql`select to_jsonb(e) as row from public.delivery_job_events e where job_id=${id(99)}`)[0]?.['row']
     for (const file of readdirSync('supabase/migrations').filter(f => f.startsWith('202611171040') || f.startsWith('20261117104518'))) {
+      await sql.unsafe(readFileSync(resolve('supabase/migrations', file), 'utf8'))
+    }
+    for (const file of readdirSync('supabase/migrations').filter(f => f.startsWith('20261117112402'))) {
       await sql.unsafe(readFileSync(resolve('supabase/migrations', file), 'utf8'))
     }
   }, 30000)
@@ -40,7 +43,7 @@ suite('delivery PostgreSQL workflow (isolated database)', () => {
     const results = await Promise.all([dispatch(),dispatch(),dispatch()])
     expect(new Set(results.map(r=>r[0]?.['id'])).size).toBe(1)
     const job = results[0]?.[0]?.['id']
-    expect((await sql`select status,pickup_lat,dropoff_lng from public.delivery_jobs where id=${job}`)[0]).toMatchObject({status:'in_process',pickup_lat:-6.8,dropoff_lng:39.3})
+    expect((await sql`select status,pickup_lat,pickup_address,dropoff_lng from public.delivery_jobs where id=${job}`)[0]).toMatchObject({status:'in_process',pickup_lat:null,pickup_address:'Pickup street, Test city',dropoff_lng:39.3})
     expect(Number((await sql`select count(*) from public.delivery_job_events where job_id=${job} and action='created'`)[0]?.['count'])).toBe(1)
     await expect(sql.begin(async tx => {
       await tx`select set_config('request.jwt.claim.sub',${id(17)},true)`
@@ -110,7 +113,7 @@ suite('delivery PostgreSQL workflow (isolated database)', () => {
     expect((await sql`select status,delivered_at,returned_at from public.delivery_jobs where id=${job}`)[0]).toMatchObject({status:'returned',delivered_at:null})
   })
   it('preserves legacy columns and history; new history is append-only and public tracking excludes private fields', async () => {
-    const job=(await sql`select to_jsonb(j)-ARRAY['pickup_lat','pickup_lng','assignment_state','accepted_at','pickup_started_at','pickup_arrived_at','collected_at','destination_arrived_at','cancelled_at','failed_at','returned_at','exception_reason'] as row from public.delivery_jobs j where id=${id(99)}`)[0]?.['row']
+    const job=(await sql`select to_jsonb(j)-ARRAY['pickup_branch_id','pickup_address','updated_at','pickup_lat','pickup_lng','assignment_state','accepted_at','pickup_started_at','pickup_arrived_at','collected_at','destination_arrived_at','cancelled_at','failed_at','returned_at','exception_reason'] as row from public.delivery_jobs j where id=${id(99)}`)[0]?.['row']
     const event=(await sql`select to_jsonb(e)-ARRAY['action','previous_status','new_status','actor_role','previous_rider_id'] as row from public.delivery_job_events e where job_id=${id(99)}`)[0]?.['row']
     expect(job).toEqual(historicalJob); expect(event).toEqual(historicalEvent)
     await expect(sql`update public.delivery_job_events set note='Changed' where job_id=${id(99)}`).rejects.toThrow(/append-only/)
@@ -120,5 +123,74 @@ suite('delivery PostgreSQL workflow (isolated database)', () => {
     expect((await sql`select has_table_privilege('anon','public.delivery_jobs','SELECT') as allowed`)[0]?.['allowed']).toBe(false)
     expect(Number((await sql`select count(*) from pg_publication_tables where pubname='supabase_realtime' and tablename in ('delivery_jobs','delivery_job_events')`)[0]?.['count'])).toBe(2)
     expect(Number((await sql`select count(*) from public.notifications where title like 'Delivery %'`)[0]?.['count'])).toBeGreaterThan(0)
+  })
+  it('POS saves the actual sale branch and ignores stale caller pickup snapshots', async () => {
+    await sql`insert into public.branches(id,pharmacy_id,address,is_main) values(${id(201)},${id(1)},'Main counter',true),(${id(202)},${id(1)},'Sale counter',false)`
+    const sale=crypto.randomUUID()
+    await sql`insert into public.sales(id,pharmacy_id,branch_id) values(${sale},${id(1)},${id(202)})`
+    const job=(await asUser(17,`select public.create_sale_delivery('${sale}','Destination','Receiver','255700000000','Note',-6,39,-7,40,'Stale') as id`))[0]?.['id']
+    expect((await sql`select pickup_branch_id,pickup_address,pickup_lat,pickup_lng,dropoff_lat,dropoff_lng from public.delivery_jobs where id=${job}`)[0]).toMatchObject({pickup_branch_id:id(202),pickup_address:'Sale counter',pickup_lat:null,pickup_lng:null,dropoff_lat:-7,dropoff_lng:40})
+  })
+  it('manual jobs use the current main branch and the pharmacy fallback without a main branch', async () => {
+    const create=()=>asUser(10,`select public.create_delivery_job('${id(1)}',NULL,'Destination','Receiver','Phone',-7,40,'Note') as id`)
+    const first=(await create())[0]?.['id']
+    expect((await sql`select pickup_branch_id,pickup_address from public.delivery_jobs where id=${first}`)[0]).toMatchObject({pickup_branch_id:id(201),pickup_address:'Main counter'})
+    await sql`update public.branches set is_main=false where id=${id(201)}`
+    await sql`update public.branches set is_main=true where id=${id(202)}`
+    const second=(await create())[0]?.['id']
+    expect((await sql`select pickup_branch_id,pickup_address from public.delivery_jobs where id=${second}`)[0]).toMatchObject({pickup_branch_id:id(202),pickup_address:'Sale counter'})
+    await sql`update public.branches set is_main=false where id=${id(202)}`
+    const third=(await create())[0]?.['id']
+    expect((await sql`select pickup_branch_id,pickup_address from public.delivery_jobs where id=${third}`)[0]).toMatchObject({pickup_branch_id:null,pickup_address:'Pickup street, Test city'})
+    await sql`update public.branches set is_main=true where id=${id(201)}`
+  })
+  it('backfills open jobs by sale/main branch, including failed/returning, while preserving terminal and customer data', async () => {
+    const jobs:string[]=[]
+    for(const status of ['pending','failed','returning','delivered','cancelled','returned']) {
+      const sale=crypto.randomUUID()
+      await sql`insert into public.sales(id,pharmacy_id,branch_id) values(${sale},${id(1)},${id(202)})`
+      const job=(await asUser(17,`select public.create_sale_delivery('${sale}','Private destination','Receiver','Phone','Private note') as id`))[0]?.['id']
+      await sql`update public.delivery_jobs set status=${status},pickup_address='Old snapshot',pickup_lat=-6,pickup_lng=39 where id=${job}`
+      jobs.push(String(job))
+    }
+    const before=await sql`select id,to_jsonb(j) as row from public.delivery_jobs j where id=any(${jobs}::uuid[]) order by id`
+    await sql.unsafe(readFileSync(resolve('supabase/tests/pickup-backfill.sql'),'utf8'))
+    for(const previous of before) {
+      const row=(await sql`select * from public.delivery_jobs where id=${previous['id']}`)[0]
+      const original=previous['row']
+      if(['delivered','cancelled','returned'].includes(original.status)) {
+        const unchanged=(await sql`select to_jsonb(j) as row from public.delivery_jobs j where id=${previous['id']}`)[0]?.['row']
+        expect(unchanged).toEqual(original)
+      }
+      else {
+        expect(row).toMatchObject({pickup_branch_id:id(202),pickup_address:'Sale counter',pickup_lat:null,pickup_lng:null})
+        for(const key of ['dropoff_address','recipient_name','recipient_phone','note','status','tracking_number']) expect(row?.[key]).toEqual(original[key])
+      }
+    }
+    expect((await sql`select pickup_branch_id,pickup_address from public.delivery_jobs where id=${id(99)}`)[0]).toMatchObject({pickup_branch_id:id(201),pickup_address:'Main counter'})
+  })
+  it('branch changes refresh failed/returning jobs and public tracking, not terminal jobs', async () => {
+    await sql`update public.branches set address='Current sale counter' where id=${id(202)}`
+    const rows=await sql`select status,pickup_address,pickup_lat from public.delivery_jobs where pickup_branch_id=${id(202)}`
+    for(const row of rows) expect(row['pickup_address']).toBe(['delivered','cancelled','returned'].includes(row['status'])?'Old snapshot':'Current sale counter')
+    expect(rows.some(r=>r['status']==='failed')).toBe(true)
+    expect(rows.some(r=>r['status']==='returning')).toBe(true)
+    const job=(await sql`select id from public.delivery_jobs where status='failed' and pickup_branch_id=${id(202)}`)[0]?.['id']
+    const pub=await sql.begin(async tx=>{await tx.unsafe('SET LOCAL ROLE anon');return tx`select public.get_public_delivery_tracking(${job}) as row`})
+    expect(pub[0]?.['row']).toMatchObject({pickup_address:'Current sale counter',pickup_lat:null,pickup_lng:null})
+  })
+  it('pharmacy changes refresh null/blank branch fallbacks but do not replace nonblank branch addresses', async () => {
+    await sql`update public.branches set address=' ' where id=${id(201)}`
+    await sql`update public.pharmacies set address='New pharmacy street',city='New city' where id=${id(1)}`
+    const fallbacks=await sql`select pickup_address,pickup_lat,pickup_lng from public.delivery_jobs where pharmacy_id=${id(1)} and status not in ('delivered','cancelled','returned') and (pickup_branch_id is null or pickup_branch_id=${id(201)})`
+    expect(fallbacks.length).toBeGreaterThan(0)
+    for(const row of fallbacks) expect(row).toMatchObject({pickup_address:'New pharmacy street, New city',pickup_lat:null,pickup_lng:null})
+    expect((await sql`select pickup_address from public.delivery_jobs where pickup_branch_id=${id(202)} and status='failed'`)[0]?.['pickup_address']).toBe('Current sale counter')
+  })
+  it('branch deletion clears only the reference and pickup triggers are private with fixed search paths', async () => {
+    await sql`delete from public.branches where id=${id(201)}`
+    expect((await sql`select pickup_branch_id,pickup_address from public.delivery_jobs where id=${id(99)}`)[0]).toMatchObject({pickup_branch_id:null,pickup_address:'New pharmacy street, New city'})
+    const helper=(await sql`select prosecdef,proconfig,has_function_privilege('anon',oid,'EXECUTE') anon,has_function_privilege('authenticated',oid,'EXECUTE') authenticated from pg_proc where proname='refresh_delivery_pickup_location'`)[0]
+    expect(helper).toMatchObject({prosecdef:true,proconfig:['search_path=public'],anon:false,authenticated:false})
   })
 })
