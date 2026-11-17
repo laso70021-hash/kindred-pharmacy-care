@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 // Explicit opt-in: connects ONLY to a disposable database on a local socket.
-const socket = process.env.DELIVERY_TEST_SOCKET
+const socket = process.env['DELIVERY_TEST_SOCKET']
 const suite = socket?.startsWith('/tmp/') ? describe : describe.skip
 suite('delivery PostgreSQL workflow (isolated database)', () => {
   const sql = postgres({ host: socket, port: 55432, username: 'lovable', database: 'postgres', max: 8 })
