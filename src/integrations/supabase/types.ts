@@ -786,33 +786,45 @@ export type Database = {
       }
       delivery_job_events: {
         Row: {
+          action: string | null
           actor_id: string | null
+          actor_role: string | null
           created_at: string
           id: string
           job_id: string
           lat: number | null
           lng: number | null
+          new_status: string | null
           note: string | null
+          previous_status: string | null
           status: string
         }
         Insert: {
+          action?: string | null
           actor_id?: string | null
+          actor_role?: string | null
           created_at?: string
           id?: string
           job_id: string
           lat?: number | null
           lng?: number | null
+          new_status?: string | null
           note?: string | null
+          previous_status?: string | null
           status: string
         }
         Update: {
+          action?: string | null
           actor_id?: string | null
+          actor_role?: string | null
           created_at?: string
           id?: string
           job_id?: string
           lat?: number | null
           lng?: number | null
+          new_status?: string | null
           note?: string | null
+          previous_status?: string | null
           status?: string
         }
         Relationships: [
@@ -827,19 +839,31 @@ export type Database = {
       }
       delivery_jobs: {
         Row: {
+          accepted_at: string | null
+          assignment_state: string
           buyer_pharmacy_id: string | null
+          cancelled_at: string | null
+          collected_at: string | null
           created_at: string
           created_by: string | null
           delivered_at: string | null
+          destination_arrived_at: string | null
           dropoff_address: string
           dropoff_lat: number | null
           dropoff_lng: number | null
+          exception_reason: string | null
+          failed_at: string | null
           id: string
           note: string | null
           pharmacy_id: string
           pickup_address: string | null
+          pickup_arrived_at: string | null
+          pickup_lat: number | null
+          pickup_lng: number | null
+          pickup_started_at: string | null
           recipient_name: string | null
           recipient_phone: string | null
+          returned_at: string | null
           rider_id: string | null
           rider_lat: number | null
           rider_lng: number | null
@@ -853,19 +877,31 @@ export type Database = {
           wholesale_order_id: string | null
         }
         Insert: {
+          accepted_at?: string | null
+          assignment_state?: string
           buyer_pharmacy_id?: string | null
+          cancelled_at?: string | null
+          collected_at?: string | null
           created_at?: string
           created_by?: string | null
           delivered_at?: string | null
+          destination_arrived_at?: string | null
           dropoff_address: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
+          exception_reason?: string | null
+          failed_at?: string | null
           id?: string
           note?: string | null
           pharmacy_id: string
           pickup_address?: string | null
+          pickup_arrived_at?: string | null
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          pickup_started_at?: string | null
           recipient_name?: string | null
           recipient_phone?: string | null
+          returned_at?: string | null
           rider_id?: string | null
           rider_lat?: number | null
           rider_lng?: number | null
@@ -879,19 +915,31 @@ export type Database = {
           wholesale_order_id?: string | null
         }
         Update: {
+          accepted_at?: string | null
+          assignment_state?: string
           buyer_pharmacy_id?: string | null
+          cancelled_at?: string | null
+          collected_at?: string | null
           created_at?: string
           created_by?: string | null
           delivered_at?: string | null
+          destination_arrived_at?: string | null
           dropoff_address?: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
+          exception_reason?: string | null
+          failed_at?: string | null
           id?: string
           note?: string | null
           pharmacy_id?: string
           pickup_address?: string | null
+          pickup_arrived_at?: string | null
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          pickup_started_at?: string | null
           recipient_name?: string | null
           recipient_phone?: string | null
+          returned_at?: string | null
           rider_id?: string | null
           rider_lat?: number | null
           rider_lng?: number | null
@@ -2808,6 +2856,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_delivery_offer: { Args: { _job: string }; Returns: undefined }
       accept_handover: {
         Args: {
           _minutes: number
@@ -2861,6 +2910,10 @@ export type Database = {
       }
       advance_wholesale_order: {
         Args: { _note: string; _order: string; _status: string }
+        Returns: undefined
+      }
+      arrive_delivery_pickup: {
+        Args: { _job: string; _lat?: number; _lng?: number }
         Returns: undefined
       }
       can_access_branch: {
@@ -2926,16 +2979,37 @@ export type Database = {
         }
         Returns: string
       }
-      create_sale_delivery: {
-        Args: {
-          _dropoff: string
-          _note: string
-          _phone: string
-          _recipient: string
-          _sale: string
-        }
-        Returns: string
+      create_sale_delivery:
+        | {
+            Args: {
+              _dropoff: string
+              _note: string
+              _phone: string
+              _recipient: string
+              _sale: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _dropoff: string
+              _dropoff_lat: number
+              _dropoff_lng: number
+              _note: string
+              _phone: string
+              _pickup_address?: string
+              _pickup_lat: number
+              _pickup_lng: number
+              _recipient: string
+              _sale: string
+            }
+            Returns: string
+          }
+      delivery_exception: {
+        Args: { _action: string; _job: string; _reason: string }
+        Returns: undefined
       }
+      delivery_workflow_status: { Args: { _status: string }; Returns: string }
       extend_trial: {
         Args: { _days: number; _pharmacy_id: string }
         Returns: undefined
@@ -2964,6 +3038,10 @@ export type Database = {
           _rows: Json
         }
         Returns: Json
+      }
+      is_active_delivery_rider: {
+        Args: { _pharmacy: string; _user: string }
+        Returns: boolean
       }
       is_pharmacy_owner: { Args: { _pharmacy_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
@@ -3197,6 +3275,10 @@ export type Database = {
       user_belongs_to_pharmacy: {
         Args: { pharmacy_uuid: string }
         Returns: boolean
+      }
+      validate_delivery_coordinates: {
+        Args: { _lat: number; _lng: number }
+        Returns: undefined
       }
     }
     Enums: {
