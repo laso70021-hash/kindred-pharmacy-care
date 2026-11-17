@@ -33,6 +33,8 @@ import { StockAlertsTab } from './StockAlertsTab';
 import { RoleHome } from './RoleHome';
 import { CovloTab } from './CovloTab';
 import { MarketDemandTab } from './MarketDemandTab';
+import { DeliveriesTab } from './DeliveriesTab';
+import { Truck } from 'lucide-react';
 import { TrendingUp } from 'lucide-react';
 import { Bot } from 'lucide-react';
 import { SupplierDashboard, InventoryAvailability, SupplierPayments, SupplierReports, SupplierNotifications, SupplierMessages } from './SupplierPortal';
@@ -99,6 +101,7 @@ export function PharmacyWorkspace({ ws: realWs, all, userId, onSwitch, onSignOut
     { s: 'Inventory & Procurement', id: 'restock', label: 'Restock (Suppliers)', Icon: ShoppingCart, show: ws.business_type === 'pharmacy' && canOrderStock(ws.role) },
     { s: 'Inventory & Procurement', id: 'orders', label: ws.business_type === 'supplier' ? 'Wholesale orders' : 'Supplier orders', Icon: ClipboardList, show: canOrderStock(ws.role) },
     { s: 'Inventory & Procurement', id: 'suppliers', label: 'Suppliers', Icon: Store, show: can(ws.role, 'manageStock', 'active') },
+    { s: 'Operations', id: 'deliveries', label: 'Deliveries & Tracking', Icon: Truck, show: ws.business_type === 'pharmacy' },
     { s: 'Operations', id: 'branches', label: 'Branches', Icon: GitBranch, show: true },
     { s: 'Operations', id: 'staff', label: 'Staff & Roles', Icon: Users2, show: can(ws.role, 'manageBranches', 'active') },
     { s: 'Operations', id: 'shifts', label: 'Shifts', Icon: Clock, show: true },
@@ -189,6 +192,7 @@ export function PharmacyWorkspace({ ws: realWs, all, userId, onSwitch, onSignOut
           {tab === 'rx' && <DispenserTab ws={ws} userId={userId} />}
           {tab === 'restock' && <MarketplaceTab key={prefill?.name ?? 'all'} ws={ws} userId={userId} prefill={prefill} onClearPrefill={() => setPrefill(null)} onOrdered={() => { setPrefill(null); setTab('orders'); }} />}
           {tab === 'orders' && <OrdersTab ws={ws} />}
+          {tab === 'deliveries' && <DeliveriesTab ws={ws} />}
           {tab === 'branches' && <BranchesTab ws={ws} />}
           {tab === 'staff' && <StaffTab ws={ws} />}
           {tab === 'documents' && <DocumentsTab ws={ws} />}
