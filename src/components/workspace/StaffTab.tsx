@@ -111,7 +111,7 @@ export function StaffTab({ ws }: { ws: Workspace }) {
             <Field label="Job title"><input className={inputCls} value={acct.jobTitle} onChange={(e) => setAcct({ ...acct, jobTitle: e.target.value })} /></Field>
             <Field label="Role">
               <select className={inputCls} value={acct.role} onChange={(e) => setAcct({ ...acct, role: e.target.value as StaffRole })}>
-                {STAFF_ROLES.filter((r) => r.value !== 'owner' && r.value !== 'admin').map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                {STAFF_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
             </Field>
             <Field label="Branch">
