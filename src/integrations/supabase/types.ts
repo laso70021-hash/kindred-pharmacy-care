@@ -2940,6 +2940,7 @@ export type Database = {
         Args: { _days: number; _pharmacy_id: string }
         Returns: undefined
       }
+      get_public_delivery_tracking: { Args: { _job: string }; Returns: Json }
       has_pharmacy_role: {
         Args: {
           _pharmacy_id: string
