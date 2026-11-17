@@ -26,6 +26,7 @@ Reference: 19 uploaded designs + "COMPLETE SUPPLIER MARKETPLACE" brief. Keep the
 - [x] 20. Invite link shareable via WhatsApp in addition to email
 
 # Delivery backend workflow (Nov 17)
+- [ ] Central pickup sources: branch links, active-job backfill, address-change refresh triggers, POS/manual RPCs and SQL verification.
 - [x] Inspect live schema; apply additive dispatch, assignment, rider transitions, exceptions, GPS, audit and notification migration.
 - [x] Run 9 isolated SQL tests; verify live historical digests, grants and Realtime publication. Hosted rider/subscription end-to-end verification unavailable on external Supabase.
 - [x] Document exact RPC calls, legacy mapping, provider requirements and verification limits in docs/delivery-backend.md; React UI unchanged.
