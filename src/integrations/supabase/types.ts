@@ -861,6 +861,7 @@ export type Database = {
           pharmacy_id: string
           pickup_address: string | null
           pickup_arrived_at: string | null
+          pickup_branch_id: string | null
           pickup_lat: number | null
           pickup_lng: number | null
           pickup_started_at: string | null
@@ -899,6 +900,7 @@ export type Database = {
           pharmacy_id: string
           pickup_address?: string | null
           pickup_arrived_at?: string | null
+          pickup_branch_id?: string | null
           pickup_lat?: number | null
           pickup_lng?: number | null
           pickup_started_at?: string | null
@@ -937,6 +939,7 @@ export type Database = {
           pharmacy_id?: string
           pickup_address?: string | null
           pickup_arrived_at?: string | null
+          pickup_branch_id?: string | null
           pickup_lat?: number | null
           pickup_lng?: number | null
           pickup_started_at?: string | null
@@ -968,6 +971,13 @@ export type Database = {
             columns: ["pharmacy_id"]
             isOneToOne: false
             referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_jobs_pickup_branch_id_fkey"
+            columns: ["pickup_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {
