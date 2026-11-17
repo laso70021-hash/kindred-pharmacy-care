@@ -42,7 +42,10 @@ suite('delivery PostgreSQL workflow (isolated database)', () => {
     const job = results[0][0].id
     expect((await sql`select status,pickup_lat,dropoff_lng from public.delivery_jobs where id=${job}`)[0]).toMatchObject({status:'in_process',pickup_lat:-6.8,dropoff_lng:39.3})
     expect(Number((await sql`select count(*) from public.delivery_job_events where job_id=${job} and action='created'`)[0].count)).toBe(1)
-    await expect(sql`insert into public.delivery_jobs(tracking_number,pharmacy_id,sale_id,status,dropoff_address) values('DUPLICATE',${id(1)},${sale},'in_process','Destination')`).rejects.toThrow(/unique/)
+    await expect(sql.begin(async tx => {
+      await tx`select set_config('request.jwt.claim.sub',${id(17)},true)`
+      await tx`insert into public.delivery_jobs(tracking_number,pharmacy_id,sale_id,status,dropoff_address) values('DUPLICATE',${id(1)},${sale},'in_process','Destination')`
+    })).rejects.toThrow(/unique/)
   })
   it('concurrent acceptance assigns exactly one rider without advancing shipment', async () => {
     const {job} = await newJob()
