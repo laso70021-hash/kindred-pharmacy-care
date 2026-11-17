@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { sendRecordEmail } from '@/lib/management.functions';
+import { createStaffAccount } from '@/lib/staff.functions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { UserPlus, Copy, X, Mail } from 'lucide-react';
@@ -35,6 +36,16 @@ export function StaffTab({ ws }: { ws: Workspace }) {
   const { data: branches = [] } = useQuery({ queryKey: ['ws', pid, 'branches'], queryFn: () => WorkspaceService.getBranches(pid) });
   const { data: refs = {} } = useQuery({ queryKey: ['entry-refs', pid], queryFn: () => EntryService.references(pid) });
   const [inviting, setInviting] = useState(false);
+  const createAccount = useServerFn(createStaffAccount);
+  const [creating, setCreating] = useState(false);
+  const [acct, setAcct] = useState({ fullName: '', email: '', password: '', phone: '', jobTitle: '', role: 'cashier' as StaffRole, branchId: '' });
+  const [made, setMade] = useState<{ email: string; password: string } | null>(null);
+  const genPassword = () => { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; const a = new Uint32Array(10); crypto.getRandomValues(a); setAcct((x) => ({ ...x, password: Array.from(a, (n) => c[n % c.length]).join('') + '!7' })); };
+  const submitAccount = () => void run(async () => {
+    await createAccount({ data: { pharmacyId: pid, fullName: acct.fullName, email: acct.email, password: acct.password, phone: acct.phone, jobTitle: acct.jobTitle, role: acct.role as 'cashier', branchIds: acct.branchId ? [acct.branchId] : [] } });
+    setMade({ email: acct.email.trim().toLowerCase(), password: acct.password }); setCreating(false);
+    setAcct({ fullName: '', email: '', password: '', phone: '', jobTitle: '', role: 'cashier' as StaffRole, branchId: '' });
+  }, 'Staff account created');
   const [busy, setBusy] = useState(false);
   const [editing,setEditing]=useState<EntryRow|null>(null);
   const { data: details = [] } = useQuery({ queryKey: ['staff-details',pid], queryFn:()=>EntryService.staffDetails(pid), enabled:editable });
@@ -71,9 +82,14 @@ export function StaffTab({ ws }: { ws: Workspace }) {
         subtitle={`${limitLabel(used, ws.limits.max_employees)} staff seats used on the ${ws.plan_name} plan (pending invites count)`}
         action={
           editable && (
-            <button className={primaryBtn} disabled={full} onClick={() => setInviting(true)}>
-              <UserPlus className="w-3.5 h-3.5" /> Invite staff
-            </button>
+            <div className="flex gap-2">
+              <button className={primaryBtn} disabled={full} onClick={() => setCreating(true)}>
+                <UserPlus className="w-3.5 h-3.5" /> Create account
+              </button>
+              <button className={ghostBtn} disabled={full} onClick={() => setInviting(true)}>
+                <Mail className="w-3.5 h-3.5" /> Invite by email
+              </button>
+            </div>
           )
         }
       />
@@ -81,6 +97,41 @@ export function StaffTab({ ws }: { ws: Workspace }) {
         <div className="text-xs bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-2.5 font-semibold">
           All staff seats on the {ws.plan_name} plan are used. Upgrade from My Account, or remove someone first.
         </div>
+      )}
+
+      {creating && (
+        <Modal title="Create staff account" onClose={() => setCreating(false)}>
+          <div className="space-y-3">
+            <Field label="Full name"><input className={inputCls} value={acct.fullName} onChange={(e) => setAcct({ ...acct, fullName: e.target.value })} /></Field>
+            <Field label="Email (their username)"><input className={inputCls} type="email" value={acct.email} onChange={(e) => setAcct({ ...acct, email: e.target.value })} /></Field>
+            <Field label="Password" hint="At least 8 characters. Share it privately with the employee.">
+              <div className="flex gap-2"><input className={inputCls} value={acct.password} onChange={(e) => setAcct({ ...acct, password: e.target.value })} /><button type="button" className={ghostBtn} onClick={genPassword}>Generate</button></div>
+            </Field>
+            <Field label="Phone"><input className={inputCls} value={acct.phone} onChange={(e) => setAcct({ ...acct, phone: e.target.value })} /></Field>
+            <Field label="Job title"><input className={inputCls} value={acct.jobTitle} onChange={(e) => setAcct({ ...acct, jobTitle: e.target.value })} /></Field>
+            <Field label="Role">
+              <select className={inputCls} value={acct.role} onChange={(e) => setAcct({ ...acct, role: e.target.value as StaffRole })}>
+                {STAFF_ROLES.filter((r) => r.value !== 'owner' && r.value !== 'admin').map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Branch">
+              <select className={inputCls} value={acct.branchId} onChange={(e) => setAcct({ ...acct, branchId: e.target.value })}>
+                <option value="">All branches</option>
+                {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </Field>
+            <button className={primaryBtn} disabled={busy || acct.fullName.trim().length < 2 || !acct.email.includes('@') || acct.password.length < 8} onClick={submitAccount}>Create account</button>
+          </div>
+        </Modal>
+      )}
+      {made && (
+        <Modal title="Account ready" onClose={() => setMade(null)}>
+          <div className="space-y-2 text-sm">
+            <p>Give these sign-in details to the employee. The password is shown only once.</p>
+            <div className="bg-slate-50 rounded-xl p-3 font-mono text-xs">User: {made.email}<br />Password: {made.password}</div>
+            <button className={primaryBtn} onClick={() => void navigator.clipboard.writeText(`Swahivo sign-in: ${typeof window === 'undefined' ? '' : window.location.origin}/auth\nUser: ${made.email}\nPassword: ${made.password}`).then(() => toast.success('Copied'))}><Copy className="w-3.5 h-3.5" /> Copy details</button>
+          </div>
+        </Modal>
       )}
 
       <div className={`${cardCls} p-5 overflow-x-auto`}>
