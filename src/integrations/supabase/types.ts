@@ -796,6 +796,7 @@ export type Database = {
           lng: number | null
           new_status: string | null
           note: string | null
+          previous_rider_id: string | null
           previous_status: string | null
           status: string
         }
@@ -810,6 +811,7 @@ export type Database = {
           lng?: number | null
           new_status?: string | null
           note?: string | null
+          previous_rider_id?: string | null
           previous_status?: string | null
           status: string
         }
@@ -824,6 +826,7 @@ export type Database = {
           lng?: number | null
           new_status?: string | null
           note?: string | null
+          previous_rider_id?: string | null
           previous_status?: string | null
           status?: string
         }
