@@ -14,9 +14,9 @@ suite('transactional product RPCs (disposable PostgreSQL)', () => {
     await tx.unsafe('SET LOCAL ROLE authenticated')
     return work(tx)
   })
-  const save = (r: Record<string, unknown>, id: string | null = null) => asUser(owner, tx => tx`select public.save_business_entry(${pharmacy},'products',${JSON.stringify(r)}::jsonb,${id}::uuid) as id`) as Promise<{id: string}[]>
+  const save = (r: Record<string, unknown>, id: string | null = null) => asUser(owner, tx => tx`select public.save_business_entry(${pharmacy},'products',${sql.json(r as postgres.JSONValue)},${id}::uuid) as id`) as Promise<{id: string}[]>
   const runImport = async (rows: Record<string, unknown>[], fingerprint = crypto.randomUUID()) => {
-    const results = await asUser(owner, tx => tx`select public.import_business_rows(${pharmacy},'products',${JSON.stringify(rows)}::jsonb,${fingerprint},'products.csv') as result`) as {result: {status: string; successful_count: number; failed_count: number; error?: string}}[]
+    const results = await asUser(owner, tx => tx`select public.import_business_rows(${pharmacy},'products',${sql.json(rows as postgres.JSONValue)},${fingerprint},'products.csv') as result`) as {result: {status: string; successful_count: number; failed_count: number; error?: string}}[]
     return results[0]?.result
   }
   beforeAll(async () => {
@@ -84,8 +84,8 @@ suite('transactional product RPCs (disposable PostgreSQL)', () => {
     await expect(runImport([row()],fingerprint)).rejects.toThrow(/already processed/)
   })
   it('keeps unauthorized users and tenants out and does not grant direct writes', async () => {
-    await expect(asUser('00000000-0000-0000-0000-000000000099',tx => tx`select public.save_business_entry(${pharmacy},'products',${JSON.stringify(row())}::jsonb,NULL)`)).rejects.toThrow(/not permitted/)
-    await expect(asUser(owner,tx => tx`select public.save_business_entry('00000000-0000-0000-0000-000000000002','products',${JSON.stringify(row())}::jsonb,NULL)`)).rejects.toThrow(/not permitted/)
+    await expect(asUser('00000000-0000-0000-0000-000000000099',tx => tx`select public.save_business_entry(${pharmacy},'products',${sql.json(row() as postgres.JSONValue)},NULL)`)).rejects.toThrow(/not permitted/)
+    await expect(asUser(owner,tx => tx`select public.save_business_entry('00000000-0000-0000-0000-000000000002','products',${sql.json(row() as postgres.JSONValue)},NULL)`)).rejects.toThrow(/not permitted/)
     expect((await sql`select has_function_privilege('anon','public.save_business_entry(uuid,text,jsonb,uuid)','EXECUTE') as allowed,has_table_privilege('authenticated','products','INSERT') as writes`)[0]).toMatchObject({allowed:false,writes:false})
   })
 })
