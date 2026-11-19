@@ -1,5 +1,6 @@
 -- Disposable PostgreSQL fixture only; never apply to the connected database.
 CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+GRANT USAGE ON SCHEMA public TO anon,authenticated,service_role;
 CREATE SCHEMA auth;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 GRANT USAGE ON SCHEMA auth TO authenticated;
