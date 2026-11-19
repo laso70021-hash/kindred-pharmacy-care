@@ -8,14 +8,14 @@ suite('transactional product RPCs (disposable PostgreSQL)', () => {
   const sql = postgres({ host: socket, port: 55433, username: 'lovable', database: 'postgres' })
   const pharmacy = '00000000-0000-0000-0000-000000000001'
   const owner = '00000000-0000-0000-0000-000000000010'
-  const row = (extra: Record<string, unknown> = {}) => ({ name: 'Paracetamol', sku: crypto.randomUUID(), selling_price: 1500, cost_price: 700, image_url: `${pharmacy}/products/photo.jpg`, quantity: 12, branch_code: 'MAIN', batch_number: 'B001', expiry_date: '2028-12-31', received_date: '2026-11-19', cost_per_unit: 650, ...extra })
+  const row = (extra: Record<string, postgres.JSONValue> = {}) => ({ name: 'Paracetamol', sku: crypto.randomUUID(), selling_price: 1500, cost_price: 700, image_url: `${pharmacy}/products/photo.jpg`, quantity: 12, branch_code: 'MAIN', batch_number: 'B001', expiry_date: '2028-12-31', received_date: '2026-11-19', cost_per_unit: 650, ...extra })
   const asUser = (uid: string, work: (tx: postgres.TransactionSql) => Promise<unknown>) => sql.begin(async tx => {
     await tx`select set_config('request.jwt.claim.sub',${uid},true)`
     await tx.unsafe('SET LOCAL ROLE authenticated')
     return work(tx)
   })
-  const save = (r: Record<string, unknown>, id: string | null = null) => asUser(owner, tx => tx`select public.save_business_entry(${pharmacy},'products',${sql.json(r as postgres.JSONValue)},${id}::uuid) as id`) as Promise<{id: string}[]>
-  const runImport = async (rows: Record<string, unknown>[], fingerprint = crypto.randomUUID()) => {
+  const save = (r: Record<string, postgres.JSONValue>, id: string | null = null) => asUser(owner, tx => tx`select public.save_business_entry(${pharmacy},'products',${sql.json(r as postgres.JSONValue)},${id}::uuid) as id`) as Promise<{id: string}[]>
+  const runImport = async (rows: Record<string, postgres.JSONValue>[], fingerprint = crypto.randomUUID()) => {
     const results = await asUser(owner, tx => tx`select public.import_business_rows(${pharmacy},'products',${sql.json(rows as postgres.JSONValue)},${fingerprint},'products.csv') as result`) as {result: {status: string; successful_count: number; failed_count: number; error?: string}}[]
     return results[0]?.result
   }
@@ -51,32 +51,38 @@ suite('transactional product RPCs (disposable PostgreSQL)', () => {
   it.each([{branch_code:'OTHER'},{branch_code:'CLOSED'},{branch_code:''},{batch_number:''},{expiry_date:''},{expiry_date:'invalid'},{expiry_date:'2020-01-01'},{cost_per_unit:-1},{quantity:-1},{quantity:'1.5'}])('rejects invalid opening stock %j', async extra => {
     const r = row(extra)
     expect(await runImport([r])).toMatchObject({status:'failed',successful_count:0})
-    expect((await sql`select count(*)::int as n from products where sku=${r.sku}`)[0]?.n).toBe(0)
+    expect((await sql`select count(*)::int as n from products where sku=${r.sku}`)[0]?.['n']).toBe(0)
   })
   it.each([0,'',null])('creates no batch for zero/blank quantity %s', async quantity => {
     const r = row({quantity,branch_code:'',batch_number:'',expiry_date:''})
     const result = await save(r)
-    expect((await sql`select count(*)::int as n from inventory_batches where product_id=${result[0]?.id}`)[0]?.n).toBe(0)
-    expect((await sql`select count(*)::int as n from stock_movements where product_id=${result[0]?.id}`)[0]?.n).toBe(0)
+    const productId = result[0]?.id
+    if (!productId) throw new Error('Product creation returned no id')
+    expect((await sql`select count(*)::int as n from inventory_batches where product_id=${productId}`)[0]?.['n']).toBe(0)
+    expect((await sql`select count(*)::int as n from stock_movements where product_id=${productId}`)[0]?.['n']).toBe(0)
   })
   it('preserves images on edits and allows legacy image-less products', async () => {
     const r = row({quantity:0})
     const saved = await save(r)
-    await save({...r,image_url:'',name:'Edited'},saved[0]?.id)
-    expect((await sql`select image_url from products where id=${saved[0]?.id}`)[0]?.image_url).toBe(r.image_url)
+    const productId = saved[0]?.id
+    if (!productId) throw new Error('Product creation returned no id')
+    await save({...r,image_url:'',name:'Edited'},productId)
+    expect((await sql`select image_url from products where id=${productId}`)[0]?.['image_url']).toBe(r.image_url)
     const legacy = await sql`insert into products(pharmacy_id,name,sku,selling_price) values(${pharmacy},'Legacy','LEGACY',100) returning id`
-    await save(row({quantity:0,image_url:null,sku:'LEGACY'}),legacy[0]?.id)
-    expect((await sql`select image_url from products where id=${legacy[0]?.id}`)[0]?.image_url).toBeNull()
+    const legacyId = legacy[0]?.['id']
+    if (typeof legacyId !== 'string') throw new Error('Legacy product creation returned no id')
+    await save(row({quantity:0,image_url:null,sku:'LEGACY'}),legacyId)
+    expect((await sql`select image_url from products where id=${legacyId}`)[0]?.['image_url']).toBeNull()
   })
   it('rolls back earlier products, batches, movements and audit rows on a later row failure', async () => {
     const r = row()
-    const before = (await sql`select count(*)::int as n from audit_logs`)[0]?.n
+    const before = (await sql`select count(*)::int as n from audit_logs`)[0]?.['n']
     const result = await runImport([r,row({image_url:null})])
     expect(result).toMatchObject({status:'failed',successful_count:0,failed_count:2})
     expect(result?.error).toContain('Row 2:')
-    expect((await sql`select count(*)::int as n from products where sku=${r.sku}`)[0]?.n).toBe(0)
-    expect((await sql`select count(*)::int as n from audit_logs`)[0]?.n).toBe(before)
-    expect((await sql`select count(*)::int as n from inventory_batches b left join products p on p.id=b.product_id where p.id is null`)[0]?.n).toBe(0)
+    expect((await sql`select count(*)::int as n from products where sku=${r.sku}`)[0]?.['n']).toBe(0)
+    expect((await sql`select count(*)::int as n from audit_logs`)[0]?.['n']).toBe(before)
+    expect((await sql`select count(*)::int as n from inventory_batches b left join products p on p.id=b.product_id where p.id is null`)[0]?.['n']).toBe(0)
   })
   it('keeps fingerprint protection including failed attempts', async () => {
     const fingerprint = crypto.randomUUID()
