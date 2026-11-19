@@ -1,0 +1,22 @@
+-- Disposable PostgreSQL fixture only; never apply to the connected database.
+CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+CREATE SCHEMA auth;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+GRANT USAGE ON SCHEMA auth TO authenticated;
+CREATE TYPE public.user_role AS ENUM ('super_admin','pharmacy_owner','supplier','manager','cashier','pharmacist','inventory_manager','accountant','delivery_rider');
+CREATE TABLE public.pharmacies(id uuid PRIMARY KEY,owner_id uuid,current_plan boolean DEFAULT true);
+CREATE TABLE public.branches(id uuid PRIMARY KEY,pharmacy_id uuid,code text,is_active boolean);
+CREATE TABLE public.categories(id uuid PRIMARY KEY,pharmacy_id uuid,name text);
+CREATE TABLE public.suppliers(id uuid PRIMARY KEY,pharmacy_id uuid,name text);
+CREATE TABLE public.products(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),pharmacy_id uuid,name text NOT NULL,generic_name text,brand_name text,description text,sku text,barcode text,dosage_form text,strength text,unit_of_measurement text,packaging text,cost_price numeric,selling_price numeric NOT NULL,min_stock_level int,is_prescription_required boolean,category_id uuid,supplier_id uuid,is_active boolean,image_url text,updated_at timestamptz DEFAULT now());
+CREATE TABLE public.inventory_batches(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),pharmacy_id uuid NOT NULL,product_id uuid REFERENCES public.products(id),branch_id uuid REFERENCES public.branches(id),batch_number text NOT NULL,quantity int NOT NULL,cost_per_unit numeric,manufacturing_date date,expiry_date date NOT NULL,received_date date);
+CREATE TABLE public.stock_movements(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),pharmacy_id uuid,product_id uuid,batch_id uuid,movement_type text,quantity int,notes text,created_by uuid);
+CREATE TABLE public.audit_logs(pharmacy_id uuid,user_id uuid,action text,entity text,entity_id text);
+CREATE TABLE public.import_history(id uuid DEFAULT gen_random_uuid(),pharmacy_id uuid,created_by uuid,module text,fingerprint text,file_name text,successful_count int DEFAULT 0,failed_count int DEFAULT 0,status text,error_message text,UNIQUE(pharmacy_id,module,fingerprint));
+CREATE FUNCTION public.can_write_pharmacy(_pharmacy uuid,_roles public.user_role[]) RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM pharmacies WHERE id=_pharmacy AND owner_id=auth.uid() AND current_plan) $$;
+CREATE FUNCTION public.can_access_branch(_pharmacy uuid,_branch uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT EXISTS(SELECT 1 FROM branches WHERE id=_branch AND pharmacy_id=_pharmacy) $$;
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inventory_batches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_movements ENABLE ROW LEVEL SECURITY;
+INSERT INTO public.pharmacies VALUES ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000010',true),('00000000-0000-0000-0000-000000000002',NULL,true);
+INSERT INTO public.branches VALUES ('00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000000001','MAIN',true),('00000000-0000-0000-0000-000000000102','00000000-0000-0000-0000-000000000001','CLOSED',false),('00000000-0000-0000-0000-000000000103','00000000-0000-0000-0000-000000000002','OTHER',true);
